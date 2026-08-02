@@ -143,6 +143,8 @@ class _DrillScreenState extends State<DrillScreen> {
   }
 
   Future<void> _submit() async {
+    // SnackBarの「再試行」から画面破棄後・添削中に呼ばれる可能性があるためガード
+    if (!mounted || _grading) return;
     final spoken = _answerController.text.trim();
     if (spoken.isEmpty) return;
 
@@ -172,6 +174,7 @@ class _DrillScreenState extends State<DrillScreen> {
       if (!mounted) return;
       await context.read<HistoryService>().saveDrillResult(result);
       if (!mounted) return;
+      _timer?.cancel();
       setState(() {
         _feedback = feedback;
         _gradedSpoken = spoken;

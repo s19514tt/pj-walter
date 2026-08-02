@@ -74,7 +74,13 @@ class DeviceSpeechInputService implements SpeechInputService {
   @override
   Future<void> start({required void Function(String text) onPartial}) async {
     if (!_initialized) {
-      final ok = await _speech.initialize();
+      bool ok;
+      try {
+        ok = await _speech.initialize();
+      } catch (_) {
+        // 端末によってはPlatformException等を投げるため利用不可として扱う
+        ok = false;
+      }
       if (!ok) {
         throw SpeechInputException('端末の音声認識を利用できません。手入力してください。');
       }
