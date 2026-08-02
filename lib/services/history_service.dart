@@ -1,0 +1,218 @@
+// コンストラクタの公開パラメータ名（例: drillResultsBox）と、内部実装用の
+// プライベートフィールド名（_drillResultsBox）をあえて分けているため、
+// initializing formalは使わない（使うとパラメータ名がprivateになり外部から渡せなくなる）。
+// ignore_for_file: prefer_initializing_formals
+
+import 'package:flutter/foundation.dart';
+import 'package:hive/hive.dart';
+
+import '../models/drill_result.dart';
+import '../models/monologue_result.dart';
+import '../models/phrase.dart';
+import '../models/srs_item.dart';
+
+/// スコアがこの値未満だとSRSキューに登録される（不合格ライン）。
+const _passingScore = 70;
+
+/// SRSの段階(stage)ごとの復習間隔（日数）。stage5は卒業（キューから除外）。
+const _srsIntervalDays = {0: 1, 1: 3, 2: 7, 3: 14, 4: 30};
+
+/// 卒業（キューから除外）とみなすstage
+const _graduationStage = 5;
+
+/// 学習履歴（口頭英作文・独り言英会話の結果）、SRS復習キュー、フレーズ帳、
+/// 日次学習統計を永続化するサービス。
+///
+/// テスト容易性のため、各Hive boxはコンストラクタ注入できる。
+class HistoryService extends ChangeNotifier {
+  HistoryService({
+    required Box drillResultsBox,
+    required Box monologueResultsBox,
+    required Box srsItemsBox,
+    required Box phrasesBox,
+    required Box dailyStatsBox,
+  }) : _drillResultsBox = drillResultsBox,
+       _monologueResultsBox = monologueResultsBox,
+       _srsItemsBox = srsItemsBox,
+       _phrasesBox = phrasesBox,
+       _dailyStatsBox = dailyStatsBox;
+
+  final Box _drillResultsBox;
+  final Box _monologueResultsBox;
+  final Box _srsItemsBox;
+  final Box _phrasesBox;
+  final Box _dailyStatsBox;
+
+  // --- 口頭英作文 -----------------------------------------------------
+
+  /// 口頭英作文の結果を保存する。日次統計を更新し、
+  /// スコアが70未満なら対象文をSRS復習キューに登録する。
+  Future<void> saveDrillResult(DrillResult result) async {
+    await _drillResultsBox.put(result.id, result.toJson());
+    await _bumpDailyStats(drillCount: 1);
+    if (result.feedback.score < _passingScore) {
+      await _registerSrsFailure(
+        sentenceId: result.sentenceId,
+        level: result.level,
+      );
+    }
+    notifyListeners();
+  }
+
+  /// 口頭英作文の結果を新しい順に返す。
+  List<DrillResult> get drillHistory {
+    final list = _drillResultsBox.values
+        .map((e) => DrillResult.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
+    list.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    return list;
+  }
+
+  // --- 独り言英会話 -----------------------------------------------------
+
+  /// 独り言英会話の結果を保存し、日次統計を更新する。
+  Future<void> saveMonologueResult(MonologueResult result) async {
+    await _monologueResultsBox.put(result.id, result.toJson());
+    await _bumpDailyStats(monologueCount: 1, studySeconds: result.seconds);
+    notifyListeners();
+  }
+
+  /// 独り言英会話の結果を新しい順に返す。
+  List<MonologueResult> get monologueHistory {
+    final list = _monologueResultsBox.values
+        .map(
+          (e) => MonologueResult.fromJson(Map<String, dynamic>.from(e as Map)),
+        )
+        .toList();
+    list.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    return list;
+  }
+
+  // --- SRS -----------------------------------------------------
+
+  /// 今日復習すべきアイテム（dueDate <= 今日、日単位比較）を、
+  /// dueDateが早い順に返す。
+  List<SrsItem> get dueSrsItems {
+    final today = _dateOnly(DateTime.now());
+    final list = _srsItemsBox.values
+        .map((e) => SrsItem.fromJson(Map<String, dynamic>.from(e as Map)))
+        .where((item) => !_dateOnly(item.dueDate).isAfter(today))
+        .toList();
+    list.sort((a, b) => a.dueDate.compareTo(b.dueDate));
+    return list;
+  }
+
+  /// 全てのSRSアイテムを返す（順不同）。
+  List<SrsItem> get allSrsItems => _srsItemsBox.values
+      .map((e) => SrsItem.fromJson(Map<String, dynamic>.from(e as Map)))
+      .toList();
+
+  /// 復習結果を反映する。
+  ///
+  /// 正解ならstageを1つ進め、次回dueDateを更新する（stage5到達で卒業しキューから削除）。
+  /// 不正解ならstageを0に戻し、翌日をdueDateとする。
+  Future<void> applyReviewResult(String sentenceId, bool correct) async {
+    final map = _srsItemsBox.get(sentenceId) as Map?;
+    if (map == null) return;
+    final item = SrsItem.fromJson(Map<String, dynamic>.from(map));
+
+    if (correct) {
+      final nextStage = item.stage + 1;
+      if (nextStage >= _graduationStage) {
+        await _srsItemsBox.delete(sentenceId);
+        notifyListeners();
+        return;
+      }
+      final updated = item.copyWith(
+        stage: nextStage,
+        dueDate: _addDays(
+          _dateOnly(DateTime.now()),
+          _srsIntervalDays[nextStage]!,
+        ),
+        lastResult: true,
+      );
+      await _srsItemsBox.put(sentenceId, updated.toJson());
+    } else {
+      final updated = item.copyWith(
+        stage: 0,
+        dueDate: _addDays(_dateOnly(DateTime.now()), _srsIntervalDays[0]!),
+        lastResult: false,
+      );
+      await _srsItemsBox.put(sentenceId, updated.toJson());
+    }
+    notifyListeners();
+  }
+
+  Future<void> _registerSrsFailure({
+    required String sentenceId,
+    required int level,
+  }) async {
+    final existingMap = _srsItemsBox.get(sentenceId) as Map?;
+    final lapses = existingMap != null
+        ? SrsItem.fromJson(Map<String, dynamic>.from(existingMap)).lapses + 1
+        : 0;
+    final item = SrsItem(
+      sentenceId: sentenceId,
+      level: level,
+      stage: 0,
+      dueDate: _addDays(_dateOnly(DateTime.now()), _srsIntervalDays[0]!),
+      lapses: lapses,
+      lastResult: false,
+    );
+    await _srsItemsBox.put(sentenceId, item.toJson());
+  }
+
+  // --- フレーズ帳 -----------------------------------------------------
+
+  /// フレーズ帳にフレーズを追加する。
+  Future<void> addPhrase(Phrase phrase) async {
+    await _phrasesBox.put(phrase.id, phrase.toJson());
+    notifyListeners();
+  }
+
+  /// フレーズ帳の内容を新しい順に返す。
+  List<Phrase> get phrases {
+    final list = _phrasesBox.values
+        .map((e) => Phrase.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
+    list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return list;
+  }
+
+  // --- 日次統計 -----------------------------------------------------
+
+  /// 指定日の学習統計（drillCount / monologueCount / studySeconds）を返す。
+  Map<String, int> statsForDate(DateTime date) {
+    final existing = _dailyStatsBox.get(_dateKey(date)) as Map?;
+    if (existing == null) {
+      return {'drillCount': 0, 'monologueCount': 0, 'studySeconds': 0};
+    }
+    return Map<String, int>.from(existing);
+  }
+
+  Future<void> _bumpDailyStats({
+    int drillCount = 0,
+    int monologueCount = 0,
+    int studySeconds = 0,
+  }) async {
+    final key = _dateKey(DateTime.now());
+    final current = statsForDate(DateTime.now());
+    final updated = {
+      'drillCount': current['drillCount']! + drillCount,
+      'monologueCount': current['monologueCount']! + monologueCount,
+      'studySeconds': current['studySeconds']! + studySeconds,
+    };
+    await _dailyStatsBox.put(key, updated);
+  }
+
+  static String _dateKey(DateTime date) =>
+      '${date.year.toString().padLeft(4, '0')}-'
+      '${date.month.toString().padLeft(2, '0')}-'
+      '${date.day.toString().padLeft(2, '0')}';
+
+  static DateTime _dateOnly(DateTime date) =>
+      DateTime(date.year, date.month, date.day);
+
+  static DateTime _addDays(DateTime date, int days) =>
+      DateTime(date.year, date.month, date.day + days);
+}
