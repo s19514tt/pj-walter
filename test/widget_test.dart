@@ -1,9 +1,4 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
+// スモークテスト: シェルが表示され、下部ナビゲーションに4つのタブがあることを確認する。
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -11,20 +6,29 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pj_walter/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
+  testWidgets('Shell shows 4 bottom navigation tabs', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(const MyApp());
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    expect(find.text('ホーム'), findsOneWidget);
+    expect(find.text('学習'), findsOneWidget);
+    expect(find.text('復習'), findsOneWidget);
+    expect(find.text('記録'), findsOneWidget);
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    expect(find.byType(BottomNavigationBar), findsOneWidget);
+    final navBar = tester.widget<BottomNavigationBar>(
+      find.byType(BottomNavigationBar),
+    );
+    expect(navBar.items.length, 4);
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // ホームタブのAppBarタイトルが表示されていること
+    expect(find.text('pj-walter'), findsOneWidget);
+
+    // 学習タブに切り替えるとメニューが表示されること
+    await tester.tap(find.text('学習'));
+    await tester.pumpAndSettle();
+    expect(find.text('口頭英作文'), findsOneWidget);
+    expect(find.text('独り言英会話'), findsOneWidget);
   });
 }
