@@ -123,6 +123,27 @@ void main() {
       expect(stats['drillCount'], 2);
     });
 
+    test('updateSrs:falseならスコア70未満でもSRSキューに登録されない', () async {
+      await historyService.saveDrillResult(
+        _drillResult(sentenceId: 's700-030', score: 30),
+        updateSrs: false,
+      );
+
+      expect(historyService.allSrsItems, isEmpty);
+      expect(historyService.drillHistory, hasLength(1));
+    });
+
+    test('updateSrs:falseでも履歴・日次統計は通常通り記録される', () async {
+      await historyService.saveDrillResult(
+        _drillResult(sentenceId: 's700-031', score: 90),
+        updateSrs: false,
+      );
+
+      final stats = historyService.statsForDate(DateTime.now());
+      expect(stats['drillCount'], 1);
+      expect(historyService.drillHistory, hasLength(1));
+    });
+
     test('保存した結果が新しい順に取得できる', () async {
       await historyService.saveDrillResult(
         _drillResult(sentenceId: 's700-006', score: 90),
@@ -244,6 +265,40 @@ void main() {
       final phrases = historyService.phrases;
       expect(phrases, hasLength(2));
       expect(phrases.first.id, 'p-2');
+    });
+  });
+
+  group('deletePhrase', () {
+    test('指定idのフレーズだけが削除される', () async {
+      await historyService.addPhrase(
+        Phrase(
+          id: 'p-10',
+          en: 'break the ice',
+          ja: '緊張をほぐす',
+          source: 'manual',
+          createdAt: DateTime.now(),
+        ),
+      );
+      await historyService.addPhrase(
+        Phrase(
+          id: 'p-11',
+          en: 'slip my mind',
+          ja: 'うっかり忘れる',
+          source: 'manual',
+          createdAt: DateTime.now(),
+        ),
+      );
+
+      await historyService.deletePhrase('p-10');
+
+      final phrases = historyService.phrases;
+      expect(phrases, hasLength(1));
+      expect(phrases.first.id, 'p-11');
+    });
+
+    test('存在しないidを指定しても例外にならない', () async {
+      await expectLater(historyService.deletePhrase('unknown'), completes);
+      expect(historyService.phrases, isEmpty);
     });
   });
 }

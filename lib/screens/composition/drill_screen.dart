@@ -30,17 +30,27 @@ class DrillScreen extends StatefulWidget {
     required this.sentences,
     required this.level,
     required this.theme,
+    this.isReview = false,
     this.speechInputService,
   });
 
   /// 出題文一覧（すでにランダム選出済み）
   final List<Sentence> sentences;
 
-  /// TOEICレベル（DrillResultの記録・「もう一度」の再出題に使用）
+  /// TOEICレベル（「もう一度」の再出題に使用）。復習モードでは未使用。
   final int level;
 
-  /// 出題テーマ（「もう一度」の再出題に使用、nullなら全テーマ）
+  /// 出題テーマ（「もう一度」の再出題に使用、nullなら全テーマ）。復習モードでは未使用。
   final String? theme;
+
+  /// 復習モードかどうか。
+  ///
+  /// trueの場合、添削完了時に[HistoryService.saveDrillResult]を
+  /// `updateSrs: false`で呼び（SRSの二重更新を避ける）、
+  /// [HistoryService.applyReviewResult]でSRSを進める。
+  /// また全問終了後は[DrillSummaryScreen]（通常モード専用の「もう一度」を持つ）
+  /// へは遷移せず、呼び出し元（[ReviewScreen]）に戻る。
+  final bool isReview;
 
   /// テスト注入用。省略時は設定に応じたインスタンスを自動生成する。
   final SpeechInputService? speechInputService;
@@ -166,13 +176,25 @@ class _DrillScreenState extends State<DrillScreen> {
       final result = DrillResult(
         id: const Uuid().v4(),
         sentenceId: sentence.id,
-        level: widget.level,
+        level: sentence.level,
         spoken: spoken,
         timestamp: DateTime.now(),
         feedback: feedback,
       );
       if (!mounted) return;
-      await context.read<HistoryService>().saveDrillResult(result);
+      final historyService = context.read<HistoryService>();
+      if (widget.isReview) {
+        // 復習モードではSRSの二重更新を避けるためsaveDrillResultではSRSを
+        // 更新せず、applyReviewResultで明示的に反映する（履歴・日次統計は記録する）。
+        await historyService.saveDrillResult(result, updateSrs: false);
+        if (!mounted) return;
+        await historyService.applyReviewResult(
+          sentence.id,
+          feedback.isAcceptable,
+        );
+      } else {
+        await historyService.saveDrillResult(result);
+      }
       if (!mounted) return;
       _timer?.cancel();
       setState(() {
@@ -228,6 +250,13 @@ class _DrillScreenState extends State<DrillScreen> {
     }
 
     if (_index >= widget.sentences.length - 1) {
+      if (widget.isReview) {
+        // 復習セッションは複数レベル・テーマの文が混在しうるため、通常モード専用の
+        // 「もう一度」（単一level/themeで再出題）を持つDrillSummaryScreenは使わず、
+        // 呼び出し元のReviewScreenへ戻る。
+        Navigator.of(context).pop();
+        return;
+      }
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (_) => DrillSummaryScreen(
@@ -255,7 +284,10 @@ class _DrillScreenState extends State<DrillScreen> {
     final feedback = _feedback;
     return Scaffold(
       appBar: AppBar(
-        title: Text('口頭英作文 (${_index + 1}/${widget.sentences.length})'),
+        title: Text(
+          '${widget.isReview ? '復習' : '口頭英作文'} '
+          '(${_index + 1}/${widget.sentences.length})',
+        ),
       ),
       body: SafeArea(
         child: feedback == null

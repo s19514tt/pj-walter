@@ -46,11 +46,17 @@ class HistoryService extends ChangeNotifier {
   // --- 口頭英作文 -----------------------------------------------------
 
   /// 口頭英作文の結果を保存する。日次統計を更新し、
-  /// スコアが70未満なら対象文をSRS復習キューに登録する。
-  Future<void> saveDrillResult(DrillResult result) async {
+  /// [updateSrs]がtrue（既定）かつスコアが70未満なら対象文をSRS復習キューに登録する。
+  ///
+  /// 復習ドリル（[updateSrs]がfalse）では、SRSの更新は呼び出し側が
+  /// [applyReviewResult]で別途行うため、ここでは履歴・日次統計の記録のみ行う。
+  Future<void> saveDrillResult(
+    DrillResult result, {
+    bool updateSrs = true,
+  }) async {
     await _drillResultsBox.put(result.id, result.toJson());
     await _bumpDailyStats(drillCount: 1);
-    if (result.feedback.score < _passingScore) {
+    if (updateSrs && result.feedback.score < _passingScore) {
       await _registerSrsFailure(
         sentenceId: result.sentenceId,
         level: result.level,
@@ -177,6 +183,12 @@ class HistoryService extends ChangeNotifier {
         .toList();
     list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     return list;
+  }
+
+  /// フレーズ帳から指定のエントリを削除する。
+  Future<void> deletePhrase(String id) async {
+    await _phrasesBox.delete(id);
+    notifyListeners();
   }
 
   // --- 日次統計 -----------------------------------------------------
