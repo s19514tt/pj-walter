@@ -32,7 +32,16 @@ abstract class SpeechInputService {
   /// [onPartial]は認識中のテキストが更新されるたびに呼ばれる
   /// （device方式はリアルタイムの部分認識結果、gemini方式は録音中である旨の
   /// 固定文言）。マイク権限拒否・STT利用不可の場合は[SpeechInputException]を投げる。
-  Future<void> start({required void Function(String text) onPartial});
+  ///
+  /// [listenFor]・[pauseFor]はdevice方式（[DeviceSpeechInputService]）でのみ
+  /// 使われるオプションで、独り言英会話のような長時間発話向けに
+  /// 認識継続時間・無音許容時間を調整するためのもの。省略時（null）は
+  /// 口頭英作文の短文発話に適した既存の挙動を維持する。gemini方式では無視される。
+  Future<void> start({
+    required void Function(String text) onPartial,
+    Duration? listenFor,
+    Duration? pauseFor,
+  });
 
   /// 音声入力を終了し、確定したテキストを返す。
   ///
@@ -72,7 +81,11 @@ class DeviceSpeechInputService implements SpeechInputService {
   }
 
   @override
-  Future<void> start({required void Function(String text) onPartial}) async {
+  Future<void> start({
+    required void Function(String text) onPartial,
+    Duration? listenFor,
+    Duration? pauseFor,
+  }) async {
     if (!_initialized) {
       bool ok;
       try {
@@ -94,6 +107,11 @@ class DeviceSpeechInputService implements SpeechInputService {
 
     _lastWords = '';
     _finalResultCompleter = Completer<void>();
+    // listenFor/pauseForが渡された場合（独り言英会話などの長時間発話）は
+    // ListenMode.dictationにし、無音許容時間・最大継続時間を延長する。
+    // 未指定時（口頭英作文の短文発話）は既存の挙動を変えないため
+    // ListenMode.confirmation・両方nullのままにする。
+    final longForm = listenFor != null || pauseFor != null;
     await _speech.listen(
       onResult: (result) {
         _lastWords = result.recognizedWords;
@@ -108,6 +126,11 @@ class DeviceSpeechInputService implements SpeechInputService {
       listenOptions: stt.SpeechListenOptions(
         localeId: 'en_US',
         partialResults: true,
+        listenMode: longForm
+            ? stt.ListenMode.dictation
+            : stt.ListenMode.confirmation,
+        listenFor: listenFor,
+        pauseFor: pauseFor,
       ),
     );
   }
@@ -153,7 +176,12 @@ class GeminiSpeechInputService implements SpeechInputService {
   Future<bool> get isAvailable => _recorder.hasPermission();
 
   @override
-  Future<void> start({required void Function(String text) onPartial}) async {
+  Future<void> start({
+    required void Function(String text) onPartial,
+    Duration? listenFor,
+    Duration? pauseFor,
+  }) async {
+    // listenFor/pauseForはdevice方式専用のオプションのためここでは使わない。
     final granted = await _recorder.hasPermission();
     if (!granted) {
       throw SpeechInputException('マイクの権限が許可されていません。手入力してください。');
