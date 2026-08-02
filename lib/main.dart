@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'screens/shell.dart';
 import 'services/gemini_service.dart';
 import 'services/history_service.dart';
+import 'services/sentence_repository.dart';
 import 'services/settings_service.dart';
 import 'theme/app_theme.dart';
 
@@ -68,6 +69,7 @@ class MyApp extends StatelessWidget {
           update: (context, settings, previous) =>
               GeminiService(settingsService: settings),
         ),
+        Provider<SentenceRepository>(create: (context) => SentenceRepository()),
       ],
       child: MaterialApp(
         title: 'pj-walter',
