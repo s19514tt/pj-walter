@@ -55,14 +55,15 @@ class SentenceRepository {
     final raw = await rootBundle.loadString(assetPath);
     final json = jsonDecode(raw) as Map<String, dynamic>;
     final jsonLevel = (json['level'] as num).toInt();
-    final list = (json['sentences'] as List<dynamic>)
-        .map(
-          (e) => Sentence.fromJson({
-            ...e as Map<String, dynamic>,
-            'level': jsonLevel,
-          }),
-        )
-        .toList(growable: false);
+    // キャッシュを呼び出し側のin-place操作（シャッフル等）から守るためunmodifiableで保持する
+    final list = List<Sentence>.unmodifiable(
+      (json['sentences'] as List<dynamic>).map(
+        (e) => Sentence.fromJson({
+          ...e as Map<String, dynamic>,
+          'level': jsonLevel,
+        }),
+      ),
+    );
 
     _sentenceCache[level] = list;
     return list;
@@ -74,9 +75,11 @@ class SentenceRepository {
 
     final raw = await rootBundle.loadString(_topicsAssetPath);
     final json = jsonDecode(raw) as Map<String, dynamic>;
-    final list = (json['topics'] as List<dynamic>)
-        .map((e) => Topic.fromJson(e as Map<String, dynamic>))
-        .toList(growable: false);
+    final list = List<Topic>.unmodifiable(
+      (json['topics'] as List<dynamic>).map(
+        (e) => Topic.fromJson(e as Map<String, dynamic>),
+      ),
+    );
 
     _topicCache = list;
     return list;
