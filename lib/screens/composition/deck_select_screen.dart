@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../services/drill_question_selector.dart';
 import '../../services/sentence_repository.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/theme_labels.dart';
@@ -8,6 +9,7 @@ import '../../widgets/pill_chip.dart';
 import '../../widgets/primary_button.dart';
 import '../../widgets/secondary_button.dart';
 import '../../widgets/section_header.dart';
+import 'drill_screen.dart';
 import 'sentence_list_screen.dart';
 
 /// 口頭英作文のデッキ選択画面。
@@ -48,6 +50,30 @@ class _DeckSelectScreenState extends State<DeckSelectScreen> {
 
   String _themeChipLabel(String? theme) =>
       theme == null ? 'すべて' : themeLabel(theme);
+
+  Future<void> _startTraining() async {
+    final repository = context.read<SentenceRepository>();
+    final sentences = await repository.sentencesFor(
+      level: _level,
+      theme: _theme,
+    );
+    if (!mounted) return;
+    if (sentences.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('対象の教材がありません')));
+      return;
+    }
+    const selector = DrillQuestionSelector();
+    final selected = selector.select(sentences);
+    if (!mounted) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) =>
+            DrillScreen(sentences: selected, level: _level, theme: _theme),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -118,14 +144,7 @@ class _DeckSelectScreenState extends State<DeckSelectScreen> {
             },
           ),
           const SizedBox(height: 12),
-          PrimaryButton(
-            label: 'トレーニング開始',
-            onPressed: () {
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(const SnackBar(content: Text('近日実装')));
-            },
-          ),
+          PrimaryButton(label: 'トレーニング開始', onPressed: _startTraining),
         ],
       ),
     );

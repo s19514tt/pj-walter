@@ -1,4 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 口頭英作文・独り言英会話の音声入力（speech_to_text / record）に必要 -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <application
         android:label="pj_walter"
         android:name="${applicationName}"
