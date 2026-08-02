@@ -5,13 +5,11 @@ import 'package:provider/provider.dart';
 import '../models/phrase.dart';
 import '../models/srs_item.dart';
 import '../services/history_service.dart';
-import '../services/review_question_resolver.dart';
-import '../services/sentence_repository.dart';
 import '../theme/app_theme.dart';
+import '../utils/review_launcher.dart';
 import '../widgets/app_card.dart';
 import '../widgets/primary_button.dart';
 import '../widgets/section_header.dart';
-import 'composition/drill_screen.dart';
 
 /// 復習予定一覧で全件を個別表示する上限。超えた分は件数表示のみにする。
 const _upcomingListLimit = 8;
@@ -26,6 +24,7 @@ class ReviewScreen extends StatefulWidget {
 
 class _ReviewScreenState extends State<ReviewScreen> {
   final _searchController = TextEditingController();
+  final _launcher = const ReviewSessionLauncher();
   String _query = '';
   bool _startingReview = false;
 
@@ -38,33 +37,9 @@ class _ReviewScreenState extends State<ReviewScreen> {
   Future<void> _startReview(List<SrsItem> dueItems) async {
     if (_startingReview) return;
     setState(() => _startingReview = true);
-
-    final repository = context.read<SentenceRepository>();
-    const resolver = ReviewQuestionResolver();
-    final sentences = await resolver.resolve(
-      items: dueItems,
-      sentencesByLevel: (level) => repository.sentencesFor(level: level),
-    );
+    await _launcher.start(context, dueItems);
     if (!mounted) return;
     setState(() => _startingReview = false);
-
-    if (sentences.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('復習対象の教材が見つかりませんでした')));
-      return;
-    }
-
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => DrillScreen(
-          sentences: sentences,
-          level: sentences.first.level,
-          theme: null,
-          isReview: true,
-        ),
-      ),
-    );
   }
 
   Future<void> _deletePhrase(HistoryService history, Phrase phrase) async {
@@ -161,7 +136,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
       );
     }
 
-    final sorted = [...allItems]..sort((a, b) => a.dueDate.compareTo(b.dueDate));
+    final sorted = [...allItems]
+      ..sort((a, b) => a.dueDate.compareTo(b.dueDate));
     final shown = sorted.take(_upcomingListLimit).toList();
     final remaining = sorted.length - shown.length;
     final today = DateTime.now();
