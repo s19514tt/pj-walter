@@ -6,8 +6,24 @@ import 'package:pj_walter/models/monologue_result.dart';
 import 'package:pj_walter/models/phrase.dart';
 import 'package:pj_walter/models/sentence.dart';
 import 'package:pj_walter/models/srs_item.dart';
+import 'package:pj_walter/models/topic.dart';
 
 void main() {
+  group('Topic', () {
+    test('fromJson/toJson roundtrip', () {
+      const topic = Topic(
+        id: 't-001',
+        ja: '今日の朝ごはんについて話してください',
+        en: 'Talk about what you had for breakfast today',
+        theme: 'daily',
+      );
+
+      final roundTripped = Topic.fromJson(topic.toJson());
+
+      expect(roundTripped, topic);
+    });
+  });
+
   group('Sentence', () {
     test('fromJson/toJson roundtrip', () {
       const sentence = Sentence(

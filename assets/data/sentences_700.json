@@ -1,0 +1,1405 @@
+{
+  "level": 700,
+  "sentences": [
+    {
+      "id": "s700-001",
+      "ja": "私は毎朝ジョギングをしてから朝食を食べます。",
+      "en": "I go jogging every morning before I eat breakfast.",
+      "theme": "daily",
+      "tips": "before は接続詞としても使える(前置詞/接続詞両方の用法)"
+    },
+    {
+      "id": "s700-002",
+      "ja": "来週の土曜日に友達と映画を見に行く予定です。",
+      "en": "I'm going to the movies with a friend next Saturday.",
+      "theme": "daily",
+      "tips": "現在進行形で近い未来の予定を表せる"
+    },
+    {
+      "id": "s700-003",
+      "ja": "昨日の夜、隣の部屋から変な音が聞こえました。",
+      "en": "I heard a strange noise from the next room last night.",
+      "theme": "daily",
+      "tips": "hear の過去形 heard、知覚動詞の一種"
+    },
+    {
+      "id": "s700-004",
+      "ja": "私はまだこのレストランに一度も行ったことがありません。",
+      "en": "I have never been to this restaurant before.",
+      "theme": "daily",
+      "tips": "have never been to で「一度も行ったことがない」"
+    },
+    {
+      "id": "s700-005",
+      "ja": "彼女はもう3時間ずっとその小説を読み続けています。",
+      "en": "She has been reading that novel for three hours.",
+      "theme": "daily",
+      "tips": "現在完了進行形は継続中の動作を強調する"
+    },
+    {
+      "id": "s700-006",
+      "ja": "電話が鳴ったとき、私はちょうどシャワーを浴びていました。",
+      "en": "I was taking a shower when the phone rang.",
+      "theme": "daily",
+      "tips": "過去進行形+過去形で「~していたときに…した」"
+    },
+    {
+      "id": "s700-007",
+      "ja": "明日は雨が降ると思うので、傘を持って行きます。",
+      "en": "I think it will rain tomorrow, so I'll bring an umbrella.",
+      "theme": "daily",
+      "tips": "I think のあとはthatが省略され、willで単純未来を表す"
+    },
+    {
+      "id": "s700-008",
+      "ja": "今夜は疲れているので、早く寝るつもりです。",
+      "en": "I'm tired tonight, so I'm going to go to bed early.",
+      "theme": "daily",
+      "tips": "be going to で「~するつもりだ」という意図を表す"
+    },
+    {
+      "id": "s700-009",
+      "ja": "この公園は毎週日曜日に地域の人々によって掃除されます。",
+      "en": "This park is cleaned by local people every Sunday.",
+      "theme": "daily",
+      "tips": "受動態は be動詞+過去分詞+by で動作主を示す"
+    },
+    {
+      "id": "s700-010",
+      "ja": "このアパートは前に住んでいた部屋より少し広いです。",
+      "en": "This apartment is a little bigger than the room I lived in before.",
+      "theme": "daily",
+      "tips": "a little+比較級で「少しだけ~」という程度を表す"
+    },
+    {
+      "id": "s700-011",
+      "ja": "これは私がこれまで食べた中で一番美味しいラーメンです。",
+      "en": "This is the best ramen I have ever eaten.",
+      "theme": "daily",
+      "tips": "the best ~ I have ever eaten で最上級を強調する"
+    },
+    {
+      "id": "s700-012",
+      "ja": "駅の近くに住んでいる友達が週末に遊びに来ます。",
+      "en": "A friend who lives near the station is coming over this weekend.",
+      "theme": "daily",
+      "tips": "who以下がfriendを修飾する関係代名詞節"
+    },
+    {
+      "id": "s700-013",
+      "ja": "母が去年買ってくれたバッグを今でも毎日使っています。",
+      "en": "I still use the bag that my mother bought me last year.",
+      "theme": "daily",
+      "tips": "that以下がbagを修飾する目的格の関係代名詞"
+    },
+    {
+      "id": "s700-014",
+      "ja": "次のバスが何時に出発するのか知っていますか。",
+      "en": "Do you know what time the next bus leaves?",
+      "theme": "daily",
+      "tips": "間接疑問文は疑問詞のあとが平叙文の語順になる"
+    },
+    {
+      "id": "s700-015",
+      "ja": "もし明日晴れたら、公園でピクニックをしましょう。",
+      "en": "If it's sunny tomorrow, let's have a picnic in the park.",
+      "theme": "daily",
+      "tips": "条件を表す副詞節では未来のことでも現在形を使う"
+    },
+    {
+      "id": "s700-016",
+      "ja": "もし私があなたの立場なら、その仕事を引き受けないと思います。",
+      "en": "If I were you, I wouldn't take that job.",
+      "theme": "daily",
+      "tips": "仮定法過去はwereを使い現実と異なる仮定を表す"
+    },
+    {
+      "id": "s700-017",
+      "ja": "あそこで犬と遊んでいる女の子は私の姪です。",
+      "en": "The girl playing with the dog over there is my niece.",
+      "theme": "daily",
+      "tips": "現在分詞句が名詞を後ろから修飾している"
+    },
+    {
+      "id": "s700-018",
+      "ja": "割れた窓は今朝業者によって修理されました。",
+      "en": "The broken window was fixed by a repairman this morning.",
+      "theme": "daily",
+      "tips": "過去分詞brokenがwindowを前から修飾する形容詞用法"
+    },
+    {
+      "id": "s700-019",
+      "ja": "私は健康を保つために毎日野菜を食べるようにしています。",
+      "en": "I try to eat vegetables every day to stay healthy.",
+      "theme": "daily",
+      "tips": "to stay healthy は目的を表す副詞的用法の不定詞"
+    },
+    {
+      "id": "s700-020",
+      "ja": "音楽を聴くことは私にとって一番のストレス解消法です。",
+      "en": "Listening to music is my best way to relieve stress.",
+      "theme": "daily",
+      "tips": "動名詞が文の主語になっている"
+    },
+    {
+      "id": "s700-021",
+      "ja": "寝る前に必ず全部の電気を消してください。",
+      "en": "Please turn off all the lights before you go to bed.",
+      "theme": "daily",
+      "tips": "turn off で「(電気・電源を)消す」という句動詞"
+    },
+    {
+      "id": "s700-022",
+      "ja": "荷物が重いので、少し手伝っていただけますか。",
+      "en": "Could you help me a little? My bags are heavy.",
+      "theme": "daily",
+      "tips": "Could you ~? は丁寧な依頼表現"
+    },
+    {
+      "id": "s700-023",
+      "ja": "風邪気味なら、今夜は早く寝たほうがいいですよ。",
+      "en": "You should go to bed early tonight if you feel a cold coming on.",
+      "theme": "daily",
+      "tips": "shouldは「~したほうがいい」という助言を表す"
+    },
+    {
+      "id": "s700-024",
+      "ja": "昨夜はとても眠かったので、テレビを見ながら寝てしまいました。",
+      "en": "I was so sleepy last night that I fell asleep watching TV.",
+      "theme": "daily",
+      "tips": "so~that…で「とても~なので…」という結果を表す"
+    },
+    {
+      "id": "s700-025",
+      "ja": "このスープは熱すぎてすぐには飲めません。",
+      "en": "This soup is too hot to drink right now.",
+      "theme": "daily",
+      "tips": "too~to…で「~すぎて…できない」を表す"
+    },
+    {
+      "id": "s700-026",
+      "ja": "家に着いたらすぐにあなたに電話します。",
+      "en": "I'll call you as soon as I get home.",
+      "theme": "daily",
+      "tips": "as soon as「~するとすぐに」も現在形で未来を表す"
+    },
+    {
+      "id": "s700-027",
+      "ja": "彼らは10年前からこの町にずっと住んでいます。",
+      "en": "They have lived in this town for ten years.",
+      "theme": "daily",
+      "tips": "for+期間で現在完了の継続用法を表す"
+    },
+    {
+      "id": "s700-028",
+      "ja": "子供の頃、私はよくこの公園で遊んだものです。",
+      "en": "I used to play in this park a lot as a kid.",
+      "theme": "daily",
+      "tips": "used to で過去の習慣「よく~したものだ」を表す"
+    },
+    {
+      "id": "s700-029",
+      "ja": "今日は外食するより家で料理をするほうがいいです。",
+      "en": "I would rather cook at home than eat out today.",
+      "theme": "daily",
+      "tips": "would rather A than Bで「BよりAしたい」"
+    },
+    {
+      "id": "s700-030",
+      "ja": "あなたは以前ここに来たことがありますよね。",
+      "en": "You've been here before, haven't you?",
+      "theme": "daily",
+      "tips": "付加疑問文は肯定文に否定形をつける"
+    },
+    {
+      "id": "s700-031",
+      "ja": "姉は毎晩寝る前に日記を書いています。",
+      "en": "My sister writes in her diary every night before bed.",
+      "theme": "daily",
+      "tips": "write in a diary で「日記をつける」"
+    },
+    {
+      "id": "s700-032",
+      "ja": "この歌は世界中の多くの人に愛されています。",
+      "en": "This song is loved by many people around the world.",
+      "theme": "daily",
+      "tips": "受動態で「~によって愛されている」を表す"
+    },
+    {
+      "id": "s700-033",
+      "ja": "財布をどこかに置き忘れてしまい、まだ見つかりません。",
+      "en": "I've left my wallet somewhere and still can't find it.",
+      "theme": "daily",
+      "tips": "have left で置き忘れた結果が今も続く状態を示す"
+    },
+    {
+      "id": "s700-034",
+      "ja": "今年の夏は去年よりもずっと蒸し暑く感じます。",
+      "en": "This summer feels much more humid than last year.",
+      "theme": "daily",
+      "tips": "much+比較級で差の大きさを強調できる"
+    },
+    {
+      "id": "s700-035",
+      "ja": "犬を飼っている友人がいて、その犬はとても人懐っこいです。",
+      "en": "I have a friend whose dog is very friendly.",
+      "theme": "daily",
+      "tips": "whose+名詞で所有格の関係代名詞を表す"
+    },
+    {
+      "id": "s700-036",
+      "ja": "なぜ彼が急に会社を辞めたのか誰も知りません。",
+      "en": "Nobody knows why he suddenly quit his job.",
+      "theme": "daily",
+      "tips": "間接疑問はwhy以下が平叙文の語順になる"
+    },
+    {
+      "id": "s700-037",
+      "ja": "週末は家でゆっくり過ごしたいと思っています。",
+      "en": "I want to relax at home this weekend.",
+      "theme": "daily",
+      "tips": "want to doで「~したい」という不定詞の用法"
+    },
+    {
+      "id": "s700-038",
+      "ja": "彼は友人たちと料理をすることを心から楽しんでいます。",
+      "en": "He really enjoys cooking with his friends.",
+      "theme": "daily",
+      "tips": "enjoyの後は動名詞のみを目的語にとる"
+    },
+    {
+      "id": "s700-039",
+      "ja": "旅行中は隣人が私の猫の世話をしてくれます。",
+      "en": "My neighbor will look after my cat while I'm away.",
+      "theme": "daily",
+      "tips": "look after で「~の世話をする」という句動詞"
+    },
+    {
+      "id": "s700-040",
+      "ja": "明日は朝早く起きなければならないので、今夜は早めに寝ます。",
+      "en": "I have to get up early tomorrow, so I'll go to bed soon.",
+      "theme": "daily",
+      "tips": "have to で客観的な必要性「~しなければならない」を表す"
+    },
+    {
+      "id": "s700-041",
+      "ja": "今、キッチンで夕食の準備をしているところです。",
+      "en": "I'm making dinner in the kitchen right now.",
+      "theme": "daily",
+      "tips": "right now で「まさに今」であることを強調する"
+    },
+    {
+      "id": "s700-042",
+      "ja": "昨日は買い物に行き、それから友達とお茶を飲みました。",
+      "en": "I went shopping yesterday and then had tea with a friend.",
+      "theme": "daily",
+      "tips": "and then で動作の順序をつなぐ"
+    },
+    {
+      "id": "s700-043",
+      "ja": "今度の休みに実家に帰るつもりです。",
+      "en": "I'm going to visit my parents' house during my next vacation.",
+      "theme": "daily",
+      "tips": "be going to で前もって決めていた予定を表す"
+    },
+    {
+      "id": "s700-044",
+      "ja": "このケーキはどこで作られたのですか。",
+      "en": "Where was this cake made?",
+      "theme": "daily",
+      "tips": "受動態の疑問文はbe動詞を主語の前に置く"
+    },
+    {
+      "id": "s700-045",
+      "ja": "この町で一番静かな場所はあの小さな公園です。",
+      "en": "The quietest place in this town is that small park.",
+      "theme": "daily",
+      "tips": "the+最上級+場所で「~で一番…な場所」を表す"
+    },
+    {
+      "id": "s700-046",
+      "ja": "彼の話があまりに面白くて、みんな笑いが止まりませんでした。",
+      "en": "His story was so funny that nobody could stop laughing.",
+      "theme": "daily",
+      "tips": "so~that…で「とても~なので…」。英語では nobody を主語にして否定を表すのが自然"
+    },
+    {
+      "id": "s700-047",
+      "ja": "もし時間があれば、一緒に買い物に行きませんか。",
+      "en": "If you have time, would you like to go shopping together?",
+      "theme": "daily",
+      "tips": "Would you like to ~?で丁寧な誘いを表す"
+    },
+    {
+      "id": "s700-048",
+      "ja": "もっとお金があれば、世界中を旅行するのですが。",
+      "en": "If I had more money, I would travel around the world.",
+      "theme": "daily",
+      "tips": "仮定法過去はif+過去形, would+動詞の原形"
+    },
+    {
+      "id": "s700-049",
+      "ja": "公園でランニングをしている人たちをよく見かけます。",
+      "en": "I often see people running in the park.",
+      "theme": "daily",
+      "tips": "知覚動詞see+目的語+現在分詞の形"
+    },
+    {
+      "id": "s700-050",
+      "ja": "壊れたおもちゃを息子はまだ捨てたがりません。",
+      "en": "My son still doesn't want to throw away his broken toy.",
+      "theme": "daily",
+      "tips": "broken toy のように過去分詞が名詞を前修飾する"
+    },
+    {
+      "id": "s700-051",
+      "ja": "目が覚めたらすぐにメッセージを送りますね。",
+      "en": "I'll text you as soon as I wake up.",
+      "theme": "daily",
+      "tips": "textは「メッセージを送る」という動詞用法"
+    },
+    {
+      "id": "s700-052",
+      "ja": "彼女は先月からずっとこのアパートで一人暮らしをしています。",
+      "en": "She has lived alone in this apartment since last month.",
+      "theme": "daily",
+      "tips": "since+起点で現在完了の継続を表す"
+    },
+    {
+      "id": "s700-053",
+      "ja": "以前はこの通りにたくさんの店がありました。",
+      "en": "There used to be a lot of shops on this street.",
+      "theme": "daily",
+      "tips": "There used to be ~で「以前は~があった」"
+    },
+    {
+      "id": "s700-054",
+      "ja": "今夜は出かけるよりも家でゆっくりしたい気分です。",
+      "en": "I would rather stay home than go out tonight.",
+      "theme": "daily",
+      "tips": "would rather+動詞の原形で「むしろ~したい」"
+    },
+    {
+      "id": "s700-055",
+      "ja": "私が探していた本がついに図書館で見つかりました。",
+      "en": "I finally found the book that I had been looking for.",
+      "theme": "daily",
+      "tips": "had been looking for は過去完了進行形で探し続けたことを示す"
+    },
+    {
+      "id": "s700-056",
+      "ja": "明日の集まりに彼が来るかどうかわかりません。",
+      "en": "I don't know whether he will come to the get-together tomorrow.",
+      "theme": "daily",
+      "tips": "whether ~ or notで「~かどうか」を表す間接疑問"
+    },
+    {
+      "id": "s700-057",
+      "ja": "彼はダイエットを一度も諦めたことがありません。",
+      "en": "He has never given up on his diet.",
+      "theme": "daily",
+      "tips": "give up on ~ で「~を諦める」という句動詞"
+    },
+    {
+      "id": "s700-058",
+      "ja": "今度の日曜日に一緒にハイキングに行きませんか。",
+      "en": "Why don't we go hiking together this Sunday?",
+      "theme": "daily",
+      "tips": "Why don't we ~?は「~しませんか」という提案表現"
+    },
+    {
+      "id": "s700-059",
+      "ja": "天気予報によると、今夜は雪が降るかもしれません。",
+      "en": "According to the forecast, it might snow tonight.",
+      "theme": "daily",
+      "tips": "mightはmayより控えめな可能性を表す"
+    },
+    {
+      "id": "s700-060",
+      "ja": "この部屋は来週までにきれいにされる必要があります。",
+      "en": "This room needs to be cleaned by next week.",
+      "theme": "daily",
+      "tips": "need to be+過去分詞で「~される必要がある」"
+    },
+    {
+      "id": "s700-061",
+      "ja": "彼は明日早く来ると私に言いました。",
+      "en": "He told me that he would come early tomorrow.",
+      "theme": "daily",
+      "tips": "時制の一致でwillがwouldに変わる"
+    },
+    {
+      "id": "s700-062",
+      "ja": "私たちはもう1時間もこのカフェで話し続けています。",
+      "en": "We have been talking in this cafe for an hour.",
+      "theme": "daily",
+      "tips": "for+期間で継続している長さを表す"
+    },
+    {
+      "id": "s700-063",
+      "ja": "このスマホは前のモデルと同じくらい使いやすいです。",
+      "en": "This smartphone is as easy to use as the previous model.",
+      "theme": "daily",
+      "tips": "as~as…で「…と同じくらい~」という同等比較を表す"
+    },
+    {
+      "id": "s700-064",
+      "ja": "毎朝早起きするのは私にとって簡単ではありません。",
+      "en": "It isn't easy for me to get up early every morning.",
+      "theme": "daily",
+      "tips": "It is ~ for A to doで「Aが…するのは~だ」"
+    },
+    {
+      "id": "s700-065",
+      "ja": "新しいことに挑戦するのはいつもわくわくします。",
+      "en": "Trying new things is always exciting to me.",
+      "theme": "daily",
+      "tips": "動名詞句が文全体の主語になっている"
+    },
+    {
+      "id": "s700-066",
+      "ja": "忙しくて部屋の掃除をずっと先延ばしにしています。",
+      "en": "I keep putting off cleaning my room because I'm busy.",
+      "theme": "daily",
+      "tips": "put off ~ingで「~することを先延ばしにする」"
+    },
+    {
+      "id": "s700-067",
+      "ja": "もっと早く出発すればよかったと後悔しています。",
+      "en": "I wish I had left home earlier.",
+      "theme": "daily",
+      "tips": "I wish+過去完了で過去の後悔を表す仮定法"
+    },
+    {
+      "id": "s700-068",
+      "ja": "明日の今頃は飛行機の中にいるでしょう。",
+      "en": "I'll be on a plane around this time tomorrow.",
+      "theme": "daily",
+      "tips": "will be ~で未来のある時点の状態を表す"
+    },
+    {
+      "id": "s700-069",
+      "ja": "私が生まれた町には今でも祖父母が住んでいます。",
+      "en": "My grandparents still live in the town where I was born.",
+      "theme": "daily",
+      "tips": "whereは場所を表す関係副詞"
+    },
+    {
+      "id": "s700-070",
+      "ja": "これは今まで見た中で一番感動した映画です。",
+      "en": "This is the most moving movie I have ever seen.",
+      "theme": "daily",
+      "tips": "most+形容詞の最上級と現在完了の組み合わせ"
+    },
+    {
+      "id": "s700-071",
+      "ja": "弊社は毎月第一月曜日に全体会議を開いています。",
+      "en": "Our company holds an all-staff meeting on the first Monday of every month.",
+      "theme": "business",
+      "tips": "hold a meeting で「会議を開く」"
+    },
+    {
+      "id": "s700-072",
+      "ja": "現在、新しいプロジェクトの企画書を作成しています。",
+      "en": "I'm currently working on the proposal for a new project.",
+      "theme": "business",
+      "tips": "work on ~で「~に取り組む」"
+    },
+    {
+      "id": "s700-073",
+      "ja": "先週、クライアントと契約内容について話し合いました。",
+      "en": "We discussed the contract details with the client last week.",
+      "theme": "business",
+      "tips": "discussは他動詞でaboutをつけない点に注意"
+    },
+    {
+      "id": "s700-074",
+      "ja": "すでに全ての資料を関係部署に送信しました。",
+      "en": "I have already sent all the documents to the related departments.",
+      "theme": "business",
+      "tips": "alreadyは完了を強調する副詞で通常haveの後に置く"
+    },
+    {
+      "id": "s700-075",
+      "ja": "私たちはこの取引先と3年間ずっと協力してきました。",
+      "en": "We have been working with this client for three years.",
+      "theme": "business",
+      "tips": "work withで「~と協力する、取引する」"
+    },
+    {
+      "id": "s700-076",
+      "ja": "上司が話しかけてきたとき、私は見積書を作っていました。",
+      "en": "I was making an estimate when my boss spoke to me.",
+      "theme": "business",
+      "tips": "makeで「(見積もりを)作成する」という意味になる"
+    },
+    {
+      "id": "s700-077",
+      "ja": "来週までに担当者から返信があるはずです。",
+      "en": "We should hear back from the person in charge by next week.",
+      "theme": "business",
+      "tips": "hear backで「返事をもらう」という句動詞"
+    },
+    {
+      "id": "s700-078",
+      "ja": "弊社は来月新しい支店をオープンする予定です。",
+      "en": "Our company is going to open a new branch next month.",
+      "theme": "business",
+      "tips": "主語が三人称単数companyでもbe動詞はisになる"
+    },
+    {
+      "id": "s700-079",
+      "ja": "この製品は3つの異なる工場で生産されています。",
+      "en": "This product is manufactured in three different factories.",
+      "theme": "business",
+      "tips": "manufactureは「製造する」というやや堅い動詞"
+    },
+    {
+      "id": "s700-080",
+      "ja": "今回の売上は前回の四半期よりも高くなりました。",
+      "en": "This quarter's sales were higher than last quarter's.",
+      "theme": "business",
+      "tips": "比較級のあとに省略された名詞quarter's salesを補って理解する"
+    },
+    {
+      "id": "s700-081",
+      "ja": "このアイデアが今のところ最も現実的な解決策です。",
+      "en": "This idea is the most realistic solution so far.",
+      "theme": "business",
+      "tips": "so farで「今のところ」という頻出表現"
+    },
+    {
+      "id": "s700-082",
+      "ja": "このプロジェクトを担当している田中さんは非常に優秀です。",
+      "en": "Mr. Tanaka, who is in charge of this project, is very capable.",
+      "theme": "business",
+      "tips": "固有名詞の後のwhoはコンマを伴う非限定用法"
+    },
+    {
+      "id": "s700-083",
+      "ja": "先月導入したシステムはまだ完全には稼働していません。",
+      "en": "The system that we introduced last month isn't fully operational yet.",
+      "theme": "business",
+      "tips": "operationalは「稼働している」というビジネス頻出語"
+    },
+    {
+      "id": "s700-084",
+      "ja": "この予算案がいつ承認されるのか教えていただけますか。",
+      "en": "Could you tell me when this budget proposal will be approved?",
+      "theme": "business",
+      "tips": "Could you tell me+間接疑問で丁寧に尋ねる表現"
+    },
+    {
+      "id": "s700-085",
+      "ja": "もし質問があれば、遠慮なく私にメールしてください。",
+      "en": "If you have any questions, please feel free to email me.",
+      "theme": "business",
+      "tips": "feel free to ~で「遠慮なく~する」"
+    },
+    {
+      "id": "s700-086",
+      "ja": "もし予算がもっとあれば、追加のスタッフを雇えるのですが。",
+      "en": "If we had a bigger budget, we could hire more staff.",
+      "theme": "business",
+      "tips": "仮定法過去はcouldを使うと「~できるのに」という含みになる"
+    },
+    {
+      "id": "s700-087",
+      "ja": "会議で発言しているあの女性が新しいマネージャーです。",
+      "en": "The woman speaking at the meeting is the new manager.",
+      "theme": "business",
+      "tips": "現在分詞句speaking at the meetingが名詞womanを修飾"
+    },
+    {
+      "id": "s700-088",
+      "ja": "承認された予算はすでに各部署に配分されています。",
+      "en": "The approved budget has already been allocated to each department.",
+      "theme": "business",
+      "tips": "approvedが名詞budgetを前から修飾する形容詞的用法"
+    },
+    {
+      "id": "s700-089",
+      "ja": "私たちは来年までに売上を20%伸ばす必要があります。",
+      "en": "We need to increase sales by 20% by next year.",
+      "theme": "business",
+      "tips": "byは「~までに」という期限を表す前置詞"
+    },
+    {
+      "id": "s700-090",
+      "ja": "新しい市場に参入することは大きなリスクを伴います。",
+      "en": "Entering a new market involves a big risk.",
+      "theme": "business",
+      "tips": "動名詞句が主語で三人称単数扱いなのでinvolvesとなる"
+    },
+    {
+      "id": "s700-091",
+      "ja": "予算の都合でその会議は来月に延期されました。",
+      "en": "The meeting was put off until next month due to budget issues.",
+      "theme": "business",
+      "tips": "put off で「延期する」、due to+名詞で理由を示す"
+    },
+    {
+      "id": "s700-092",
+      "ja": "明日の午後、少しお時間をいただけますでしょうか。",
+      "en": "Could you spare a few minutes tomorrow afternoon?",
+      "theme": "business",
+      "tips": "spare timeで「時間を割く」という表現"
+    },
+    {
+      "id": "s700-093",
+      "ja": "この件については事前に上司に相談したほうがいいと思います。",
+      "en": "I think you should consult your boss about this in advance.",
+      "theme": "business",
+      "tips": "consult A about Bで「BについてAに相談する」"
+    },
+    {
+      "id": "s700-094",
+      "ja": "資料があまりに複雑で、誰も内容を理解できませんでした。",
+      "en": "The report was so complicated that no one could understand it.",
+      "theme": "business",
+      "tips": "no oneは単数扱いで動詞はそのまま単数に対応させる"
+    },
+    {
+      "id": "s700-095",
+      "ja": "このスケジュールはタイトすぎて締め切りに間に合いません。",
+      "en": "This schedule is too tight to meet the deadline.",
+      "theme": "business",
+      "tips": "meet the deadlineで「締め切りに間に合う」"
+    },
+    {
+      "id": "s700-096",
+      "ja": "見積もりが届き次第、すぐにあなたに転送します。",
+      "en": "I'll forward it to you as soon as the quote arrives.",
+      "theme": "business",
+      "tips": "forwardは「(メールなどを)転送する」という動詞"
+    },
+    {
+      "id": "s700-097",
+      "ja": "弊社はこの分野で20年以上事業を展開してきました。",
+      "en": "Our company has been in this field for over 20 years.",
+      "theme": "business",
+      "tips": "be in a fieldで「その分野で事業を行う」"
+    },
+    {
+      "id": "s700-098",
+      "ja": "以前はすべての書類を紙で保管していました。",
+      "en": "We used to keep all the documents on paper.",
+      "theme": "business",
+      "tips": "keep A on paperで「Aを紙で保管する」"
+    },
+    {
+      "id": "s700-099",
+      "ja": "この件はメールより電話で話したほうがいいと思います。",
+      "en": "I would rather discuss this over the phone than by email.",
+      "theme": "business",
+      "tips": "over the phoneで「電話で」という頻出表現"
+    },
+    {
+      "id": "s700-100",
+      "ja": "この案で問題ないですよね。",
+      "en": "This plan is fine, isn't it?",
+      "theme": "business",
+      "tips": "肯定文には否定の付加疑問をつける"
+    },
+    {
+      "id": "s700-101",
+      "ja": "部長は来週までに報告書を提出するようにと言いました。",
+      "en": "The manager said that we should submit the report by next week.",
+      "theme": "business",
+      "tips": "shouldは提案・指示の間接話法でよく使われる"
+    },
+    {
+      "id": "s700-102",
+      "ja": "経理部は先月からずっとこの問題に対応しています。",
+      "en": "The accounting department has been dealing with this issue since last month.",
+      "theme": "business",
+      "tips": "deal withで「~に対処する」"
+    },
+    {
+      "id": "s700-103",
+      "ja": "今年の広告費は去年よりも少なくなっています。",
+      "en": "This year's advertising budget is lower than last year's.",
+      "theme": "business",
+      "tips": "lowerは数量の少なさを表す比較級"
+    },
+    {
+      "id": "s700-104",
+      "ja": "会社が急成長しているあのお客様と来週打ち合わせがあります。",
+      "en": "We have a meeting next week with that client whose company has grown rapidly.",
+      "theme": "business",
+      "tips": "whose companyで「その人の会社」という所有関係を表す"
+    },
+    {
+      "id": "s700-105",
+      "ja": "顧客が具体的に何を求めているのか把握する必要があります。",
+      "en": "We need to understand what the customer specifically wants.",
+      "theme": "business",
+      "tips": "間接疑問文は文中で目的語としても使える"
+    },
+    {
+      "id": "s700-106",
+      "ja": "この情報は関係者以外には共有されるべきではありません。",
+      "en": "This information should not be shared with anyone outside the team.",
+      "theme": "business",
+      "tips": "should not be+過去分詞で「~されるべきでない」"
+    },
+    {
+      "id": "s700-107",
+      "ja": "彼は一人でこのプロジェクトを任せられるほど経験豊富です。",
+      "en": "He is experienced enough to be trusted with this project alone.",
+      "theme": "business",
+      "tips": "形容詞+enough to doで「~するほど十分…」"
+    },
+    {
+      "id": "s700-108",
+      "ja": "来月の展示会でお会いできるのを楽しみにしています。",
+      "en": "I'm looking forward to meeting you at the exhibition next month.",
+      "theme": "business",
+      "tips": "look forward to の後は動名詞が続く"
+    },
+    {
+      "id": "s700-109",
+      "ja": "チームは締め切り前に新しい案を思いつきました。",
+      "en": "The team came up with a new idea before the deadline.",
+      "theme": "business",
+      "tips": "come up withで「~を思いつく」"
+    },
+    {
+      "id": "s700-110",
+      "ja": "全ての社員はこの研修を修了しなければなりません。",
+      "en": "All employees must complete this training program.",
+      "theme": "business",
+      "tips": "mustは規則による強い義務を表す"
+    },
+    {
+      "id": "s700-111",
+      "ja": "来週火曜日に本社で役員会議が予定されています。",
+      "en": "We're having a board meeting at the headquarters next Tuesday.",
+      "theme": "business",
+      "tips": "現在進行形で確定した予定の未来を表す"
+    },
+    {
+      "id": "s700-112",
+      "ja": "残念ながら、その提案は取締役会で承認されませんでした。",
+      "en": "Unfortunately, the proposal wasn't approved by the board.",
+      "theme": "business",
+      "tips": "wasn't approved by ~で受動態の否定形"
+    },
+    {
+      "id": "s700-113",
+      "ja": "この新しい戦略はきっと成果を上げるでしょう。",
+      "en": "This new strategy will surely produce good results.",
+      "theme": "business",
+      "tips": "surelyは話者の確信の強さを表す副詞"
+    },
+    {
+      "id": "s700-114",
+      "ja": "この契約書はいつ署名される予定ですか。",
+      "en": "When is this contract expected to be signed?",
+      "theme": "business",
+      "tips": "be expected to be+過去分詞で「~される予定だ」"
+    },
+    {
+      "id": "s700-115",
+      "ja": "彼女は営業部で最も成果を上げている社員の一人です。",
+      "en": "She is one of the top-performing employees in the sales department.",
+      "theme": "business",
+      "tips": "one of the+最上級相当表現+複数名詞"
+    },
+    {
+      "id": "s700-116",
+      "ja": "私たちが提案したプランはクライアントに気に入られました。",
+      "en": "The plan that we proposed was well received by the client.",
+      "theme": "business",
+      "tips": "be well received byで「~に好評だった」"
+    },
+    {
+      "id": "s700-117",
+      "ja": "もし在庫が足りなければ、追加で発注してください。",
+      "en": "If we run short of stock, please place an additional order.",
+      "theme": "business",
+      "tips": "run short of ~で「~が不足する」"
+    },
+    {
+      "id": "s700-118",
+      "ja": "もっと早く連絡していれば、この誤解は防げたでしょう。",
+      "en": "If we had contacted them earlier, we could have avoided this misunderstanding.",
+      "theme": "business",
+      "tips": "仮定法過去完了はif+had+過去分詞, could have+過去分詞"
+    },
+    {
+      "id": "s700-119",
+      "ja": "海外市場を担当している部署がその調査を行いました。",
+      "en": "The department handling overseas markets conducted the survey.",
+      "theme": "business",
+      "tips": "conduct a surveyで「調査を実施する」"
+    },
+    {
+      "id": "s700-120",
+      "ja": "修正された契約書を本日中にお送りします。",
+      "en": "I'll send you the revised contract by the end of today.",
+      "theme": "business",
+      "tips": "by the end of todayで「今日中に」"
+    },
+    {
+      "id": "s700-121",
+      "ja": "コストを削減するために、新しいサプライヤーを探しています。",
+      "en": "We are looking for a new supplier to cut costs.",
+      "theme": "business",
+      "tips": "cut costsで「コストを削減する」"
+    },
+    {
+      "id": "s700-122",
+      "ja": "誤解を避けるため、会議の内容をメールでまとめました。",
+      "en": "I summarized the meeting in an email to avoid any misunderstanding.",
+      "theme": "business",
+      "tips": "avoidの後は動名詞または名詞が続く"
+    },
+    {
+      "id": "s700-123",
+      "ja": "このフォームに必要事項を全て記入してください。",
+      "en": "Please fill in all the required fields on this form.",
+      "theme": "business",
+      "tips": "fill in で「(用紙などに)記入する」"
+    },
+    {
+      "id": "s700-124",
+      "ja": "この問題については次回の会議で話し合いましょう。",
+      "en": "Let's discuss this issue at the next meeting.",
+      "theme": "business",
+      "tips": "Let's+動詞の原形で「~しましょう」という提案"
+    },
+    {
+      "id": "s700-125",
+      "ja": "会議中は自由に質問していただいて構いません。",
+      "en": "You may ask questions freely during the meeting.",
+      "theme": "business",
+      "tips": "mayは許可を表すやや丁寧な助動詞"
+    },
+    {
+      "id": "s700-126",
+      "ja": "需要があまりに高くて、生産が追いついていません。",
+      "en": "Demand is so high that production can't keep up.",
+      "theme": "business",
+      "tips": "keep upで「(需要などに)追いつく」"
+    },
+    {
+      "id": "s700-127",
+      "ja": "この計画は費用がかかりすぎて実行できません。",
+      "en": "This plan is too costly to carry out.",
+      "theme": "business",
+      "tips": "carry outで「(計画を)実行する」"
+    },
+    {
+      "id": "s700-128",
+      "ja": "承認が下り次第、作業を開始します。",
+      "en": "We will start the work as soon as we get approval.",
+      "theme": "business",
+      "tips": "get approvalで「承認を得る」"
+    },
+    {
+      "id": "s700-129",
+      "ja": "彼は入社してから5年間ずっと営業部に所属しています。",
+      "en": "He has been in the sales department since he joined the company five years ago.",
+      "theme": "business",
+      "tips": "sinceの後には過去の一時点を表す節が続く"
+    },
+    {
+      "id": "s700-130",
+      "ja": "昔はミーティングを全て対面で行っていました。",
+      "en": "We used to hold all our meetings in person.",
+      "theme": "business",
+      "tips": "in personで「対面で、直接」という意味"
+    },
+    {
+      "id": "s700-131",
+      "ja": "私はメールよりチャットで連絡を取り合いたいです。",
+      "en": "I would rather communicate through chat than by email.",
+      "theme": "business",
+      "tips": "communicate through ~で「~を通じて連絡する」"
+    },
+    {
+      "id": "s700-132",
+      "ja": "この売上目標は達成可能ですよね。",
+      "en": "This sales target is achievable, isn't it?",
+      "theme": "business",
+      "tips": "achievableは「達成可能な」というビジネス頻出形容詞"
+    },
+    {
+      "id": "s700-133",
+      "ja": "クライアントは納期を1週間延ばしてほしいと言いました。",
+      "en": "The client said that they wanted to extend the deadline by a week.",
+      "theme": "business",
+      "tips": "extend the deadlineで「納期を延長する」"
+    },
+    {
+      "id": "s700-134",
+      "ja": "弊社は最近、新しい会計システムを導入しました。",
+      "en": "We have recently introduced a new accounting system.",
+      "theme": "business",
+      "tips": "recentlyは現在完了とよく一緒に使われる"
+    },
+    {
+      "id": "s700-135",
+      "ja": "全ての注文はオンラインで24時間受け付けられています。",
+      "en": "All orders are accepted online 24 hours a day.",
+      "theme": "business",
+      "tips": "受動態acceptedは「受け付けられる」という意味"
+    },
+    {
+      "id": "s700-136",
+      "ja": "このプランは前のプランよりもコストパフォーマンスが優れています。",
+      "en": "This plan offers better cost performance than the previous one.",
+      "theme": "business",
+      "tips": "offerを使うと「~を提供する」という自然な言い回しになる"
+    },
+    {
+      "id": "s700-137",
+      "ja": "上司にこの案を採用するかどうか確認しなければなりません。",
+      "en": "I need to check with my boss whether we should adopt this idea.",
+      "theme": "business",
+      "tips": "check with A whether ~で「Aに~かどうか確認する」"
+    },
+    {
+      "id": "s700-138",
+      "ja": "経営陣はその工場を来年閉鎖することを決定しました。",
+      "en": "The management decided to close the factory next year.",
+      "theme": "business",
+      "tips": "decide to doで「~することを決める」"
+    },
+    {
+      "id": "s700-139",
+      "ja": "私たちは新しいオフィスに移転することを検討しています。",
+      "en": "We are considering moving to a new office.",
+      "theme": "business",
+      "tips": "considerの後は動名詞が続き不定詞は使えない"
+    },
+    {
+      "id": "s700-140",
+      "ja": "来週までに新しいプロジェクトチームを立ち上げる予定です。",
+      "en": "We plan to set up a new project team by next week.",
+      "theme": "business",
+      "tips": "set upで「(組織やチームを)立ち上げる」"
+    },
+    {
+      "id": "s700-141",
+      "ja": "この電車は15分おきに空港まで走っています。",
+      "en": "This train runs to the airport every 15 minutes.",
+      "theme": "travel",
+      "tips": "every+数字+単位で「~おきに」という頻度を表す"
+    },
+    {
+      "id": "s700-142",
+      "ja": "今、荷物のチェックインの列に並んでいるところです。",
+      "en": "I'm standing in line to check in my luggage right now.",
+      "theme": "travel",
+      "tips": "stand in lineで「列に並ぶ」"
+    },
+    {
+      "id": "s700-143",
+      "ja": "昨日、パスポートをホテルの部屋に置き忘れました。",
+      "en": "I left my passport in my hotel room yesterday.",
+      "theme": "travel",
+      "tips": "leaveの過去形left、「置き忘れる」の意味"
+    },
+    {
+      "id": "s700-144",
+      "ja": "私は今までに10か国以上を旅したことがあります。",
+      "en": "I have traveled to more than ten countries so far.",
+      "theme": "travel",
+      "tips": "more thanは「~より多い」で厳密には超過を表す"
+    },
+    {
+      "id": "s700-145",
+      "ja": "私たちはもう2時間も飛行機の遅延を待ち続けています。",
+      "en": "We have been waiting for the delayed flight for two hours.",
+      "theme": "travel",
+      "tips": "delayed flightで「遅延している便」"
+    },
+    {
+      "id": "s700-146",
+      "ja": "空港に到着したとき、雨が激しく降っていました。",
+      "en": "It was raining heavily when we arrived at the airport.",
+      "theme": "travel",
+      "tips": "rain heavilyで「激しく雨が降る」"
+    },
+    {
+      "id": "s700-147",
+      "ja": "このツアーガイドが明日の観光ルートを案内してくれます。",
+      "en": "This tour guide will show us the sightseeing route tomorrow.",
+      "theme": "travel",
+      "tips": "show A the routeで「Aにルートを案内する」"
+    },
+    {
+      "id": "s700-148",
+      "ja": "明日は早朝から城を見に行くつもりです。",
+      "en": "We're going to visit the castle early tomorrow morning.",
+      "theme": "travel",
+      "tips": "early tomorrow morningで「明日の早朝」"
+    },
+    {
+      "id": "s700-149",
+      "ja": "空港までの送迎バスはホテルによって手配されています。",
+      "en": "The shuttle bus to the airport is arranged by the hotel.",
+      "theme": "travel",
+      "tips": "be arranged byで「~によって手配される」"
+    },
+    {
+      "id": "s700-150",
+      "ja": "このホテルは前に泊まった宿より駅から近いです。",
+      "en": "This hotel is closer to the station than the one we stayed at before.",
+      "theme": "travel",
+      "tips": "the one で前に出た名詞hotelの代わりに使う"
+    },
+    {
+      "id": "s700-151",
+      "ja": "これはこの街で一番人気のある観光スポットです。",
+      "en": "This is the most popular tourist spot in this city.",
+      "theme": "travel",
+      "tips": "tourist spotで「観光名所」"
+    },
+    {
+      "id": "s700-152",
+      "ja": "空港で私たちを出迎えてくれたガイドはとても親切でした。",
+      "en": "The guide who met us at the airport was very kind.",
+      "theme": "travel",
+      "tips": "meet Aで「Aを出迎える」という意味もある"
+    },
+    {
+      "id": "s700-153",
+      "ja": "私たちが予約したホテルは駅からとても近かったです。",
+      "en": "The hotel that we booked was very close to the station.",
+      "theme": "travel",
+      "tips": "bookは「予約する」という動詞"
+    },
+    {
+      "id": "s700-154",
+      "ja": "このチケットがどこで買えるのか教えてもらえますか。",
+      "en": "Could you tell me where I can buy this ticket?",
+      "theme": "travel",
+      "tips": "間接疑問文は語順が重要な文法ポイント"
+    },
+    {
+      "id": "s700-155",
+      "ja": "もし道に迷ったら、遠慮なく地元の人に聞いてください。",
+      "en": "If you get lost, feel free to ask a local.",
+      "theme": "travel",
+      "tips": "get lostで「道に迷う」"
+    },
+    {
+      "id": "s700-156",
+      "ja": "もっと早く予約していれば、もっと安いチケットが買えたのに。",
+      "en": "If we had booked earlier, we could have gotten cheaper tickets.",
+      "theme": "travel",
+      "tips": "仮定法過去完了で過去への後悔を表す"
+    },
+    {
+      "id": "s700-157",
+      "ja": "海辺を歩いている観光客をたくさん見かけました。",
+      "en": "We saw a lot of tourists walking along the beach.",
+      "theme": "travel",
+      "tips": "walk along ~で「~沿いを歩く」"
+    },
+    {
+      "id": "s700-158",
+      "ja": "予約されていた部屋は思ったより狭かったです。",
+      "en": "The reserved room was smaller than we expected.",
+      "theme": "travel",
+      "tips": "reservedが名詞roomを前修飾している"
+    },
+    {
+      "id": "s700-159",
+      "ja": "荷物を軽くするために、必要な物だけ持ってきました。",
+      "en": "I brought only what I needed to travel light.",
+      "theme": "travel",
+      "tips": "travel lightで「身軽に旅する」というイディオム"
+    },
+    {
+      "id": "s700-160",
+      "ja": "知らない街を歩き回ることは私の一番好きな旅の楽しみ方です。",
+      "en": "Wandering around an unfamiliar city is my favorite way to travel.",
+      "theme": "travel",
+      "tips": "wander aroundで「歩き回る」"
+    },
+    {
+      "id": "s700-161",
+      "ja": "ホテルには午後3時以降にチェックインできます。",
+      "en": "You can check into the hotel after 3 p.m.",
+      "theme": "travel",
+      "tips": "check into ~で「~にチェックインする」"
+    },
+    {
+      "id": "s700-162",
+      "ja": "窓側の席にしていただくことは可能でしょうか。",
+      "en": "Would it be possible to have a window seat?",
+      "theme": "travel",
+      "tips": "Would it be possible to ~?は丁寧な依頼表現"
+    },
+    {
+      "id": "s700-163",
+      "ja": "出発前にパスポートの有効期限を確認しておくべきです。",
+      "en": "You should check your passport's expiration date before you leave.",
+      "theme": "travel",
+      "tips": "expiration dateで「有効期限」"
+    },
+    {
+      "id": "s700-164",
+      "ja": "荷物があまりに重くて、一人では運べませんでした。",
+      "en": "My luggage was so heavy that I couldn't carry it alone.",
+      "theme": "travel",
+      "tips": "carry A aloneで「一人でAを運ぶ」"
+    },
+    {
+      "id": "s700-165",
+      "ja": "空港までの道が混雑しすぎていて、時間通りに着けませんでした。",
+      "en": "The road to the airport was too crowded for us to arrive on time.",
+      "theme": "travel",
+      "tips": "too~for A to doで「Aが…するには~すぎる」"
+    },
+    {
+      "id": "s700-166",
+      "ja": "ホテルに着き次第、フロントで両替をお願いします。",
+      "en": "Please exchange money at the front desk as soon as we arrive at the hotel.",
+      "theme": "travel",
+      "tips": "exchange moneyで「両替する」"
+    },
+    {
+      "id": "s700-167",
+      "ja": "私たちは3日前からこの島に滞在しています。",
+      "en": "We have been staying on this island for three days.",
+      "theme": "travel",
+      "tips": "stay on an islandで「島に滞在する」"
+    },
+    {
+      "id": "s700-168",
+      "ja": "昔はこの地域に外国人観光客はほとんどいませんでした。",
+      "en": "There used to be very few foreign tourists in this area.",
+      "theme": "travel",
+      "tips": "very fewは「ほとんどない」という否定的な少なさを表す"
+    },
+    {
+      "id": "s700-169",
+      "ja": "飛行機よりも電車で移動するほうがいいです。",
+      "en": "I would rather travel by train than by plane.",
+      "theme": "travel",
+      "tips": "by+乗り物名で交通手段を表す"
+    },
+    {
+      "id": "s700-170",
+      "ja": "このチケットは払い戻しできますよね。",
+      "en": "This ticket is refundable, isn't it?",
+      "theme": "travel",
+      "tips": "refundableは「払い戻し可能な」という形容詞"
+    },
+    {
+      "id": "s700-171",
+      "ja": "係員はゲートが変更になったと私たちに言いました。",
+      "en": "The staff told us that the gate had been changed.",
+      "theme": "travel",
+      "tips": "時制の一致でhad been changedと過去完了になる"
+    },
+    {
+      "id": "s700-172",
+      "ja": "私たちはもう1週間ずっとヨーロッパを旅し続けています。",
+      "en": "We have been traveling around Europe for a week.",
+      "theme": "travel",
+      "tips": "travel aroundで「~を旅して回る」"
+    },
+    {
+      "id": "s700-173",
+      "ja": "今回の旅行は前回よりも予算がかかっています。",
+      "en": "This trip is costing more than the last one.",
+      "theme": "travel",
+      "tips": "costは動詞としても使え「(費用が)かかる」の意味になる"
+    },
+    {
+      "id": "s700-174",
+      "ja": "これが私たちが結婚式を挙げたビーチです。",
+      "en": "This is the beach where we had our wedding.",
+      "theme": "travel",
+      "tips": "whereは場所を先行詞とする関係副詞"
+    },
+    {
+      "id": "s700-175",
+      "ja": "このバスが空港経由で行くかどうか確認したほうがいいです。",
+      "en": "You should check whether this bus goes via the airport.",
+      "theme": "travel",
+      "tips": "viaは「~を経由して」という前置詞"
+    },
+    {
+      "id": "s700-176",
+      "ja": "荷物は搭乗前に必ず確認される必要があります。",
+      "en": "Luggage must be checked before boarding.",
+      "theme": "travel",
+      "tips": "before boardingで「搭乗前に」"
+    },
+    {
+      "id": "s700-177",
+      "ja": "彼女は一人で海外旅行ができるほど流暢に英語を話します。",
+      "en": "She speaks English fluently enough to travel abroad alone.",
+      "theme": "travel",
+      "tips": "副詞+enough to doの語順に注意する"
+    },
+    {
+      "id": "s700-178",
+      "ja": "来月の家族旅行をとても楽しみにしています。",
+      "en": "I'm really looking forward to our family trip next month.",
+      "theme": "travel",
+      "tips": "reallyでlook forward toの気持ちを強調する"
+    },
+    {
+      "id": "s700-179",
+      "ja": "私たちは日の出前にホテルを出発しました。",
+      "en": "We set off from the hotel before sunrise.",
+      "theme": "travel",
+      "tips": "set offで「出発する」"
+    },
+    {
+      "id": "s700-180",
+      "ja": "天候によっては、明日のツアーが中止になるかもしれません。",
+      "en": "Tomorrow's tour might be canceled depending on the weather.",
+      "theme": "travel",
+      "tips": "depending on ~で「~によって、次第で」"
+    },
+    {
+      "id": "s700-181",
+      "ja": "残念ながら、そのレストランは予約なしでは入れませんでした。",
+      "en": "Unfortunately, we couldn't get into the restaurant without a reservation.",
+      "theme": "travel",
+      "tips": "get intoで「(場所に)入る」"
+    },
+    {
+      "id": "s700-182",
+      "ja": "明日の今頃、私たちは古い城を観光しているでしょう。",
+      "en": "We'll be touring the old castle around this time tomorrow.",
+      "theme": "travel",
+      "tips": "未来進行形は「その時進行中の予定」を表す"
+    },
+    {
+      "id": "s700-183",
+      "ja": "市場で新鮮な果物を売っている店主たちと話しました。",
+      "en": "We talked with vendors selling fresh fruit at the market.",
+      "theme": "travel",
+      "tips": "vendorは「(屋台などの)売り手」という意味"
+    },
+    {
+      "id": "s700-184",
+      "ja": "これが今回の旅で最も印象に残った瞬間でした。",
+      "en": "This was the most memorable moment of the whole trip.",
+      "theme": "travel",
+      "tips": "memorableは「記憶に残る、印象的な」という形容詞"
+    },
+    {
+      "id": "s700-185",
+      "ja": "もし荷物が届かなければ、すぐに航空会社に連絡してください。",
+      "en": "If your luggage doesn't arrive, contact the airline immediately.",
+      "theme": "travel",
+      "tips": "immediatelyは「すぐに」という緊急性を表す副詞"
+    },
+    {
+      "id": "s700-186",
+      "ja": "私たちが乗ったフェリーは予定より1時間遅れて出発しました。",
+      "en": "The ferry that we took departed an hour later than scheduled.",
+      "theme": "travel",
+      "tips": "than scheduledで「予定より」という比較表現"
+    },
+    {
+      "id": "s700-187",
+      "ja": "旅行の途中で現金が足りなくなってしまいました。",
+      "en": "We ran out of cash in the middle of the trip.",
+      "theme": "travel",
+      "tips": "run out of ~で「~を使い果たす」"
+    },
+    {
+      "id": "s700-188",
+      "ja": "おすすめの地元料理を教えていただけますか。",
+      "en": "Could you recommend some local dishes?",
+      "theme": "travel",
+      "tips": "recommendは他動詞でto meをつけなくてよい"
+    },
+    {
+      "id": "s700-189",
+      "ja": "入国の際にはこの書類を提示しなければなりません。",
+      "en": "You must show this document when entering the country.",
+      "theme": "travel",
+      "tips": "when entering the countryはwhen you are enteringの省略形"
+    },
+    {
+      "id": "s700-190",
+      "ja": "このバスは市内の主要な観光地を全て回ります。",
+      "en": "This bus stops at all the major tourist attractions in the city.",
+      "theme": "travel",
+      "tips": "stop atで「(場所に)止まる、立ち寄る」"
+    },
+    {
+      "id": "s700-191",
+      "ja": "人混みを避けることが、早起きした一番の理由です。",
+      "en": "Avoiding the crowds was the main reason we got up early.",
+      "theme": "travel",
+      "tips": "動名詞句Avoiding the crowdsが文の主語になっている"
+    },
+    {
+      "id": "s700-192",
+      "ja": "景色があまりに美しくて、写真を何枚も撮りました。",
+      "en": "The view was so beautiful that I took many pictures.",
+      "theme": "travel",
+      "tips": "take a pictureで「写真を撮る」"
+    },
+    {
+      "id": "s700-193",
+      "ja": "疲れすぎていて、その夜は夕食に出かけられませんでした。",
+      "en": "I was too tired to go out for dinner that night.",
+      "theme": "travel",
+      "tips": "go out for dinnerで「夕食に出かける」"
+    },
+    {
+      "id": "s700-194",
+      "ja": "ビザが発行され次第、航空券を予約するつもりです。",
+      "en": "I'll book the flight as soon as my visa is issued.",
+      "theme": "travel",
+      "tips": "issueは「(ビザなどを)発行する」という動詞"
+    },
+    {
+      "id": "s700-195",
+      "ja": "空港に到着してから、もう4時間搭乗を待っています。",
+      "en": "We have been waiting to board for four hours since we arrived at the airport.",
+      "theme": "travel",
+      "tips": "wait to boardで「搭乗を待つ」"
+    },
+    {
+      "id": "s700-196",
+      "ja": "以前はこのエリアに高層ホテルは一軒もありませんでした。",
+      "en": "There used to be no high-rise hotels in this area.",
+      "theme": "travel",
+      "tips": "high-riseは「高層の」という形容詞"
+    },
+    {
+      "id": "s700-197",
+      "ja": "混雑した観光地よりも静かな田舎を旅したいです。",
+      "en": "I would rather travel through quiet countryside than crowded tourist spots.",
+      "theme": "travel",
+      "tips": "travel through ~で「~を通って旅する」"
+    },
+    {
+      "id": "s700-198",
+      "ja": "この地図、持って行ってもいいですよね。",
+      "en": "I can take this map with me, can't I?",
+      "theme": "travel",
+      "tips": "肯定文の付加疑問は否定形にする"
+    },
+    {
+      "id": "s700-199",
+      "ja": "添乗員は集合時間が30分早まったと説明しました。",
+      "en": "The tour conductor explained that the meeting time had been moved up 30 minutes.",
+      "theme": "travel",
+      "tips": "move upで「(時間を)繰り上げる」"
+    },
+    {
+      "id": "s700-200",
+      "ja": "この旅行のおかげで、私は多くの新しい文化に触れてきました。",
+      "en": "This trip has exposed me to many new cultures.",
+      "theme": "travel",
+      "tips": "expose A to Bで「AをBに触れさせる」"
+    }
+  ]
+}

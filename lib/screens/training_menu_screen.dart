@@ -3,10 +3,11 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_card.dart';
 import '../widgets/section_header.dart';
+import 'composition/deck_select_screen.dart';
 
 /// 学習タブ。「口頭英作文」「独り言英会話」の2つのトレーニングメニューを表示する。
 ///
-/// PR1時点ではタップ時の遷移は未実装。
+/// 「独り言英会話」のタップ遷移はPR4以降で実装する。
 class TrainingMenuScreen extends StatelessWidget {
   const TrainingMenuScreen({super.key});
 
@@ -20,7 +21,11 @@ class TrainingMenuScreen extends StatelessWidget {
           const SectionHeader(title: 'トレーニングを選ぶ'),
           const SizedBox(height: 12),
           AppCard(
-            onTap: () {},
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const DeckSelectScreen()),
+              );
+            },
             child: const _MenuItem(
               icon: Icons.edit_note,
               title: '口頭英作文',
