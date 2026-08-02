@@ -32,6 +32,7 @@ lib/
   theme/app_theme.dart      # テーマ定義（色・タイポ・コンポーネントテーマを全て集約）
   models/                   # 純Dartモデル（fromJson/toJson を持つ）
     sentence.dart           # 教材文
+    topic.dart              # 独り言のお題
     drill_result.dart       # 口頭英作文の1問の結果＋添削
     monologue_result.dart   # 独り言1回の結果＋添削
     srs_item.dart           # SRS復習アイテム
@@ -42,15 +43,35 @@ lib/
     speech_input_service.dart # STT/録音の抽象化
     sentence_repository.dart  # 教材JSONのロード・フィルタ
     history_service.dart    # 履歴・SRS・フレーズ帳・日次統計の永続化（ChangeNotifier）
+    drill_question_selector.dart  # 口頭英作文の出題選定ロジック
+    review_question_resolver.dart # SRSアイテム→出題文の解決
   screens/
-    home_screen.dart        # ダッシュボード（ストリーク/今日の復習/開始ボタン）
-    shell.dart              # BottomNavigationBar のシェル
-    composition/            # 口頭英作文（デッキ選択→ドリル→結果）
-    monologue/              # 独り言英会話（お題選択→スピーキング→結果）
+    home_screen.dart        # ダッシュボード（ストリーク/今日の復習/開始ボタン、設定への導線）
+    shell.dart              # BottomNavigationBar のシェル（ホーム/学習/復習/記録の4タブ。設定はホームからpush）
+    training_menu_screen.dart # 学習タブ（口頭英作文/独り言英会話への導線）
+    composition/            # 口頭英作文（デッキ選択→ドリル→添削表示→まとめ）
+      deck_select_screen.dart
+      sentence_list_screen.dart
+      drill_screen.dart
+      drill_feedback_view.dart
+      drill_summary_screen.dart
+    monologue/              # 独り言英会話（お題選択→スピーキング→フィードバック）
+      topic_select_screen.dart
+      monologue_speak_screen.dart
+      monologue_feedback_screen.dart
     review_screen.dart      # 復習タブ（今日の復習＋フレーズ帳）
     stats_screen.dart       # 記録タブ
-    settings_screen.dart
-  widgets/                  # 共通ウィジェット（PrimaryButton, SectionHeader, ThemeChip 等）
+    stats/                   # 記録タブの構成パーツ
+      streak_summary.dart
+      weekly_chart.dart
+      study_calendar.dart
+      history_section.dart
+    settings_screen.dart    # APIキー/モデル/音声認識方式/独り言デフォルト時間
+  widgets/                  # 共通ウィジェット（PrimaryButton, SecondaryButton, SectionHeader, AppCard, PillChip 等）
+  utils/                    # 画面をまたいで使う小さなヘルパー
+    review_launcher.dart    # 「今日の復習」開始処理の共通ロジック（ホーム/復習タブ両方から利用）
+    score_colors.dart       # スコア(0-100)→表示色の変換
+    theme_labels.dart       # テーマ識別子(daily/business/travel)→日本語表示名
 assets/data/
   sentences_700.json        # TOEIC700点台 200文
   sentences_800.json        # TOEIC800点台 200文
