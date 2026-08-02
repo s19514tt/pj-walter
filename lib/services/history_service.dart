@@ -202,6 +202,59 @@ class HistoryService extends ChangeNotifier {
     return Map<String, int>.from(existing);
   }
 
+  /// 連続学習日数（現在のストリーク）。
+  ///
+  /// drillCount+monologueCount>0の日を「学習日」とし、今日または昨日を起点に
+  /// 過去へ連続する学習日数を数える。今日がまだ未学習でも、昨日までが連続して
+  /// いればストリークは維持される（今日中に学習すればさらに伸びる）。
+  /// 今日・昨日とも未学習ならストリークは0。
+  int get currentStreak {
+    var cursor = _dateOnly(DateTime.now());
+    if (!_isStudyDay(cursor)) {
+      cursor = _addDays(cursor, -1);
+      if (!_isStudyDay(cursor)) return 0;
+    }
+
+    var streak = 0;
+    while (_isStudyDay(cursor)) {
+      streak++;
+      cursor = _addDays(cursor, -1);
+    }
+    return streak;
+  }
+
+  bool _isStudyDay(DateTime date) {
+    final stats = statsForDate(date);
+    return stats['drillCount']! + stats['monologueCount']! > 0;
+  }
+
+  /// 累計の学習統計（総ドリル数・総独り言回数・総学習秒数）。
+  Map<String, int> totalStats() {
+    var drillCount = 0;
+    var monologueCount = 0;
+    var studySeconds = 0;
+    for (final value in _dailyStatsBox.values) {
+      final stats = Map<String, int>.from(value as Map);
+      drillCount += stats['drillCount'] ?? 0;
+      monologueCount += stats['monologueCount'] ?? 0;
+      studySeconds += stats['studySeconds'] ?? 0;
+    }
+    return {
+      'drillCount': drillCount,
+      'monologueCount': monologueCount,
+      'studySeconds': studySeconds,
+    };
+  }
+
+  /// 直近[days]日分の日次統計を古い→新しい順で返す（欠損日は0埋め）。
+  List<MapEntry<DateTime, Map<String, int>>> statsForLastDays(int days) {
+    final today = _dateOnly(DateTime.now());
+    return [
+      for (var i = days - 1; i >= 0; i--)
+        MapEntry(_addDays(today, -i), statsForDate(_addDays(today, -i))),
+    ];
+  }
+
   Future<void> _bumpDailyStats({
     int drillCount = 0,
     int monologueCount = 0,

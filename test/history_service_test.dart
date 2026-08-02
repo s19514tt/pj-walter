@@ -11,6 +11,25 @@ import 'test_support/hive_test_support.dart';
 
 DateTime _dateOnly(DateTime date) => DateTime(date.year, date.month, date.day);
 
+String _dateKey(DateTime date) =>
+    '${date.year.toString().padLeft(4, '0')}-'
+    '${date.month.toString().padLeft(2, '0')}-'
+    '${date.day.toString().padLeft(2, '0')}';
+
+/// テスト用に`daily_stats` boxへ直接、任意の日の統計を書き込む。
+Future<void> _setDailyStats(
+  DateTime date, {
+  int drillCount = 0,
+  int monologueCount = 0,
+  int studySeconds = 0,
+}) async {
+  await Hive.box('daily_stats').put(_dateKey(date), {
+    'drillCount': drillCount,
+    'monologueCount': monologueCount,
+    'studySeconds': studySeconds,
+  });
+}
+
 DrillResult _drillResult({
   required String sentenceId,
   required int score,
@@ -299,6 +318,106 @@ void main() {
     test('存在しないidを指定しても例外にならない', () async {
       await expectLater(historyService.deletePhrase('unknown'), completes);
       expect(historyService.phrases, isEmpty);
+    });
+  });
+
+  group('currentStreak', () {
+    test('学習記録が全くない場合は0', () {
+      expect(historyService.currentStreak, 0);
+    });
+
+    test('今日だけ学習していれば1', () async {
+      await _setDailyStats(DateTime.now(), drillCount: 1);
+      expect(historyService.currentStreak, 1);
+    });
+
+    test('今日未学習でも昨日まで連続していればストリークは維持される', () async {
+      final today = _dateOnly(DateTime.now());
+      await _setDailyStats(
+        today.subtract(const Duration(days: 1)),
+        drillCount: 1,
+      );
+      await _setDailyStats(
+        today.subtract(const Duration(days: 2)),
+        monologueCount: 1,
+      );
+
+      expect(historyService.currentStreak, 2);
+    });
+
+    test('今日も昨日も未学習ならストリークは0（一昨日だけ学習）', () async {
+      final today = _dateOnly(DateTime.now());
+      await _setDailyStats(
+        today.subtract(const Duration(days: 2)),
+        drillCount: 1,
+      );
+
+      expect(historyService.currentStreak, 0);
+    });
+
+    test('飛び日があるとそれより前の連続日はカウントしない', () async {
+      final today = _dateOnly(DateTime.now());
+      await _setDailyStats(today, drillCount: 1);
+      await _setDailyStats(
+        today.subtract(const Duration(days: 1)),
+        drillCount: 1,
+      );
+      // 2日前は未学習（飛び日）、3日前は学習済みだがカウント対象外
+      await _setDailyStats(
+        today.subtract(const Duration(days: 3)),
+        drillCount: 1,
+      );
+
+      expect(historyService.currentStreak, 2);
+    });
+  });
+
+  group('totalStats', () {
+    test('データがなければ全て0', () {
+      expect(historyService.totalStats(), {
+        'drillCount': 0,
+        'monologueCount': 0,
+        'studySeconds': 0,
+      });
+    });
+
+    test('複数日分の統計を合計する', () async {
+      final today = _dateOnly(DateTime.now());
+      await _setDailyStats(
+        today,
+        drillCount: 2,
+        monologueCount: 1,
+        studySeconds: 30,
+      );
+      await _setDailyStats(
+        today.subtract(const Duration(days: 1)),
+        drillCount: 3,
+        studySeconds: 20,
+      );
+
+      final total = historyService.totalStats();
+      expect(total['drillCount'], 5);
+      expect(total['monologueCount'], 1);
+      expect(total['studySeconds'], 50);
+    });
+  });
+
+  group('statsForLastDays', () {
+    test('欠損日は0埋めで、古い→新しい順にdays件返す', () async {
+      final today = _dateOnly(DateTime.now());
+      await _setDailyStats(today, drillCount: 1);
+
+      final result = historyService.statsForLastDays(3);
+
+      expect(result, hasLength(3));
+      expect(result.last.key, today);
+      expect(result.last.value['drillCount'], 1);
+      expect(result.first.value['drillCount'], 0);
+      expect(result.first.key.isBefore(result.last.key), isTrue);
+    });
+
+    test('days:0なら空リストを返す', () {
+      expect(historyService.statsForLastDays(0), isEmpty);
     });
   });
 }
