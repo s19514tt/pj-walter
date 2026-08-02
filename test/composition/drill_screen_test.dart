@@ -36,7 +36,11 @@ class FakeSpeechInputService implements SpeechInputService {
   Future<bool> get isAvailable async => true;
 
   @override
-  Future<void> start({required void Function(String text) onPartial}) async {
+  Future<void> start({
+    required void Function(String text) onPartial,
+    Duration? listenFor,
+    Duration? pauseFor,
+  }) async {
     startCalled = true;
     onPartial('partial text...');
   }
