@@ -34,6 +34,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final _apiKeyController = TextEditingController();
   final _customModelController = TextEditingController();
   bool _obscureApiKey = true;
+  bool _modelFieldInitialized = false;
 
   @override
   void dispose() {
@@ -45,6 +46,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final settings = context.watch<SettingsService>();
+    // 再ビルドのたびに上書きすると編集中の入力が消えるため、初回のみ反映する
+    if (!_modelFieldInitialized) {
+      _customModelController.text = settings.modelName;
+      _modelFieldInitialized = true;
+    }
 
     return Scaffold(
       appBar: AppBar(title: const Text('設定')),
@@ -192,13 +198,16 @@ class _ModelSection extends StatelessWidget {
                 PillChip(
                   label: model,
                   selected: settings.modelName == model,
-                  onTap: () => settings.setModelName(model),
+                  onTap: () {
+                    settings.setModelName(model);
+                    customController.text = model;
+                  },
                 ),
             ],
           ),
           const SizedBox(height: 12),
           TextField(
-            controller: customController..text = settings.modelName,
+            controller: customController,
             decoration: const InputDecoration(
               labelText: 'モデル名を直接入力',
               border: OutlineInputBorder(),
