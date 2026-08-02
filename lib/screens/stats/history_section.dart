@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../models/drill_result.dart';
 import '../../models/monologue_result.dart';
 import '../../models/sentence.dart';
+import '../../models/topic.dart';
 import '../../services/sentence_repository.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/score_colors.dart';
@@ -61,7 +62,10 @@ class _HistorySectionState extends State<HistorySection> {
       ),
       builder: (_) => entry.drill != null
           ? _DrillDetailSheet(result: entry.drill!, repository: repository)
-          : _MonologueDetailSheet(result: entry.monologue!),
+          : _MonologueDetailSheet(
+              result: entry.monologue!,
+              repository: repository,
+            ),
     );
   }
 
@@ -226,11 +230,12 @@ class _DrillDetailSheet extends StatelessWidget {
   }
 }
 
-/// 独り言英会話の詳細（お題ID/トランスクリプト/総評）。
+/// 独り言英会話の詳細（お題/トランスクリプト/総評）。
 class _MonologueDetailSheet extends StatelessWidget {
-  const _MonologueDetailSheet({required this.result});
+  const _MonologueDetailSheet({required this.result, required this.repository});
 
   final MonologueResult result;
+  final SentenceRepository repository;
 
   @override
   Widget build(BuildContext context) {
@@ -240,7 +245,21 @@ class _MonologueDetailSheet extends StatelessWidget {
       timestamp: result.timestamp,
       score: result.feedback.fluencyScore,
       children: [
-        _DetailField(label: 'お題ID', value: result.topicId),
+        FutureBuilder<List<Topic>>(
+          future: repository.topics(),
+          builder: (context, snapshot) {
+            final match = snapshot.data?.where((t) => t.id == result.topicId);
+            final ja = (match != null && match.isNotEmpty)
+                ? match.first.ja
+                : null;
+            final value =
+                ja ??
+                (snapshot.connectionState == ConnectionState.waiting
+                    ? '読み込み中…'
+                    : result.topicId);
+            return _DetailField(label: 'お題', value: value);
+          },
+        ),
         const SizedBox(height: 12),
         _DetailField(label: 'トランスクリプト', value: result.transcript),
         const SizedBox(height: 12),
