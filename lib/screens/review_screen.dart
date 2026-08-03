@@ -104,22 +104,32 @@ class _ReviewScreenState extends State<ReviewScreen> {
       );
     }
     return AppCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
           Text(
-            '${dueItems.length}件の復習があります',
+            '${dueItems.length}',
             style: const TextStyle(
-              fontSize: 16,
+              fontSize: 32,
               fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+              color: AppColors.primary,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(width: 6),
+          const Expanded(
+            child: Text(
+              '件の復習があります',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
           PrimaryButton(
             label: '復習を始める',
             loading: _startingReview,
             onPressed: () => _startReview(dueItems),
+            compact: true,
           ),
         ],
       ),

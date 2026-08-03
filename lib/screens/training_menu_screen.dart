@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import '../utils/app_route.dart';
 import '../widgets/app_card.dart';
 import '../widgets/section_header.dart';
 import 'composition/deck_select_screen.dart';
@@ -21,9 +22,9 @@ class TrainingMenuScreen extends StatelessWidget {
           const SizedBox(height: 12),
           AppCard(
             onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const DeckSelectScreen()),
-              );
+              Navigator.of(
+                context,
+              ).push(appRoute(builder: (_) => const DeckSelectScreen()));
             },
             child: const _MenuItem(
               icon: Icons.edit_note,
@@ -34,9 +35,9 @@ class TrainingMenuScreen extends StatelessWidget {
           const SizedBox(height: 12),
           AppCard(
             onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const TopicSelectScreen()),
-              );
+              Navigator.of(
+                context,
+              ).push(appRoute(builder: (_) => const TopicSelectScreen()));
             },
             child: const _MenuItem(
               icon: Icons.mic_none,

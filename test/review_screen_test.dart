@@ -96,7 +96,7 @@ void main() {
     await tester.pumpWidget(_buildApp(historyService));
     await tester.pump();
 
-    expect(find.text('1件の復習があります'), findsOneWidget);
+    expect(find.text('件の復習があります'), findsOneWidget);
     expect(find.text('復習を始める'), findsOneWidget);
     expect(find.text('合計1件'), findsOneWidget);
   });

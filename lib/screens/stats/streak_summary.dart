@@ -56,6 +56,7 @@ class StreakSummary extends StatelessWidget {
           children: [
             Expanded(
               child: _StatMiniCard(
+                icon: Icons.edit_note,
                 label: '総ドリル数',
                 value: '${totalStats['drillCount'] ?? 0}',
               ),
@@ -63,13 +64,18 @@ class StreakSummary extends StatelessWidget {
             const SizedBox(width: 8),
             Expanded(
               child: _StatMiniCard(
+                icon: Icons.mic,
                 label: '総独り言',
                 value: '${totalStats['monologueCount'] ?? 0}',
               ),
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: _StatMiniCard(label: '総学習時間', value: '$totalMinutes分'),
+              child: _StatMiniCard(
+                icon: Icons.schedule,
+                label: '総学習時間',
+                value: '$totalMinutes分',
+              ),
             ),
           ],
         ),
@@ -79,8 +85,13 @@ class StreakSummary extends StatelessWidget {
 }
 
 class _StatMiniCard extends StatelessWidget {
-  const _StatMiniCard({required this.label, required this.value});
+  const _StatMiniCard({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
 
+  final IconData icon;
   final String label;
   final String value;
 
@@ -90,10 +101,12 @@ class _StatMiniCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
       child: Column(
         children: [
+          Icon(icon, color: AppColors.primary, size: 20),
+          const SizedBox(height: 6),
           Text(
             value,
             style: const TextStyle(
-              fontSize: 18,
+              fontSize: 20,
               fontWeight: FontWeight.bold,
               color: AppColors.textPrimary,
             ),

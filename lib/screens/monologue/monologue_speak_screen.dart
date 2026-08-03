@@ -11,6 +11,8 @@ import '../../services/history_service.dart';
 import '../../services/settings_service.dart';
 import '../../services/speech_input_service.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/app_route.dart';
+import '../../widgets/mic_button.dart';
 import '../../widgets/primary_button.dart';
 import '../settings_screen.dart';
 import 'monologue_feedback_screen.dart';
@@ -22,6 +24,12 @@ const _listenBuffer = Duration(seconds: 30);
 /// 長時間発話中に許容する無音の最大長（device方式）。短いと発話の合間で
 /// 認識が打ち切られてしまうため、口頭英作文より長めに設定する。
 const _pauseFor = Duration(seconds: 15);
+
+/// カウントダウンリングの直径
+const _ringSize = 180.0;
+
+/// 残り時間がこの割合以下になったらリング・数値を警告色にする
+const _urgentRatio = 0.2;
 
 /// 独り言英会話のスピーキング画面。
 ///
@@ -177,7 +185,7 @@ class _MonologueSpeakScreenState extends State<MonologueSpeakScreen> {
       if (!mounted) return;
       setState(() => _grading = false);
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
+        appRoute(
           builder: (_) =>
               MonologueFeedbackScreen(topic: widget.topic, result: result),
         ),
@@ -214,7 +222,7 @@ class _MonologueSpeakScreenState extends State<MonologueSpeakScreen> {
               Navigator.of(dialogContext).pop();
               Navigator.of(
                 context,
-              ).push(MaterialPageRoute(builder: (_) => const SettingsScreen()));
+              ).push(appRoute(builder: (_) => const SettingsScreen()));
             },
             child: const Text('設定を開く'),
           ),
@@ -231,6 +239,9 @@ class _MonologueSpeakScreenState extends State<MonologueSpeakScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final ratio = widget.seconds == 0 ? 0.0 : _secondsLeft / widget.seconds;
+    final urgent = ratio <= _urgentRatio;
+    final ringColor = urgent ? AppColors.scoreLow : AppColors.primary;
     return Scaffold(
       appBar: AppBar(title: const Text('独り言英会話')),
       body: SafeArea(
@@ -270,29 +281,43 @@ class _MonologueSpeakScreenState extends State<MonologueSpeakScreen> {
             const SizedBox(height: 24),
             Center(
               child: SizedBox(
-                width: 160,
-                height: 160,
+                width: _ringSize,
+                height: _ringSize,
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    SizedBox(
-                      width: 160,
-                      height: 160,
-                      child: CircularProgressIndicator(
-                        value: _secondsLeft / widget.seconds,
-                        strokeWidth: 8,
-                        backgroundColor: AppColors.border,
-                        valueColor: const AlwaysStoppedAnimation(
-                          AppColors.primary,
-                        ),
-                      ),
+                    TweenAnimationBuilder<double>(
+                      tween: Tween<double>(begin: 1, end: ratio),
+                      duration: const Duration(milliseconds: 900),
+                      curve: Curves.linear,
+                      builder: (context, value, child) {
+                        return SizedBox(
+                          width: _ringSize,
+                          height: _ringSize,
+                          child: TweenAnimationBuilder<Color?>(
+                            tween: ColorTween(begin: ringColor, end: ringColor),
+                            duration: const Duration(milliseconds: 300),
+                            builder: (context, color, child) =>
+                                CircularProgressIndicator(
+                                  value: value.clamp(0, 1),
+                                  strokeWidth: 8,
+                                  backgroundColor: AppColors.border,
+                                  valueColor: AlwaysStoppedAnimation(
+                                    color ?? ringColor,
+                                  ),
+                                ),
+                          ),
+                        );
+                      },
                     ),
                     Text(
                       _formatTime(_secondsLeft),
-                      style: const TextStyle(
-                        fontSize: 32,
+                      style: TextStyle(
+                        fontSize: 40,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
+                        color: urgent
+                            ? AppColors.scoreLow
+                            : AppColors.textPrimary,
                       ),
                     ),
                   ],
@@ -300,10 +325,24 @@ class _MonologueSpeakScreenState extends State<MonologueSpeakScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            PrimaryButton(
-              label: _recording ? '終了する' : '話し始める',
-              onPressed: _recording ? _stopRecording : _startRecording,
-              loading: _processingSpeech,
+            Center(
+              child: Column(
+                children: [
+                  MicButton(
+                    recording: _recording,
+                    processing: _processingSpeech,
+                    onTap: _recording ? _stopRecording : _startRecording,
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'タップして話す / もう一度タップで確定',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
             ),
             if (_recording || _partialText.isNotEmpty) ...[
               const SizedBox(height: 12),

@@ -115,6 +115,7 @@ void main() {
     required List<Sentence> sentences,
     required GeminiService geminiService,
     required FakeSpeechInputService speechInputService,
+    int questionSeconds = 30,
   }) {
     return MaterialApp(
       home: MultiProvider(
@@ -128,6 +129,7 @@ void main() {
           level: 700,
           theme: 'daily',
           speechInputService: speechInputService,
+          questionSeconds: questionSeconds,
         ),
       ),
     );
@@ -181,7 +183,8 @@ void main() {
     // FakeAsyncゾーンでは完了しないため、tester.runAsync()で実の非同期ゾーンに
     // 切り替える（widget_test.dartのHive初期化と同じ理由）。
     // また、ローディング中インジケーター（回転し続けるアニメーション）を表示するため
-    // pumpAndSettle()は永久に収束しない。固定回数のpump()で応答を処理する。
+    // pumpAndSettle()は永久に収束しない。固定回数のpump()で応答を処理してから、
+    // ScoreRing・カード出現アニメーション（いずれも有限）をpumpAndSettle()で流し切る。
     await tester.enterText(find.byType(TextField), 'my first answer');
     await tester.runAsync(() async {
       await tester.tap(find.text('答え合わせ'));
@@ -189,11 +192,11 @@ void main() {
     });
     // runAsync()の外（通常のFakeAsyncゾーン）でpumpし、状態変化をフレームに反映する。
     await tester.pump();
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     // 添削結果が表示される
     expect(find.text('85'), findsOneWidget);
-    expect(find.text('合格'), findsOneWidget);
+    expect(find.text('合格 🎉'), findsOneWidget);
     expect(find.text('Corrected answer 1'), findsOneWidget);
     expect(find.text('my first answer'), findsOneWidget);
 
@@ -214,7 +217,7 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 150));
     });
     await tester.pump();
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     expect(find.text('Corrected answer 2'), findsOneWidget);
 
@@ -298,5 +301,55 @@ void main() {
     // 添削結果はまだ表示されず、履歴も保存されていない
     expect(find.byIcon(Icons.mic), findsOneWidget);
     expect(historyService.drillHistory, isEmpty);
+  });
+
+  testWidgets('制限時間が0になり回答が空だと時間切れとして自動保存される', (tester) async {
+    final sentences = [_sentence(1)];
+    final client = MockClient((request) async {
+      fail('時間切れの採点はローカルで完結するため通信しない');
+    });
+    final geminiService = GeminiService(
+      settingsService: settings,
+      client: client,
+    );
+    final speechInputService = FakeSpeechInputService();
+
+    // pumpWidgetから制限時間経過までをtester.runAsync()内（実のZone）で行う。
+    // DrillScreenの内部タイマーは初期化時のZoneに束縛されるため、ここで
+    // 実行することで実時間で動く本物のTimerになり、Hive書き込み
+    // （実ファイルI/O）も通常どおり完了する
+    // （fake_asyncゾーンで開始した実I/Oは完了通知が届かず、テスト終了時に
+    // 後始末がハングするため）。
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        buildApp(
+          sentences: sentences,
+          geminiService: geminiService,
+          speechInputService: speechInputService,
+          // 制限時間を2秒に短縮し、実時間での待ち時間を最小限にする
+          // （本番はDrillScreenのデフォルト30秒のまま）。
+          questionSeconds: 2,
+        ),
+      );
+      await tester.pump();
+      await Future<void>.delayed(const Duration(milliseconds: 2200));
+    });
+    await tester.pump();
+    // 残りの有限アニメーション（ScoreRing・カード出現）を流し切る。
+    await tester.pump(const Duration(milliseconds: 900));
+
+    // 時間切れの添削結果（模範解答が主役、修正版・あなたの発話は非表示）が表示される
+    const timeoutMessage = '時間切れで回答できませんでした。模範解答を確認して復習しましょう。';
+    expect(find.text(timeoutMessage), findsOneWidget);
+    expect(find.text('要復習'), findsOneWidget);
+    expect(find.text('あなたの発話'), findsNothing);
+    expect(find.text('修正版'), findsNothing);
+    expect(find.text('English sentence 1'), findsOneWidget);
+
+    // スコア0で履歴・SRSキューに保存されている
+    expect(historyService.drillHistory, hasLength(1));
+    expect(historyService.drillHistory.first.feedback.score, 0);
+    expect(historyService.drillHistory.first.spoken, isEmpty);
+    expect(historyService.allSrsItems, hasLength(1));
   });
 }

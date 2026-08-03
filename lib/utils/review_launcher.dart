@@ -5,6 +5,7 @@ import '../models/srs_item.dart';
 import '../screens/composition/drill_screen.dart';
 import '../services/review_question_resolver.dart';
 import '../services/sentence_repository.dart';
+import 'app_route.dart';
 
 /// 「今日の復習」開始処理の共通ロジック。
 ///
@@ -33,7 +34,7 @@ class ReviewSessionLauncher {
     }
 
     await Navigator.of(context).push(
-      MaterialPageRoute(
+      appRoute(
         builder: (_) => DrillScreen(
           sentences: sentences,
           level: sentences.first.level,
