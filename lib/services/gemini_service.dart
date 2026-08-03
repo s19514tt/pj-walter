@@ -52,10 +52,21 @@ class GeminiService {
 生徒の発話（文字起こし）: $spoken
 
 以下のJSONスキーマに従って評価結果を出力してください。
-- score: 伝わりやすさと正確さを総合した0〜100のスコア
-- is_acceptable: scoreが70以上相当なら合格(true)
-- corrected: 生徒の発話を最小限の修正にとどめた英文
-- explanation_ja: 誤りの解説（日本語、2〜3文）
+
+- score: 下記のルーブリックに従って0〜100で採点する
+  - 95-100: ほぼ完璧で自然
+  - 85-94: 正確だがわずかに不自然
+  - 70-84: 軽微な文法・語彙ミスはあるが問題なく伝わる（70点が合格ライン）
+  - 50-69: 意味は伝わるが明確な文法ミスがある
+  - 30-49: 部分的にしか伝わらない
+  - 0-29: ほぼ伝わらない
+- is_acceptable: scoreが70以上なら合格(true)
+- corrected: 生徒の発話を最小限の編集で正しくした英文にすること。模範解答を丸写しするのではなく、
+  生徒が選んだ語彙・構文をできる限りそのまま活かして修正する。
+  例: 発話が "I was too tired so that I couldn't go out" なら、
+  corrected は生徒のso that構文を活かして "I was so tired that I couldn't go out" とする。
+  模範解答が "too tired to go out" のような表現でも、それに書き換えるのはNG（生徒の構文を壊すため）。
+- explanation_ja: 誤りの解説を「誤り→なぜ誤りか→どう覚えるか」の順で簡潔に（日本語、2〜3文）
 - comparison_ja: 模範解答との違いや、どちらでも良い点の解説（日本語）
 ''';
 
@@ -84,8 +95,16 @@ class GeminiService {
 発話の文字起こし: $transcript
 
 以下のJSONスキーマに従ってフィードバックを出力してください。
-- fluency_score: 流暢さ・内容の充実度を総合した0〜100のスコア
-- corrected_transcript: 発話全文を自然な英語に直したもの
+
+- fluency_score: 下記のルーブリックに従って0〜100で採点する
+  - 95-100: ほぼ完璧で自然
+  - 85-94: 正確だがわずかに不自然
+  - 70-84: 軽微な文法・語彙ミスはあるが問題なく伝わる（70点が合格ライン）
+  - 50-69: 意味は伝わるが明確な文法ミスがある
+  - 30-49: 部分的にしか伝わらない
+  - 0-29: ほぼ伝わらない
+- corrected_transcript: 発話全文を、発話の流れ・語彙選択をできる限り保った最小限の修正で自然な英語に
+  直したもの（模範解答的な書き直しではなく、生徒自身の言い回しを活かすこと）
 - corrections: 個別の修正点（original: 元の表現, corrected: 修正後, reason_ja: 理由を日本語で）
 - useful_phrases: 次回使える表現を3〜5個（en: 英語表現, ja: 日本語訳）
 - overall_feedback_ja: 良かった点と改善点を含む総評（日本語、3〜4文）
@@ -123,6 +142,11 @@ class GeminiService {
           ],
         },
       ],
+      // gemini-2.5系Flashはデフォルトで思考モードが有効になり応答が数秒遅くなる
+      // （実測で通常6秒→thinkingBudget:0で0.9秒程度）。文字起こしは思考不要のため無効化する。
+      'generationConfig': {
+        'thinkingConfig': {'thinkingBudget': 0},
+      },
     });
 
     final response = await _post(uri: uri, apiKey: apiKey, body: body);
@@ -153,6 +177,9 @@ class GeminiService {
       'generationConfig': {
         'responseMimeType': 'application/json',
         'responseSchema': schema,
+        // gemini-2.5系Flashはデフォルトで思考モードが有効になり応答が数秒遅くなる
+        // （実測で通常6秒→thinkingBudget:0で0.9秒程度）。採点は思考不要のため無効化する。
+        'thinkingConfig': {'thinkingBudget': 0},
       },
     });
 
