@@ -4,6 +4,7 @@ import '../../models/drill_result.dart';
 import '../../models/sentence.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/score_colors.dart';
+import '../../utils/word_diff.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/bottom_cta_bar.dart';
 import '../../widgets/primary_button.dart';
@@ -75,20 +76,7 @@ class DrillFeedbackView extends StatelessWidget {
               const SizedBox(height: 24),
               if (!_timedOut) ...[
                 staggered(
-                  _Section(
-                    icon: Icons.edit,
-                    title: '修正版',
-                    content: feedback.corrected,
-                    highlight: true,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                staggered(
-                  _Section(
-                    icon: Icons.record_voice_over_outlined,
-                    title: 'あなたの発話',
-                    content: spoken,
-                  ),
+                  _DiffCard(spoken: spoken, corrected: feedback.corrected),
                 ),
                 const SizedBox(height: 12),
               ],
@@ -189,6 +177,134 @@ class _SectionLabel extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// 「あなたの発話 → 修正版」を1枚のカードに統合した差分表示。
+///
+/// 上段に発話（削除/変更された語をグレー＋取り消し線）、下段に修正版
+/// （primarySurface背景、追加/変更された語をオレンジ太字）を表示する。
+/// 差分が無い（完全一致）場合は下段の代わりに「修正なし」メッセージを
+/// good色（[AppColors.success]）で表示する。
+class _DiffCard extends StatelessWidget {
+  const _DiffCard({required this.spoken, required this.corrected});
+
+  final String spoken;
+  final String corrected;
+
+  @override
+  Widget build(BuildContext context) {
+    final diff = diffWords(spoken, corrected);
+    final hasChanges = diff.any((s) => s.type != DiffSegmentType.same);
+
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _SectionLabel(
+            icon: Icons.record_voice_over_outlined,
+            title: 'あなたの発話',
+          ),
+          const SizedBox(height: 8),
+          _DiffText(
+            segments: diff.where((s) => s.type != DiffSegmentType.added),
+            changedColor: AppColors.textSecondary,
+            changedDecoration: TextDecoration.lineThrough,
+          ),
+          const SizedBox(height: 16),
+          if (hasChanges)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.primarySurface,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const _SectionLabel(icon: Icons.edit, title: '修正版'),
+                  const SizedBox(height: 8),
+                  _DiffText(
+                    segments: diff.where(
+                      (s) => s.type != DiffSegmentType.removed,
+                    ),
+                    changedColor: AppColors.primary,
+                    changedWeight: FontWeight.bold,
+                  ),
+                ],
+              ),
+            )
+          else
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.check_circle,
+                  color: AppColors.success,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text(
+                    '修正なし！そのままでOKです 🎉',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.success,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// [DiffSegment]列を1つのテキストとして描画する。差分がある単語だけ
+/// [changedColor]／[changedWeight]／[changedDecoration]を適用し、それ以外は
+/// 通常のスタイルで表示する。単語間は半角スペース1つで繋ぐ。
+class _DiffText extends StatelessWidget {
+  const _DiffText({
+    required this.segments,
+    required this.changedColor,
+    this.changedWeight = FontWeight.normal,
+    this.changedDecoration,
+  });
+
+  final Iterable<DiffSegment> segments;
+  final Color changedColor;
+  final FontWeight changedWeight;
+  final TextDecoration? changedDecoration;
+
+  @override
+  Widget build(BuildContext context) {
+    final list = segments.toList();
+    final spans = <InlineSpan>[];
+    for (var i = 0; i < list.length; i++) {
+      final segment = list[i];
+      final changed = segment.type != DiffSegmentType.same;
+      spans.add(
+        TextSpan(
+          text: segment.text,
+          style: TextStyle(
+            color: changed ? changedColor : AppColors.textPrimary,
+            fontWeight: changed ? changedWeight : FontWeight.normal,
+            decoration: changed ? changedDecoration : null,
+            decorationColor: changedColor,
+          ),
+        ),
+      );
+      if (i != list.length - 1) {
+        spans.add(const TextSpan(text: ' '));
+      }
+    }
+    return Text.rich(
+      TextSpan(children: spans),
+      style: const TextStyle(fontSize: 15),
     );
   }
 }
