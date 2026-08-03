@@ -7,6 +7,7 @@ import '../../models/topic.dart';
 import '../../services/sentence_repository.dart';
 import '../../services/settings_service.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/app_route.dart';
 import '../../utils/theme_labels.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/pill_chip.dart';
@@ -66,7 +67,7 @@ class _TopicSelectScreenState extends State<TopicSelectScreen> {
 
   void _openSpeak(Topic topic) {
     Navigator.of(context).push(
-      MaterialPageRoute(
+      appRoute(
         builder: (_) => MonologueSpeakScreen(topic: topic, seconds: _seconds),
       ),
     );

@@ -70,9 +70,10 @@ void main() {
     await tester.pumpWidget(_buildApp(historyService, settings));
     await tester.pump();
 
-    expect(find.text('APIキーが未設定です'), findsOneWidget);
+    expect(find.text('APIキーを設定してください'), findsOneWidget);
     expect(find.text('0日連続'), findsOneWidget);
-    expect(find.text('今日の学習: 0件'), findsOneWidget);
+    expect(find.text('ドリル 0問'), findsOneWidget);
+    expect(find.text('独り言 0回'), findsOneWidget);
     expect(find.text('今日の復習はありません🎉'), findsOneWidget);
     expect(find.text('復習を始める'), findsNothing);
     expect(find.text('口頭英作文'), findsOneWidget);
@@ -91,7 +92,7 @@ void main() {
     await tester.pumpWidget(_buildApp(historyService, settings));
     await tester.pump();
 
-    expect(find.text('APIキーが未設定です'), findsNothing);
+    expect(find.text('APIキーを設定してください'), findsNothing);
   });
 
   testWidgets('今日の復習がある場合は件数と開始ボタンが表示される', (tester) async {
@@ -131,10 +132,11 @@ void main() {
     await tester.pumpWidget(_buildApp(historyService, settings));
     await tester.pump();
 
-    expect(find.text('1件の復習があります'), findsOneWidget);
+    expect(find.text('件の復習があります'), findsOneWidget);
     expect(find.text('復習を始める'), findsOneWidget);
     // 今日の学習量に今回のドリルが反映されている
-    expect(find.text('今日の学習: 1件'), findsOneWidget);
+    expect(find.text('ドリル 1問'), findsOneWidget);
+    expect(find.text('独り言 0回'), findsOneWidget);
     expect(find.text('1日連続'), findsOneWidget);
   });
 

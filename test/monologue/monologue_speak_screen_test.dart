@@ -176,20 +176,20 @@ void main() {
     expect(find.text(_topic.en), findsOneWidget);
     expect(find.text('00:30'), findsOneWidget);
 
-    // 話し始める -> 音声入力開始（partialがリアルタイム表示される）
-    await tester.tap(find.text('話し始める'));
+    // マイクをタップ -> 音声入力開始（partialがリアルタイム表示される）
+    await tester.tap(find.byIcon(Icons.mic));
     await tester.pump();
     expect(speechInputService.startCalled, isTrue);
-    expect(find.text('終了する'), findsOneWidget);
+    expect(find.byIcon(Icons.stop), findsOneWidget);
     expect(find.text('partial text...'), findsOneWidget);
 
-    // 終了する -> 音声入力停止・文字起こし取得
-    await tester.tap(find.text('終了する'));
+    // もう一度マイクをタップ -> 音声入力停止・文字起こし取得
+    await tester.tap(find.byIcon(Icons.stop));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
     expect(speechInputService.stopCalled, isTrue);
     expect(find.text('this is my spoken monologue'), findsOneWidget);
-    expect(find.text('話し始める'), findsOneWidget);
+    expect(find.byIcon(Icons.mic), findsOneWidget);
 
     // 添削してもらう -> Gemini添削 -> フィードバック画面へ遷移
     //
@@ -201,7 +201,9 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 150));
     });
     await tester.pump();
-    await tester.pump();
+    // 画面遷移アニメーション・ScoreRingのアニメーション（いずれも有限）を
+    // 流し切る。
+    await tester.pumpAndSettle();
 
     expect(find.text('フィードバック'), findsOneWidget);
     expect(find.text('82'), findsOneWidget);
@@ -217,10 +219,10 @@ void main() {
     expect(historyService.monologueHistory, hasLength(1));
     expect(historyService.monologueHistory.first.topicId, 't-001');
 
-    // フレーズ帳に追加 -> チェック表示に変わる
+    // ＋追加 -> チェック・追加済み表示に変わる
     expect(historyService.phrases, isEmpty);
     await tester.runAsync(() async {
-      await tester.tap(find.text('フレーズ帳に追加'));
+      await tester.tap(find.text('＋追加'));
       await Future<void>.delayed(const Duration(milliseconds: 100));
     });
     await tester.pump();
@@ -229,7 +231,8 @@ void main() {
     expect(historyService.phrases.first.en, 'It slipped my mind.');
     expect(historyService.phrases.first.source, 't-001');
     expect(find.byIcon(Icons.check_circle), findsOneWidget);
-    expect(find.text('フレーズ帳に追加'), findsNothing);
+    expect(find.text('追加済み'), findsOneWidget);
+    expect(find.text('＋追加'), findsNothing);
   });
 
   testWidgets('APIキー未設定で添削してもらうを押すと設定誘導ダイアログが出る', (tester) async {

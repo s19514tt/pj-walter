@@ -11,6 +11,7 @@ class AppCard extends StatelessWidget {
     required this.child,
     this.onTap,
     this.padding = const EdgeInsets.all(16),
+    this.color,
   });
 
   /// カード内に表示するウィジェット
@@ -22,10 +23,15 @@ class AppCard extends StatelessWidget {
   /// カード内の余白
   final EdgeInsetsGeometry padding;
 
+  /// カードの背景色。未指定なら[AppColors.background]（白）。
+  /// 薄色背景のハイライトカードに使う。
+  final Color? color;
+
   @override
   Widget build(BuildContext context) {
+    final background = color ?? AppColors.background;
     return Material(
-      color: AppColors.background,
+      color: background,
       borderRadius: BorderRadius.circular(AppTheme.cardRadius),
       child: InkWell(
         onTap: onTap,
@@ -33,6 +39,7 @@ class AppCard extends StatelessWidget {
         child: Container(
           padding: padding,
           decoration: BoxDecoration(
+            color: background,
             borderRadius: BorderRadius.circular(AppTheme.cardRadius),
             border: Border.all(color: AppColors.border, width: 1),
           ),

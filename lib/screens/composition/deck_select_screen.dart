@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../services/drill_question_selector.dart';
 import '../../services/sentence_repository.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/app_route.dart';
 import '../../utils/theme_labels.dart';
 import '../../widgets/pill_chip.dart';
 import '../../widgets/primary_button.dart';
@@ -68,7 +69,7 @@ class _DeckSelectScreenState extends State<DeckSelectScreen> {
     final selected = selector.select(sentences);
     if (!mounted) return;
     Navigator.of(context).push(
-      MaterialPageRoute(
+      appRoute(
         builder: (_) =>
             DrillScreen(sentences: selected, level: _level, theme: _theme),
       ),
@@ -136,7 +137,7 @@ class _DeckSelectScreenState extends State<DeckSelectScreen> {
             label: '教材を見る',
             onPressed: () {
               Navigator.of(context).push(
-                MaterialPageRoute(
+                appRoute(
                   builder: (_) =>
                       SentenceListScreen(level: _level, theme: _theme),
                 ),

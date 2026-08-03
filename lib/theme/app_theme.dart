@@ -42,6 +42,22 @@ abstract final class AppColors {
 
   /// カード・チップなどの枠線カラー
   static const Color border = Color(0xFFEEEEEE);
+
+  /// ヒーローカード用のプライマリグラデーション
+  static const LinearGradient primaryGradient = LinearGradient(
+    colors: [Color(0xFFFF7A2E), Color(0xFFFF5B00)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  /// スコア良のバッジ・ハイライト背景
+  static const Color scoreGoodSurface = Color(0xFFE6F7EF);
+
+  /// スコア中のバッジ・ハイライト背景
+  static const Color scoreMediumSurface = Color(0xFFFEF3DC);
+
+  /// スコア低のバッジ・ハイライト背景
+  static const Color scoreLowSurface = Color(0xFFFDECEC);
 }
 
 /// アプリ全体のスタイル定数・[ThemeData] を定義する。
