@@ -1,10 +1,10 @@
 import 'dart:async';
-import 'dart:io';
+import 'dart:typed_data';
 
-import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
+import '../utils/wav_builder.dart';
 import 'gemini_service.dart';
 import 'settings_service.dart';
 
@@ -154,9 +154,11 @@ class DeviceSpeechInputService implements SpeechInputService {
 
 /// 録音してGeminiに文字起こしさせる実装。
 ///
-/// `record`パッケージでwav(16kHz mono)を一時ファイルに録音し、[stop]で
-/// [GeminiService.transcribe]に送信する。高精度だがAPIキーを消費し、
-/// [stop]の完了までタイムラグがある。
+/// `record`パッケージの`startStream`でPCM16(16kHz mono)チャンクをメモリ上の
+/// [BytesBuilder]に蓄積し、[stop]でWAVヘッダー（[buildWavBytes]）を付けて
+/// [GeminiService.transcribe]に送信する。ファイルI/Oを一切使わないため
+/// Web/Android/iOS全てで同じコードパスが動く（`startStream`は全対応）。
+/// 高精度だがAPIキーを消費し、[stop]の完了までタイムラグがある。
 class GeminiSpeechInputService implements SpeechInputService {
   // コンストラクタの公開パラメータ名（geminiService）と内部フィールド名
   // （_geminiService）をあえて分けているため、initializing formalは使わない
@@ -168,9 +170,14 @@ class GeminiSpeechInputService implements SpeechInputService {
   }) : _geminiService = geminiService,
        _recorder = recorder ?? AudioRecorder();
 
+  static const _sampleRate = 16000;
+  static const _channels = 1;
+
   final GeminiService _geminiService;
   final AudioRecorder _recorder;
-  String? _recordingPath;
+  BytesBuilder? _bytesBuilder;
+  StreamSubscription<Uint8List>? _subscription;
+  Completer<void>? _streamDone;
 
   @override
   Future<bool> get isAvailable => _recorder.hasPermission();
@@ -187,49 +194,63 @@ class GeminiSpeechInputService implements SpeechInputService {
       throw SpeechInputException('マイクの権限が許可されていません。手入力してください。');
     }
 
-    final dir = await getTemporaryDirectory();
-    final path =
-        '${dir.path}/pj_walter_drill_${DateTime.now().microsecondsSinceEpoch}.wav';
-    _recordingPath = path;
-    await _recorder.start(
+    final bytesBuilder = BytesBuilder(copy: false);
+    _bytesBuilder = bytesBuilder;
+    final streamDone = Completer<void>();
+    _streamDone = streamDone;
+
+    final stream = await _recorder.startStream(
       const RecordConfig(
-        encoder: AudioEncoder.wav,
-        sampleRate: 16000,
-        numChannels: 1,
+        encoder: AudioEncoder.pcm16bits,
+        sampleRate: _sampleRate,
+        numChannels: _channels,
       ),
-      path: path,
+    );
+    _subscription = stream.listen(
+      bytesBuilder.add,
+      onDone: () {
+        if (!streamDone.isCompleted) streamDone.complete();
+      },
+      onError: (Object _, StackTrace _) {
+        if (!streamDone.isCompleted) streamDone.complete();
+      },
     );
     onPartial('録音中…');
   }
 
   @override
   Future<String> stop() async {
-    final stoppedPath = await _recorder.stop();
-    final path = stoppedPath ?? _recordingPath;
-    if (path == null) {
+    await _recorder.stop();
+    // stop()完了後にストリームのonDoneイベントが届くまで短時間待つ
+    // （マイクロタスクのスケジューリング差によるチャンク取りこぼしを防ぐ）。
+    await _streamDone?.future.timeout(
+      const Duration(milliseconds: 500),
+      onTimeout: () {},
+    );
+    await _subscription?.cancel();
+    _subscription = null;
+    _streamDone = null;
+
+    final pcmData = _bytesBuilder?.takeBytes();
+    _bytesBuilder = null;
+    if (pcmData == null || pcmData.isEmpty) {
       throw SpeechInputException('録音データを取得できませんでした。手入力してください。');
     }
 
-    final file = File(path);
-    if (!await file.exists()) {
-      throw SpeechInputException('録音データを取得できませんでした。手入力してください。');
-    }
-
-    try {
-      final bytes = await file.readAsBytes();
-      return await _geminiService.transcribe(
-        audioBytes: bytes,
-        mimeType: 'audio/wav',
-      );
-    } finally {
-      if (await file.exists()) {
-        await file.delete();
-      }
-    }
+    final wavBytes = buildWavBytes(
+      pcmData,
+      sampleRate: _sampleRate,
+      channels: _channels,
+    );
+    return await _geminiService.transcribe(
+      audioBytes: wavBytes,
+      mimeType: 'audio/wav',
+    );
   }
 
   @override
   void dispose() {
+    unawaited(_subscription?.cancel());
     unawaited(_recorder.dispose());
   }
 }
