@@ -14,7 +14,7 @@ import '../../theme/app_theme.dart';
 import '../../utils/app_route.dart';
 import '../../utils/theme_labels.dart';
 import '../../widgets/bottom_cta_bar.dart';
-import '../../widgets/mic_button.dart';
+import '../../widgets/recording_indicator.dart';
 import '../../widgets/pill_chip.dart';
 import '../../widgets/primary_button.dart';
 import '../settings_screen.dart';
@@ -32,10 +32,11 @@ const _timeoutExplanation = '時間切れで回答できませんでした。模
 
 /// 口頭英作文ドリルの進行画面。
 ///
-/// [sentences]を1問ずつ出題する。マイクボタンで[SpeechInputService]による
-/// 音声入力を行い（利用不可時は手入力にフォールバック）、「答え合わせ」で
-/// Geminiに添削させる。制限時間内に回答できなかった場合は自動的に採点処理
-/// （回答があれば自動答え合わせ、無ければ時間切れ扱い）を行う。
+/// [sentences]を1問ずつ出題する。問題表示と同時に[SpeechInputService]による
+/// 音声入力を自動で開始する。画面の要素は日本語文・残り時間・「答え合わせ」
+/// ボタン1つだけで、録音停止＝採点：ボタン一押し（または時間切れ）で
+/// 聞き取り終了→文字起こし→Gemini添削まで一気に行う。編集用の入力欄は無い。
+/// 聞き取りに失敗した場合のみ「録り直す」導線を出す。
 /// 全問終了後は[DrillSummaryScreen]へ遷移する。
 class DrillScreen extends StatefulWidget {
   const DrillScreen({
@@ -78,7 +79,6 @@ class DrillScreen extends StatefulWidget {
 
 class _DrillScreenState extends State<DrillScreen> {
   late final SpeechInputService _speechInput;
-  final _answerController = TextEditingController();
   final _entries = <DrillSummaryEntry>[];
 
   int _index = 0;
@@ -86,10 +86,17 @@ class _DrillScreenState extends State<DrillScreen> {
   int _secondsLeft = 0;
   bool _recording = false;
   bool _processingSpeech = false;
-  String _partialText = '';
+
+  /// 録音停止時に確定した文字起こし。停止＝採点に直結するため編集UIは持たない。
+  String _spoken = '';
   bool _grading = false;
   CompositionFeedback? _feedback;
   String? _gradedSpoken;
+
+  /// 自動録音開始に失敗した（マイク権限なし等）ことを記録するフラグ。
+  /// 問題が切り替わるたびに同じエラーSnackBarを出さないため、これがtrueの間は
+  /// 自動開始をスキップする。「録り直す」で成功すれば解除される。
+  bool _speechUnavailable = false;
 
   Sentence get _current => widget.sentences[_index];
 
@@ -103,12 +110,14 @@ class _DrillScreenState extends State<DrillScreen> {
           geminiService: context.read<GeminiService>(),
         );
     _startTimer();
+    // 問題表示と同時に音声入力を自動開始する（ボタン操作を待たない）。
+    // SnackBar表示にScaffoldが必要なため初回フレーム後に行う。
+    WidgetsBinding.instance.addPostFrameCallback((_) => _autoStartRecording());
   }
 
   @override
   void dispose() {
     _timer?.cancel();
-    _answerController.dispose();
     _speechInput.dispose();
     super.dispose();
   }
@@ -128,11 +137,14 @@ class _DrillScreenState extends State<DrillScreen> {
   }
 
   Future<void> _handleTimeUp() async {
+    // 「答え合わせ」押下による文字起こし・採点が既に走っている場合は
+    // そちらに任せる（二重停止・二重採点を防ぐ）。
+    if (_processingSpeech || _grading || _feedback != null) return;
     if (_recording) {
       await _stopRecording();
     }
     if (!mounted || _grading || _feedback != null) return;
-    if (_answerController.text.trim().isNotEmpty) {
+    if (_spoken.trim().isNotEmpty) {
       await _submit();
       return;
     }
@@ -178,22 +190,33 @@ class _DrillScreenState extends State<DrillScreen> {
     }
   }
 
-  Future<void> _toggleRecording() =>
-      _recording ? _stopRecording() : _startRecording();
+  /// 問題表示時の自動録音開始。
+  ///
+  /// 一度失敗した（[_speechUnavailable]）場合は問題ごとにSnackBarを
+  /// 出し続けないようスキップする（「録り直す」から再試行できる）。
+  Future<void> _autoStartRecording() async {
+    if (!mounted || _speechUnavailable || _recording) return;
+    await _startRecording();
+  }
 
   Future<void> _startRecording() async {
-    setState(() => _partialText = '');
+    // 録り直し＝新しいテイクなので、前回の文字起こしはクリアする。
+    setState(() => _spoken = '');
     try {
-      await _speechInput.start(
-        onPartial: (text) => setState(() => _partialText = text),
-      );
-      setState(() => _recording = true);
+      // 部分認識テキストは表示しない（画面は日本語文・残り時間・停止ボタンのみ）
+      await _speechInput.start(onPartial: (_) {});
+      setState(() {
+        _recording = true;
+        _speechUnavailable = false;
+      });
     } on SpeechInputException catch (e) {
+      _speechUnavailable = true;
       _showSnack(e.message);
     }
   }
 
   Future<void> _stopRecording() async {
+    if (!_recording) return;
     setState(() {
       _recording = false;
       _processingSpeech = true;
@@ -201,10 +224,7 @@ class _DrillScreenState extends State<DrillScreen> {
     try {
       final text = await _speechInput.stop();
       if (!mounted) return;
-      setState(() {
-        _answerController.text = text;
-        _partialText = '';
-      });
+      setState(() => _spoken = text);
     } on SpeechInputException catch (e) {
       _showSnack(e.message);
     } on GeminiException catch (e) {
@@ -223,13 +243,25 @@ class _DrillScreenState extends State<DrillScreen> {
 
   Future<void> _submit() async {
     // SnackBarの「再試行」から画面破棄後・添削中に呼ばれる可能性があるためガード
-    if (!mounted || _grading) return;
-    final spoken = _answerController.text.trim();
-    if (spoken.isEmpty) return;
+    if (!mounted || _grading || _processingSpeech) return;
 
     final settings = context.read<SettingsService>();
     if (!settings.hasApiKey) {
+      // 録音は止めずにダイアログを出す（キー設定後にそのまま続行できる）
       _showApiKeyDialog();
+      return;
+    }
+
+    // 録音中なら「答え合わせ」一押しで聞き取り終了→文字起こしまで行い、
+    // そのまま採点に進む。
+    if (_recording) {
+      await _stopRecording();
+      if (!mounted) return;
+    }
+
+    final spoken = _spoken.trim();
+    if (spoken.isEmpty) {
+      _showSnack('発話を聞き取れませんでした。「録り直す」からもう一度話してください。');
       return;
     }
 
@@ -340,12 +372,13 @@ class _DrillScreenState extends State<DrillScreen> {
 
     setState(() {
       _index++;
-      _answerController.clear();
+      _spoken = '';
       _feedback = null;
       _gradedSpoken = null;
-      _partialText = '';
     });
     _startTimer();
+    // 次の問題でも表示と同時に音声入力を自動開始する
+    _autoStartRecording();
   }
 
   @override
@@ -438,53 +471,38 @@ class _DrillScreenState extends State<DrillScreen> {
                 ),
               ),
               const SizedBox(height: 24),
+              // 操作ボタンは下部の「答え合わせ」1つだけ（録音停止＝採点）。
+              // ここは録音状態の表示のみ：録音中はインジケーター、文字起こし中は
+              // スピナー、失敗して録音が止まっている時だけ録り直しの導線を出す。
               Center(
-                child: Column(
-                  children: [
-                    MicButton(
-                      recording: _recording,
-                      processing: _processingSpeech,
-                      onTap: _toggleRecording,
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'タップして話す / もう一度タップで確定',
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: AppColors.textSecondary,
+                child: _processingSpeech
+                    ? const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        child: SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(strokeWidth: 3),
+                        ),
+                      )
+                    : _recording
+                    ? const RecordingIndicator()
+                    : TextButton.icon(
+                        onPressed: _startRecording,
+                        icon: const Icon(Icons.mic),
+                        label: const Text('録り直す'),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              if (_recording || _partialText.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Center(
-                  child: Text(
-                    _partialText.isEmpty ? '聞き取り中…' : _partialText,
-                    style: const TextStyle(color: AppColors.textSecondary),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ],
-              const SizedBox(height: 24),
-              TextField(
-                controller: _answerController,
-                maxLines: 3,
-                decoration: const InputDecoration(
-                  labelText: '英語で回答',
-                  hintText: 'マイクで話すか、直接入力してください',
-                  border: OutlineInputBorder(),
-                ),
               ),
             ],
           ),
         ),
         BottomCtaBar(
           child: PrimaryButton(
-            label: '答え合わせ',
+            // 録音中は「停止＝採点」であることをラベルでも明示する
+            label: _recording ? '停止して答え合わせ' : '答え合わせ',
             onPressed: _submit,
-            loading: _grading,
+            // 文字起こし（_processingSpeech）→採点（_grading）まで一続きの
+            // 処理として、ボタンはその間ずっとローディング表示にする。
+            loading: _grading || _processingSpeech,
           ),
         ),
       ],

@@ -12,7 +12,7 @@ import '../../services/settings_service.dart';
 import '../../services/speech_input_service.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/app_route.dart';
-import '../../widgets/mic_button.dart';
+import '../../widgets/recording_indicator.dart';
 import '../../widgets/primary_button.dart';
 import '../settings_screen.dart';
 import 'monologue_feedback_screen.dart';
@@ -33,11 +33,12 @@ const _urgentRatio = 0.2;
 
 /// 独り言英会話のスピーキング画面。
 ///
-/// お題を表示し、「話し始める」で[SpeechInputService]による音声入力と
-/// カウントダウンを開始する。時間切れ、または「終了する」ボタンで音声入力を
-/// 止め、得られた文字起こしを編集可能なTextFieldに表示する。
-/// 「添削してもらう」でGeminiにフィードバックさせ、結果を保存したうえで
-/// [MonologueFeedbackScreen]へ進む。
+/// お題表示と同時に[SpeechInputService]による音声入力とカウントダウンを
+/// 自動で開始する。画面の要素はお題・残り時間・「添削してもらう」ボタン
+/// 1つだけで、録音停止＝添削：ボタン一押し（または時間切れ）で聞き取り終了→
+/// 文字起こし→Geminiフィードバックまで一気に行い、結果を保存したうえで
+/// [MonologueFeedbackScreen]へ進む。編集用の入力欄は無い。
+/// 聞き取りに失敗した場合のみ「録り直す」導線を出す。
 class MonologueSpeakScreen extends StatefulWidget {
   const MonologueSpeakScreen({
     super.key,
@@ -61,13 +62,14 @@ class MonologueSpeakScreen extends StatefulWidget {
 
 class _MonologueSpeakScreenState extends State<MonologueSpeakScreen> {
   late final SpeechInputService _speechInput;
-  final _transcriptController = TextEditingController();
 
   Timer? _timer;
   late int _secondsLeft;
   bool _recording = false;
   bool _processingSpeech = false;
-  String _partialText = '';
+
+  /// 録音停止時に確定した文字起こし。停止＝添削に直結するため編集UIは持たない。
+  String _transcript = '';
   bool _grading = false;
 
   @override
@@ -80,21 +82,26 @@ class _MonologueSpeakScreenState extends State<MonologueSpeakScreen> {
           settingsService: context.read<SettingsService>(),
           geminiService: context.read<GeminiService>(),
         );
+    // お題表示と同時に音声入力とカウントダウンを自動開始する。
+    // SnackBar表示にScaffoldが必要なため初回フレーム後に行う。
+    WidgetsBinding.instance.addPostFrameCallback((_) => _startRecording());
   }
 
   @override
   void dispose() {
     _timer?.cancel();
-    _transcriptController.dispose();
     _speechInput.dispose();
     super.dispose();
   }
 
   Future<void> _startRecording() async {
-    setState(() => _partialText = '');
+    if (!mounted || _recording) return;
+    // 録り直し＝新しいテイクなので、前回の文字起こしはクリアする。
+    setState(() => _transcript = '');
     try {
+      // 部分認識テキストは表示しない（画面はお題・残り時間・停止ボタンのみ）
       await _speechInput.start(
-        onPartial: (text) => setState(() => _partialText = text),
+        onPartial: (_) {},
         listenFor: Duration(seconds: widget.seconds) + _listenBuffer,
         pauseFor: _pauseFor,
       );
@@ -114,11 +121,23 @@ class _MonologueSpeakScreenState extends State<MonologueSpeakScreen> {
       if (_secondsLeft <= 1) {
         timer.cancel();
         setState(() => _secondsLeft = 0);
-        _stopRecording();
+        _handleTimeUp();
         return;
       }
       setState(() => _secondsLeft--);
     });
+  }
+
+  /// 時間切れ処理。
+  ///
+  /// ボタン操作なしでも必ず聞き取り終了（文字起こし）まで行い、そのまま
+  /// 添削へ進む。「添削してもらう」押下による処理が既に走っている場合は
+  /// そちらに任せる（二重停止・二重添削を防ぐ）。
+  Future<void> _handleTimeUp() async {
+    if (_grading || _processingSpeech) return;
+    await _stopRecording();
+    if (!mounted) return;
+    await _submit();
   }
 
   Future<void> _stopRecording() async {
@@ -131,10 +150,7 @@ class _MonologueSpeakScreenState extends State<MonologueSpeakScreen> {
     try {
       final text = await _speechInput.stop();
       if (!mounted) return;
-      setState(() {
-        _transcriptController.text = text;
-        _partialText = '';
-      });
+      setState(() => _transcript = text);
     } on SpeechInputException catch (e) {
       _showSnack(e.message);
     } on GeminiException catch (e) {
@@ -153,13 +169,25 @@ class _MonologueSpeakScreenState extends State<MonologueSpeakScreen> {
 
   Future<void> _submit() async {
     // SnackBarの「再試行」から画面破棄後・添削中に呼ばれる可能性があるためガード
-    if (!mounted || _grading) return;
-    final transcript = _transcriptController.text.trim();
-    if (transcript.isEmpty) return;
+    if (!mounted || _grading || _processingSpeech) return;
 
     final settings = context.read<SettingsService>();
     if (!settings.hasApiKey) {
+      // 録音は止めずにダイアログを出す（キー設定後にそのまま続行できる）
       _showApiKeyDialog();
+      return;
+    }
+
+    // 録音中なら「添削してもらう」一押しで聞き取り終了→文字起こしまで行い、
+    // そのまま添削に進む。
+    if (_recording) {
+      await _stopRecording();
+      if (!mounted) return;
+    }
+
+    final transcript = _transcript.trim();
+    if (transcript.isEmpty) {
+      _showSnack('発話を聞き取れませんでした。「録り直す」からもう一度話してください。');
       return;
     }
 
@@ -325,50 +353,35 @@ class _MonologueSpeakScreenState extends State<MonologueSpeakScreen> {
               ),
             ),
             const SizedBox(height: 24),
+            // 操作ボタンは下部の「添削してもらう」1つだけ（録音停止＝添削）。
+            // ここは録音状態の表示のみ：録音中はインジケーター、文字起こし中は
+            // スピナー、失敗して録音が止まっている時だけ録り直しの導線を出す。
             Center(
-              child: Column(
-                children: [
-                  MicButton(
-                    recording: _recording,
-                    processing: _processingSpeech,
-                    onTap: _recording ? _stopRecording : _startRecording,
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'タップして話す / もう一度タップで確定',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: AppColors.textSecondary,
+              child: _processingSpeech
+                  ? const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      child: SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(strokeWidth: 3),
+                      ),
+                    )
+                  : _recording
+                  ? const RecordingIndicator()
+                  : TextButton.icon(
+                      onPressed: _startRecording,
+                      icon: const Icon(Icons.mic),
+                      label: const Text('録り直す'),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            if (_recording || _partialText.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              Center(
-                child: Text(
-                  _partialText.isEmpty ? '聞き取り中…' : _partialText,
-                  style: const TextStyle(color: AppColors.textSecondary),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ],
-            const SizedBox(height: 24),
-            TextField(
-              controller: _transcriptController,
-              maxLines: 6,
-              decoration: const InputDecoration(
-                labelText: '発話の文字起こし',
-                hintText: '音声認識結果が表示されます。直接編集もできます',
-                border: OutlineInputBorder(),
-              ),
             ),
             const SizedBox(height: 24),
             PrimaryButton(
-              label: '添削してもらう',
+              // 録音中は「停止＝添削」であることをラベルでも明示する
+              label: _recording ? '停止して添削' : '添削してもらう',
               onPressed: _submit,
-              loading: _grading,
+              // 文字起こし（_processingSpeech）→添削（_grading）まで一続きの
+              // 処理として、ボタンはその間ずっとローディング表示にする。
+              loading: _grading || _processingSpeech,
             ),
           ],
         ),

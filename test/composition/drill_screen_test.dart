@@ -176,7 +176,7 @@ void main() {
     expect(find.text('日本語の例文1'), findsOneWidget);
     expect(find.text('口頭英作文 (1/2)'), findsOneWidget);
 
-    // 手入力で回答を入力し、答え合わせ
+    // 「停止して答え合わせ」1タップで聞き取り終了→文字起こし→採点まで走る
     //
     // 答え合わせは(1)MockClient経由のGemini応答と(2)HistoryServiceによる実際の
     // Hive書き込み（ファイルI/O）を伴う。ファイルI/Oは通常のtestWidgetsの
@@ -185,9 +185,8 @@ void main() {
     // また、ローディング中インジケーター（回転し続けるアニメーション）を表示するため
     // pumpAndSettle()は永久に収束しない。固定回数のpump()で応答を処理してから、
     // ScoreRing・カード出現アニメーション（いずれも有限）をpumpAndSettle()で流し切る。
-    await tester.enterText(find.byType(TextField), 'my first answer');
     await tester.runAsync(() async {
-      await tester.tap(find.text('答え合わせ'));
+      await tester.tap(find.text('停止して答え合わせ'));
       await Future<void>.delayed(const Duration(milliseconds: 150));
     });
     // runAsync()の外（通常のFakeAsyncゾーン）でpumpし、状態変化をフレームに反映する。
@@ -198,22 +197,26 @@ void main() {
     expect(find.text('85'), findsOneWidget);
     expect(find.text('合格 🎉'), findsOneWidget);
     expect(find.text('Corrected answer 1'), findsOneWidget);
-    expect(find.text('my first answer'), findsOneWidget);
+    expect(find.text('this is my spoken answer'), findsOneWidget);
 
     // 履歴に保存されている
     expect(historyService.drillHistory, hasLength(1));
     expect(historyService.drillHistory.first.sentenceId, 's700-001');
 
     // 次へ -> 2問目
+    //
+    // 2問目では録音が自動開始され、録音インジケーターの明滅アニメーションが
+    // 録音中ずっと繰り返されるため、pumpAndSettle()は収束しない。
+    // 固定回数のpump()で2問目の表示を反映する。
     await tester.tap(find.text('次へ'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.text('日本語の例文2'), findsOneWidget);
     expect(find.text('口頭英作文 (2/2)'), findsOneWidget);
 
-    await tester.enterText(find.byType(TextField), 'my second answer');
     await tester.runAsync(() async {
-      await tester.tap(find.text('答え合わせ'));
+      await tester.tap(find.text('停止して答え合わせ'));
       await Future<void>.delayed(const Duration(milliseconds: 150));
     });
     await tester.pump();
@@ -234,7 +237,7 @@ void main() {
     expect(historyService.drillHistory, hasLength(2));
   });
 
-  testWidgets('マイクボタンで音声入力を開始・停止しTextFieldに反映される', (tester) async {
+  testWidgets('問題表示と同時に音声入力が自動開始される', (tester) async {
     final sentences = [_sentence(1)];
     final client = MockClient((request) async {
       fail('この検証では通信しない');
@@ -243,8 +246,7 @@ void main() {
       settingsService: settings,
       client: client,
     );
-    final speechInputService = FakeSpeechInputService()
-      ..stopResult = 'recognized by mic';
+    final speechInputService = FakeSpeechInputService();
 
     await tester.pumpWidget(
       buildApp(
@@ -255,23 +257,69 @@ void main() {
     );
     await tester.pump();
 
-    // マイクタップで録音開始
-    await tester.tap(find.byIcon(Icons.mic));
-    await tester.pump();
+    // ボタン操作なしで録音が自動開始されている
     expect(speechInputService.startCalled, isTrue);
-    expect(find.byIcon(Icons.stop), findsOneWidget);
-    expect(find.text('partial text...'), findsOneWidget);
+    expect(find.text('聞き取り中'), findsOneWidget);
+    // 操作ボタンは「停止して答え合わせ」1つだけ。編集用の入力欄・録り直し導線は無い
+    expect(find.text('停止して答え合わせ'), findsOneWidget);
+    expect(find.byType(TextField), findsNothing);
+    expect(find.text('録り直す'), findsNothing);
+  });
 
-    // もう一度タップで停止（停止中は回転インジケーターが出るためpumpAndSettleは使わない）
-    await tester.tap(find.byIcon(Icons.stop));
+  testWidgets('録音中に答え合わせを押すと聞き取り終了→文字起こし→採点まで一気に走る', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(400, 1600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final sentences = [_sentence(1)];
+    final client = MockClient((request) async {
+      return _jsonResponse(
+        _geminiEnvelope({
+          'score': 90,
+          'is_acceptable': true,
+          'corrected': 'One-press corrected answer',
+          'explanation_ja': '解説',
+          'comparison_ja': '比較',
+        }),
+        200,
+      );
+    });
+    final geminiService = GeminiService(
+      settingsService: settings,
+      client: client,
+    );
+    final speechInputService = FakeSpeechInputService();
+
+    await tester.pumpWidget(
+      buildApp(
+        sentences: sentences,
+        geminiService: geminiService,
+        speechInputService: speechInputService,
+      ),
+    );
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
 
+    // 自動開始された録音中のまま、マイクを触らずに答え合わせを押す
+    expect(speechInputService.startCalled, isTrue);
+    expect(speechInputService.stopCalled, isFalse);
+    await tester.runAsync(() async {
+      await tester.tap(find.text('停止して答え合わせ'));
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+    });
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    // 停止（文字起こし）→採点まで1タップで完了し、文字起こしが回答として使われる
     expect(speechInputService.stopCalled, isTrue);
-    expect(find.text('recognized by mic'), findsOneWidget);
+    expect(find.text('One-press corrected answer'), findsOneWidget);
+    expect(find.text('this is my spoken answer'), findsOneWidget);
+    expect(historyService.drillHistory, hasLength(1));
+    expect(historyService.drillHistory.first.spoken, 'this is my spoken answer');
   });
 
   testWidgets('GeminiExceptionが発生するとSnackBarとリトライボタンが表示される', (tester) async {
+    // 録音自動開始でpartial表示の行が加わり、デフォルトのビューポートでは
+    // TextFieldがListViewの構築範囲外になるため、縦に広げる。
+    await tester.binding.setSurfaceSize(const Size(400, 1600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     final sentences = [_sentence(1)];
     final client = MockClient((request) async {
       return http.Response('server error', 500);
@@ -291,15 +339,14 @@ void main() {
     );
     await tester.pump();
 
-    await tester.enterText(find.byType(TextField), 'an answer');
-    await tester.tap(find.text('答え合わせ'));
+    await tester.tap(find.text('停止して答え合わせ'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.byType(SnackBar), findsOneWidget);
     expect(find.text('再試行'), findsOneWidget);
-    // 添削結果はまだ表示されず、履歴も保存されていない
-    expect(find.byIcon(Icons.mic), findsOneWidget);
+    // 添削結果はまだ表示されず、履歴も保存されていない。録り直し導線が出ている
+    expect(find.text('録り直す'), findsOneWidget);
     expect(historyService.drillHistory, isEmpty);
   });
 
@@ -312,7 +359,9 @@ void main() {
       settingsService: settings,
       client: client,
     );
-    final speechInputService = FakeSpeechInputService();
+    // 録音は自動開始されるため、時間切れ時の自動停止で文字起こしが空
+    // （何も話さなかった）ケースを再現する。
+    final speechInputService = FakeSpeechInputService()..stopResult = '';
 
     // pumpWidgetから制限時間経過までをtester.runAsync()内（実のZone）で行う。
     // DrillScreenの内部タイマーは初期化時のZoneに束縛されるため、ここで

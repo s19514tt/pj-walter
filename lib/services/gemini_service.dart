@@ -166,7 +166,7 @@ class GeminiService {
     // 聞き取れなかった場合は空文字が返る（プロンプトでそう指示している）。
     // 空のまま入力欄に反映すると理由が分からないため、明示的に案内する。
     if (text.isEmpty) {
-      throw GeminiException('音声を聞き取れませんでした。もう一度話すか、手入力してください。');
+      throw GeminiException('音声を聞き取れませんでした。もう一度お試しください。');
     }
     return text;
   }

@@ -11,8 +11,8 @@ import 'settings_service.dart';
 
 /// 音声入力（マイク権限・音声認識）に失敗した際に投げられる例外。
 ///
-/// [message]はUIにそのまま表示できる日本語文言。呼び出し側は必ず
-/// 手入力フォールバックを用意すること。
+/// [message]はUIにそのまま表示できる日本語文言。呼び出し側は録り直し等の
+/// リカバリー導線を用意すること。
 class SpeechInputException implements Exception {
   SpeechInputException(this.message);
 
@@ -96,14 +96,14 @@ class DeviceSpeechInputService implements SpeechInputService {
         ok = false;
       }
       if (!ok) {
-        throw SpeechInputException('端末の音声認識を利用できません。手入力してください。');
+        throw SpeechInputException('端末の音声認識を利用できません。');
       }
       _initialized = true;
     }
 
     final hasPermission = await _speech.hasPermission;
     if (!hasPermission) {
-      throw SpeechInputException('マイクの権限が許可されていません。手入力してください。');
+      throw SpeechInputException('マイクの権限が許可されていません。設定でマイクを許可してください。');
     }
 
     _lastWords = '';
@@ -197,7 +197,7 @@ class GeminiSpeechInputService implements SpeechInputService {
     // listenFor/pauseForはdevice方式専用のオプションのためここでは使わない。
     final granted = await _recorder.hasPermission();
     if (!granted) {
-      throw SpeechInputException('マイクの権限が許可されていません。手入力してください。');
+      throw SpeechInputException('マイクの権限が許可されていません。設定でマイクを許可してください。');
     }
 
     final bytesBuilder = BytesBuilder(copy: false);
@@ -253,7 +253,7 @@ class GeminiSpeechInputService implements SpeechInputService {
     final pcmData = _bytesBuilder?.takeBytes();
     _bytesBuilder = null;
     if (pcmData == null || pcmData.isEmpty) {
-      throw SpeechInputException('録音データを取得できませんでした。手入力してください。');
+      throw SpeechInputException('録音データを取得できませんでした。もう一度お試しください。');
     }
 
     // 実際の録音フォーマットを16kHzモノラルに揃えてからWAVヘッダーを付ける。
@@ -265,7 +265,7 @@ class GeminiSpeechInputService implements SpeechInputService {
       targetSampleRate: _sampleRate,
     );
     if (normalized.isEmpty) {
-      throw SpeechInputException('録音データを取得できませんでした。手入力してください。');
+      throw SpeechInputException('録音データを取得できませんでした。もう一度お試しください。');
     }
 
     final wavBytes = buildWavBytes(
