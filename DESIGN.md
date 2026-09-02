@@ -73,8 +73,8 @@ lib/
     score_colors.dart       # スコア(0-100)→表示色の変換
     theme_labels.dart       # テーマ識別子(daily/business/travel)→日本語表示名
 assets/data/
-  sentences_700.json        # TOEIC700点台 200文
-  sentences_800.json        # TOEIC800点台 200文
+  sentences_700.json        # TOEIC700点台 400文
+  sentences_800.json        # TOEIC800点台 400文
   topics.json               # 独り言のお題
 ```
 
@@ -119,6 +119,11 @@ assets/data/
 ```
 
 `id` は `s{level}-{連番3桁}`。約数十文ごとの「ユニット」には分けず、テーマ×レベルでフィルタして出題。
+
+各レベル400文。テーマ内訳は `daily` 140 / `business` 140 / `travel` 120 で両レベル共通。
+`tips` は1文につき1つの構文・表現を指し、全800文で重複しない（同じ表現を狙う文を複数置かない）。
+英文の長さでレベル差をつけており、平均語数は700点台が約9語、800点台が約12語。
+**IDは永続化データのキーになる**（`srs_items` box は sentenceId をキーにする）ため、文を追加するときは既存IDを振り直さず末尾に連番で追記すること。
 
 ### 独り言お題 (assets/data/topics.json)
 

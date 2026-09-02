@@ -1400,6 +1400,1406 @@
       "en": "Ironically, that mishap was what made us truly appreciate the warmth of the local people.",
       "theme": "travel",
       "tips": "ironically で「皮肉にも、かえって」"
+    },
+    {
+      "id": "s800-201",
+      "ja": "家を出たとたんに雨が降り始めました。",
+      "en": "No sooner had I left the house than it started to rain.",
+      "theme": "daily",
+      "tips": "No sooner had S 過去分詞 than ~ で「~したとたんに」倒置"
+    },
+    {
+      "id": "s800-202",
+      "ja": "席に着くか着かないかのうちに電話が鳴り出しました。",
+      "en": "Hardly had I sat down when my phone started ringing.",
+      "theme": "daily",
+      "tips": "Hardly had S 過去分詞 when ~ で「~するやいなや」倒置"
+    },
+    {
+      "id": "s800-203",
+      "ja": "彼に言われて初めて自分の間違いに気づきました。",
+      "en": "Not until he told me did I realize my own mistake.",
+      "theme": "daily",
+      "tips": "Not until ~ を文頭に置くと主節が疑問文の語順になる"
+    },
+    {
+      "id": "s800-204",
+      "ja": "引っ越して初めてこの街の静けさのありがたみがわかりました。",
+      "en": "Only after I moved did I appreciate how quiet this town is.",
+      "theme": "daily",
+      "tips": "Only after ~ が文頭に来ると主節が倒置される"
+    },
+    {
+      "id": "s800-205",
+      "ja": "あれほど美しい夕日はそれまで見たことがありませんでした。",
+      "en": "Never before had I seen such a beautiful sunset.",
+      "theme": "daily",
+      "tips": "Never before を文頭に出すと過去完了が倒置される"
+    },
+    {
+      "id": "s800-206",
+      "ja": "家族の支えがなければ今の私はありません。",
+      "en": "Were it not for my family's support, I wouldn't be where I am.",
+      "theme": "daily",
+      "tips": "Were it not for ~ は If it were not for ~ の倒置形"
+    },
+    {
+      "id": "s800-207",
+      "ja": "彼の助言がなかったら、私は同じ失敗を繰り返していたでしょう。",
+      "en": "But for his advice, I would have repeated the same mistake.",
+      "theme": "daily",
+      "tips": "But for ~ で「~がなかったら」という仮定を表す"
+    },
+    {
+      "id": "s800-208",
+      "ja": "万一気が変わったら、いつでもご連絡ください。",
+      "en": "Should you change your mind, please contact me at any time.",
+      "theme": "daily",
+      "tips": "Should you ~ は If you should ~ の倒置で万一の可能性を表す"
+    },
+    {
+      "id": "s800-209",
+      "ja": "私は自転車にすら乗れません、ましてバイクなど無理です。",
+      "en": "I can't even ride a bicycle, let alone a motorcycle.",
+      "theme": "daily",
+      "tips": "let alone ~ で「まして~ない」と否定を重ねる"
+    },
+    {
+      "id": "s800-210",
+      "ja": "彼は自分の名前も書けず、まして手紙などとても無理でした。",
+      "en": "He couldn't write his own name, much less a whole letter.",
+      "theme": "daily",
+      "tips": "much less ~ も否定文の後で「まして~ない」を表す"
+    },
+    {
+      "id": "s800-211",
+      "ja": "その店は料理がおいしく、雰囲気も言うまでもなく最高です。",
+      "en": "The food there is delicious, not to mention the wonderful atmosphere.",
+      "theme": "daily",
+      "tips": "not to mention ~ で「~は言うまでもなく」"
+    },
+    {
+      "id": "s800-212",
+      "ja": "航空券だけでも高いのに、宿泊費は言うまでもありません。",
+      "en": "The airfare alone is expensive, to say nothing of the hotel.",
+      "theme": "daily",
+      "tips": "to say nothing of ~ で「~は言うに及ばず」"
+    },
+    {
+      "id": "s800-213",
+      "ja": "彼が忙しいと知っていたので、その心遣いがなおさらうれしかった。",
+      "en": "Knowing how busy he was made his kindness all the more welcome.",
+      "theme": "daily",
+      "tips": "all the more ~ で「それだけいっそう~」と理由を受けて強調する"
+    },
+    {
+      "id": "s800-214",
+      "ja": "すっかり疲れていましたが、それでも最後まで走り切りました。",
+      "en": "I was completely exhausted; nonetheless, I ran all the way to the finish.",
+      "theme": "daily",
+      "tips": "nonetheless は「それにもかかわらず」を表す副詞"
+    },
+    {
+      "id": "s800-215",
+      "ja": "彼はそんなことを言うような人ではありません。",
+      "en": "He is the last person to say something like that.",
+      "theme": "daily",
+      "tips": "the last person to do で「最も~しそうにない人」"
+    },
+    {
+      "id": "s800-216",
+      "ja": "その説明は納得できるどころか、かえって混乱を招きました。",
+      "en": "The explanation was far from convincing and only caused confusion.",
+      "theme": "daily",
+      "tips": "far from ~ で「~どころではない、決して~でない」"
+    },
+    {
+      "id": "s800-217",
+      "ja": "そのレストランは私たちが行った晩、静かどころではありませんでした。",
+      "en": "The restaurant was anything but quiet on the evening we visited.",
+      "theme": "daily",
+      "tips": "anything but ~ で「決して~でない」"
+    },
+    {
+      "id": "s800-218",
+      "ja": "この問題を解くのは見た目ほど簡単ではまったくありません。",
+      "en": "Solving this problem is by no means as easy as it looks.",
+      "theme": "daily",
+      "tips": "by no means ~ で「決して~ない」と強い否定を表す"
+    },
+    {
+      "id": "s800-219",
+      "ja": "どんな事情があっても子どもだけで留守番はさせません。",
+      "en": "Under no circumstances do I leave the children home alone.",
+      "theme": "daily",
+      "tips": "Under no circumstances が文頭に来ると主節が倒置される"
+    },
+    {
+      "id": "s800-220",
+      "ja": "彼はわずか1か月で10キロも体重を減らしました。",
+      "en": "He lost no less than ten kilos in a single month.",
+      "theme": "daily",
+      "tips": "no less than ~ で「~も(の多さ)」と量の多さを強調する"
+    },
+    {
+      "id": "s800-221",
+      "ja": "週末は家族と過ごすほかに予定はありません。",
+      "en": "I have no plans other than spending the weekend with my family.",
+      "theme": "daily",
+      "tips": "other than ~ で「~以外に」"
+    },
+    {
+      "id": "s800-222",
+      "ja": "都会の暮らしとは対照的に、田舎の生活が私には合っています。",
+      "en": "Country life suits me better, as opposed to living in a city.",
+      "theme": "daily",
+      "tips": "as opposed to ~ で「~とは対照的に」"
+    },
+    {
+      "id": "s800-223",
+      "ja": "彼がまだ初心者であることを考えれば、たいしたものです。",
+      "en": "Given that he is still a beginner, he did remarkably well.",
+      "theme": "daily",
+      "tips": "given that ~ で「~を考慮すると」"
+    },
+    {
+      "id": "s800-224",
+      "ja": "確かに費用はかかりますが、それだけの価値はあります。",
+      "en": "Granted that it costs a lot, the experience is still worth it.",
+      "theme": "daily",
+      "tips": "granted that ~ で「なるほど~だが」と譲歩を表す"
+    },
+    {
+      "id": "s800-225",
+      "ja": "子どもたちが独立した今、家が急に広く感じます。",
+      "en": "Now that the children have moved out, the house feels empty.",
+      "theme": "daily",
+      "tips": "now that ~ で「今や~だから」と理由を表す"
+    },
+    {
+      "id": "s800-226",
+      "ja": "もう遅くなってきたので、そろそろお暇します。",
+      "en": "Seeing that it's getting late, I should be heading home.",
+      "theme": "daily",
+      "tips": "seeing that ~ で「~であることを考えると」"
+    },
+    {
+      "id": "s800-227",
+      "ja": "その二つは片方が高いという点だけが異なります。",
+      "en": "The two differ only in that one costs more than the other.",
+      "theme": "daily",
+      "tips": "in that ~ で「~という点で」"
+    },
+    {
+      "id": "s800-228",
+      "ja": "彼は声が出なくなるほど大声で応援していました。",
+      "en": "He cheered to the extent that he completely lost his voice.",
+      "theme": "daily",
+      "tips": "to the extent that ~ で「~するほどまでに」"
+    },
+    {
+      "id": "s800-229",
+      "ja": "私に関して言えば、その計画に不満はありません。",
+      "en": "As far as I'm concerned, I have no complaints about the plan.",
+      "theme": "daily",
+      "tips": "as far as I'm concerned で「私に関する限り」"
+    },
+    {
+      "id": "s800-230",
+      "ja": "窓を開けたまま寝てしまい、風邪をひきました。",
+      "en": "I fell asleep with the window open and caught a cold.",
+      "theme": "daily",
+      "tips": "with + 名詞 + 形容詞/分詞で付帯状況「~したまま」を表す"
+    },
+    {
+      "id": "s800-231",
+      "ja": "一度その道を通っていたので、迷わずにたどり着けました。",
+      "en": "Having taken that road once before, I got there without getting lost.",
+      "theme": "daily",
+      "tips": "Having + 過去分詞は主節より前の出来事を表す完了分詞構文"
+    },
+    {
+      "id": "s800-232",
+      "ja": "天気さえよければ、明日の朝は海まで自転車で行きます。",
+      "en": "Weather permitting, we'll cycle to the coast tomorrow morning.",
+      "theme": "daily",
+      "tips": "Weather permitting は主語を伴う独立分詞構文の慣用表現"
+    },
+    {
+      "id": "s800-233",
+      "ja": "反対する人がいなかったので、その案はすぐに決まりました。",
+      "en": "There being no objections, the plan was decided right away.",
+      "theme": "daily",
+      "tips": "There being ~ は there is 構文の分詞構文形"
+    },
+    {
+      "id": "s800-234",
+      "ja": "健康が何より大切なのは言うまでもありません。",
+      "en": "It goes without saying that health matters more than anything else.",
+      "theme": "daily",
+      "tips": "It goes without saying that ~ で「~は言うまでもない」"
+    },
+    {
+      "id": "s800-235",
+      "ja": "彼が次に何を言い出すか見当もつきません。",
+      "en": "There is no telling what he will say next.",
+      "theme": "daily",
+      "tips": "There is no ~ing で「~することはできない」"
+    },
+    {
+      "id": "s800-236",
+      "ja": "私たちは家族がいつもそばにいることを当たり前だと思いがちです。",
+      "en": "We often take it for granted that our family will always be there.",
+      "theme": "daily",
+      "tips": "take it for granted that ~ で「~を当然のことと思う」"
+    },
+    {
+      "id": "s800-237",
+      "ja": "彼女はようやく祖父の死を受け入れられるようになりました。",
+      "en": "She has finally come to terms with her grandfather's death.",
+      "theme": "daily",
+      "tips": "come to terms with ~ で「~を受け入れる、折り合いをつける」"
+    },
+    {
+      "id": "s800-238",
+      "ja": "長年の夜勤が父の体にこたえてきました。",
+      "en": "Years of night shifts have taken their toll on my father's health.",
+      "theme": "daily",
+      "tips": "take a toll on ~ で「~に打撃を与える、悪影響を及ぼす」"
+    },
+    {
+      "id": "s800-239",
+      "ja": "新しい部屋に引っ越す計画は結局立ち消えになりました。",
+      "en": "Our plan to move to a new apartment fell through.",
+      "theme": "daily",
+      "tips": "fall through で「(計画が)だめになる」"
+    },
+    {
+      "id": "s800-240",
+      "ja": "今年の貯金額は目標に少し届きませんでした。",
+      "en": "My savings this year fell a little short of my goal.",
+      "theme": "daily",
+      "tips": "fall short of ~ で「~に届かない、~を下回る」"
+    },
+    {
+      "id": "s800-241",
+      "ja": "その映画は前評判ほどのものではありませんでした。",
+      "en": "The movie didn't quite live up to all the hype.",
+      "theme": "daily",
+      "tips": "live up to ~ で「(期待などに)応える」"
+    },
+    {
+      "id": "s800-242",
+      "ja": "毎日練習すれば上達するのは当然のことです。",
+      "en": "It stands to reason that daily practice will make you better.",
+      "theme": "daily",
+      "tips": "It stands to reason that ~ で「~なのは理の当然だ」"
+    },
+    {
+      "id": "s800-243",
+      "ja": "結局のところ、問題はお金と時間に行き着きます。",
+      "en": "In the end, it all boils down to money and time.",
+      "theme": "daily",
+      "tips": "boil down to ~ で「要するに~に帰着する」"
+    },
+    {
+      "id": "s800-244",
+      "ja": "今月の出費は合計で15万円になりました。",
+      "en": "My expenses this month amounted to 150,000 yen in total.",
+      "theme": "daily",
+      "tips": "amount to ~ で「合計~になる」"
+    },
+    {
+      "id": "s800-245",
+      "ja": "彼は私の忠告を軽く受け流しました。",
+      "en": "He brushed off my warning as if it meant nothing.",
+      "theme": "daily",
+      "tips": "brush off ~ で「~を軽くあしらう」"
+    },
+    {
+      "id": "s800-246",
+      "ja": "彼女はその批判を気にも留めずに進み続けました。",
+      "en": "She simply shrugged off the criticism and kept going.",
+      "theme": "daily",
+      "tips": "shrug off ~ で「~を意に介さない」"
+    },
+    {
+      "id": "s800-247",
+      "ja": "彼はその話の都合の悪い部分をさらっと流しました。",
+      "en": "He glossed over the inconvenient parts of the story.",
+      "theme": "daily",
+      "tips": "gloss over ~ で「~を都合よく取り繕う」"
+    },
+    {
+      "id": "s800-248",
+      "ja": "留学の前に英語をやり直すつもりです。",
+      "en": "I'm planning to brush up on my English before studying abroad.",
+      "theme": "daily",
+      "tips": "brush up on ~ で「~を学び直す」"
+    },
+    {
+      "id": "s800-249",
+      "ja": "迷ったときは安全なほうを選ぶようにしています。",
+      "en": "When in doubt, I try to err on the side of caution.",
+      "theme": "daily",
+      "tips": "err on the side of ~ で「~の方に偏っておく、念のため~にする」"
+    },
+    {
+      "id": "s800-250",
+      "ja": "彼は健康を犠牲にして仕事に打ち込みました。",
+      "en": "He devoted himself to work at the expense of his health.",
+      "theme": "daily",
+      "tips": "at the expense of ~ で「~を犠牲にして」"
+    },
+    {
+      "id": "s800-251",
+      "ja": "地震の後、多くの人が防災用品を買いそろえました。",
+      "en": "In the wake of the earthquake, many people stocked up on supplies.",
+      "theme": "daily",
+      "tips": "in the wake of ~ で「~の直後に、~の結果として」"
+    },
+    {
+      "id": "s800-252",
+      "ja": "新しい事実を踏まえて、私はすっかり考えを改めました。",
+      "en": "In light of the new facts, I changed my mind completely.",
+      "theme": "daily",
+      "tips": "in light of ~ で「~を踏まえて、~を考慮して」"
+    },
+    {
+      "id": "s800-253",
+      "ja": "彼は独立を視野に入れて勉強を始めました。",
+      "en": "He started studying with a view to starting his own business.",
+      "theme": "daily",
+      "tips": "with a view to ~ing で「~する目的で」"
+    },
+    {
+      "id": "s800-254",
+      "ja": "彼を起こしてしまうといけないので、私は静かに歩きました。",
+      "en": "I walked quietly for fear that I might wake him up.",
+      "theme": "daily",
+      "tips": "for fear that ~ で「~するといけないので」"
+    },
+    {
+      "id": "s800-255",
+      "ja": "彼女はその知らせを聞いて今にも泣き出しそうでした。",
+      "en": "She was on the verge of tears when she heard the news.",
+      "theme": "daily",
+      "tips": "on the verge of ~ で「今にも~しそうで」"
+    },
+    {
+      "id": "s800-256",
+      "ja": "彼女を見たとき、私は何と言えばよいか言葉に詰まりました。",
+      "en": "I was at a loss for words when I saw her.",
+      "theme": "daily",
+      "tips": "at a loss for words で「言葉に詰まって」"
+    },
+    {
+      "id": "s800-257",
+      "ja": "今にして思えば、あの申し出は断るべきでした。",
+      "en": "In hindsight, I should have turned the offer down.",
+      "theme": "daily",
+      "tips": "in hindsight で「あとから考えれば」"
+    },
+    {
+      "id": "s800-258",
+      "ja": "概して言えば、去年は私にとって満ち足りた一年でした。",
+      "en": "By and large, last year was a satisfying one for me.",
+      "theme": "daily",
+      "tips": "by and large で「概して、全体として」"
+    },
+    {
+      "id": "s800-259",
+      "ja": "何度も彼を説得しようとしましたが、無駄でした。",
+      "en": "I tried to persuade him many times, but to no avail.",
+      "theme": "daily",
+      "tips": "to no avail で「効果なく、むだに」"
+    },
+    {
+      "id": "s800-260",
+      "ja": "息子は誰に言われるでもなく片づけを始めました。",
+      "en": "My son started cleaning up of his own accord.",
+      "theme": "daily",
+      "tips": "of one's own accord で「自発的に、独りでに」"
+    },
+    {
+      "id": "s800-261",
+      "ja": "自転車に乗ることは今では体が覚えています。",
+      "en": "Riding a bicycle has become second nature to me.",
+      "theme": "daily",
+      "tips": "second nature で「第二の天性、身についた習慣」"
+    },
+    {
+      "id": "s800-262",
+      "ja": "今の暮らしは学生時代とはまるで違います。",
+      "en": "My life now is a far cry from my student days.",
+      "theme": "daily",
+      "tips": "a far cry from ~ で「~とは似ても似つかない」"
+    },
+    {
+      "id": "s800-263",
+      "ja": "あのとき不採用になったのは結果的に幸運でした。",
+      "en": "Not getting that job turned out to be a blessing in disguise.",
+      "theme": "daily",
+      "tips": "a blessing in disguise で「災い転じて福となるもの」"
+    },
+    {
+      "id": "s800-264",
+      "ja": "あの喧嘩はもう過ぎたことです。",
+      "en": "That argument is water under the bridge now.",
+      "theme": "daily",
+      "tips": "water under the bridge で「過ぎ去って取り返しのつかないこと」"
+    },
+    {
+      "id": "s800-265",
+      "ja": "手を抜くと結局あとで自分が高くつきます。",
+      "en": "If you cut corners, it will cost you more later.",
+      "theme": "daily",
+      "tips": "cut corners で「手を抜く、近道をする」"
+    },
+    {
+      "id": "s800-266",
+      "ja": "意を決して古い車をようやく買い替えました。",
+      "en": "I finally bit the bullet and replaced my old car.",
+      "theme": "daily",
+      "tips": "bite the bullet で「意を決して困難に立ち向かう」"
+    },
+    {
+      "id": "s800-267",
+      "ja": "明日の予定は成り行きで決めましょう。",
+      "en": "Let's just play it by ear tomorrow.",
+      "theme": "daily",
+      "tips": "play it by ear で「臨機応変にやる、成り行きに任せる」"
+    },
+    {
+      "id": "s800-268",
+      "ja": "彼は直前になって怖気づいてしまいました。",
+      "en": "He got cold feet at the very last moment.",
+      "theme": "daily",
+      "tips": "get cold feet で「怖じ気づく、しりごみする」"
+    },
+    {
+      "id": "s800-269",
+      "ja": "今さら言い訳をしても意味がありません。",
+      "en": "There's no point in making excuses at this stage.",
+      "theme": "daily",
+      "tips": "There's no point in ~ing で「~しても意味がない」"
+    },
+    {
+      "id": "s800-270",
+      "ja": "子どものころ、祖母がよく昔話をしてくれました。",
+      "en": "My grandmother would often tell me old stories when I was a child.",
+      "theme": "daily",
+      "tips": "would often で過去の反復的な習慣を表す"
+    },
+    {
+      "id": "s800-271",
+      "ja": "徹底的に検証して初めて本当の原因を特定できます。",
+      "en": "Only by testing thoroughly can we identify the real cause of the failure.",
+      "theme": "business",
+      "tips": "Only by ~ing を文頭に置くと主節が倒置される"
+    },
+    {
+      "id": "s800-272",
+      "ja": "彼は納期を守っただけでなく、コストも大幅に削減しました。",
+      "en": "Not only did he meet the deadline, but he also cut costs significantly.",
+      "theme": "business",
+      "tips": "Not only を文頭に出すと主節が疑問文の語順になる"
+    },
+    {
+      "id": "s800-273",
+      "ja": "反響があまりに大きかったので、すぐに増産を決めました。",
+      "en": "So strong was the response that we decided to increase production immediately.",
+      "theme": "business",
+      "tips": "So + 形容詞 + be動詞 + S の倒置で程度を強調する"
+    },
+    {
+      "id": "s800-274",
+      "ja": "彼の準備が徹底していたので、誰も質問しませんでした。",
+      "en": "Such was the thoroughness of his preparation that nobody had any questions.",
+      "theme": "business",
+      "tips": "Such was ~ that... の倒置構文で程度を強調する"
+    },
+    {
+      "id": "s800-275",
+      "ja": "いかなる場合も顧客情報を社外に出してはなりません。",
+      "en": "On no account should customer data be shared outside the company.",
+      "theme": "business",
+      "tips": "On no account が文頭に来ると主節が倒置される"
+    },
+    {
+      "id": "s800-276",
+      "ja": "今回の遅延は当社の責任ではまったくありません。",
+      "en": "In no way is our company responsible for the delay this time.",
+      "theme": "business",
+      "tips": "In no way を文頭に出すと倒置が起こる"
+    },
+    {
+      "id": "s800-277",
+      "ja": "彼が定例会議で発言することはめったにありません。",
+      "en": "Rarely does he speak up during our weekly management meetings.",
+      "theme": "business",
+      "tips": "Rarely を文頭に置くと do/does を用いた倒置になる"
+    },
+    {
+      "id": "s800-278",
+      "ja": "上層部がその種の提案を承認することはめったにありません。",
+      "en": "Seldom do the executives approve a proposal of that kind.",
+      "theme": "business",
+      "tips": "Seldom も文頭で倒置を伴う頻度の否定語"
+    },
+    {
+      "id": "s800-279",
+      "ja": "20社もの企業がこの入札に参加しました。",
+      "en": "No fewer than twenty companies took part in this bidding process.",
+      "theme": "business",
+      "tips": "no fewer than ~ で「~もの数の」と可算名詞の多さを強調する"
+    },
+    {
+      "id": "s800-280",
+      "ja": "準備はほぼ整いましたが、最終確認が残っています。",
+      "en": "The preparations are all but complete, though the final check remains.",
+      "theme": "business",
+      "tips": "all but ~ で「ほとんど~」を表す"
+    },
+    {
+      "id": "s800-281",
+      "ja": "どちらかと言えば、こちらの案のほうが現実的です。",
+      "en": "If anything, this plan is the more realistic of the two.",
+      "theme": "business",
+      "tips": "If anything で「どちらかと言えば」"
+    },
+    {
+      "id": "s800-282",
+      "ja": "この種の交渉はたいてい何か月も長引きます。",
+      "en": "More often than not, negotiations of this kind drag on for months.",
+      "theme": "business",
+      "tips": "more often than not で「たいてい、大半の場合」"
+    },
+    {
+      "id": "s800-283",
+      "ja": "その報告書はおおむね正確でよくまとまっていました。",
+      "en": "The report was, for the most part, accurate and well organized.",
+      "theme": "business",
+      "tips": "for the most part で「大部分は、概して」"
+    },
+    {
+      "id": "s800-284",
+      "ja": "今回の成功は彼の粘り強さによるところが大きい。",
+      "en": "This success is due to his persistence to a large extent.",
+      "theme": "business",
+      "tips": "to a large extent で「大部分は、かなりの程度」"
+    },
+    {
+      "id": "s800-285",
+      "ja": "長年の実績によって当社はその契約を勝ち取りました。",
+      "en": "We won the contract by virtue of our long track record.",
+      "theme": "business",
+      "tips": "by virtue of ~ で「~のおかげで、~によって」"
+    },
+    {
+      "id": "s800-286",
+      "ja": "原材料費の高騰により価格を改定せざるを得ません。",
+      "en": "Owing to soaring material costs, we must revise our prices.",
+      "theme": "business",
+      "tips": "owing to ~ で「~のせいで」と原因を表す"
+    },
+    {
+      "id": "s800-287",
+      "ja": "深刻なシステム障害のため受注を一時停止しました。",
+      "en": "We suspended orders on account of a serious system failure.",
+      "theme": "business",
+      "tips": "on account of ~ で「~の理由で」"
+    },
+    {
+      "id": "s800-288",
+      "ja": "市場の状況を考えると、投資はより慎重に行うべきです。",
+      "en": "In view of market conditions, we should invest more cautiously.",
+      "theme": "business",
+      "tips": "in view of ~ で「~を考慮すると」"
+    },
+    {
+      "id": "s800-289",
+      "ja": "保証の範囲については契約書の第5条をご覧ください。",
+      "en": "With regard to the warranty, please see Article 5 of the contract.",
+      "theme": "business",
+      "tips": "with regard to ~ で「~に関して」"
+    },
+    {
+      "id": "s800-290",
+      "ja": "作業はすべて安全基準に従って行われました。",
+      "en": "The work was carried out in accordance with the safety standards.",
+      "theme": "business",
+      "tips": "in accordance with ~ で「~に従って」"
+    },
+    {
+      "id": "s800-291",
+      "ja": "当社の手続きは新しい規制に準拠しています。",
+      "en": "Our procedures are in compliance with the new regulations.",
+      "theme": "business",
+      "tips": "in compliance with ~ で「~を遵守して」"
+    },
+    {
+      "id": "s800-292",
+      "ja": "価格は予告なく変更される場合があります。",
+      "en": "Prices are subject to change without prior notice.",
+      "theme": "business",
+      "tips": "be subject to ~ で「~を受ける可能性がある」"
+    },
+    {
+      "id": "s800-293",
+      "ja": "契約の締結は取締役会の承認を条件とします。",
+      "en": "Signing the contract is contingent on approval from the board.",
+      "theme": "business",
+      "tips": "be contingent on ~ で「~を条件とする、~次第である」"
+    },
+    {
+      "id": "s800-294",
+      "ja": "この方針は業界の一般的な慣行に沿ったものです。",
+      "en": "This policy is in line with common practice in our industry.",
+      "theme": "business",
+      "tips": "in line with ~ で「~に沿って、~と一致して」"
+    },
+    {
+      "id": "s800-295",
+      "ja": "不測の問題がなければ、来月には出荷できます。",
+      "en": "Barring any unexpected problems, we can ship the goods next month.",
+      "theme": "business",
+      "tips": "barring ~ で「~がなければ」という前置詞用法"
+    },
+    {
+      "id": "s800-296",
+      "ja": "それがだめなら、次の案に切り替えます。",
+      "en": "Failing that, we will switch to our second option.",
+      "theme": "business",
+      "tips": "Failing that で「それがうまくいかなければ」"
+    },
+    {
+      "id": "s800-297",
+      "ja": "大幅な値下げでもしない限り、契約は取れないでしょう。",
+      "en": "Short of a major price cut, we are unlikely to win the contract.",
+      "theme": "business",
+      "tips": "short of ~ で「~でもしない限り」"
+    },
+    {
+      "id": "s800-298",
+      "ja": "誤解が生じないよう、要点を文書にまとめました。",
+      "en": "I put the main points in writing lest there be any misunderstanding.",
+      "theme": "business",
+      "tips": "lest S (should) 原形で「~しないように」"
+    },
+    {
+      "id": "s800-299",
+      "ja": "私の知る限りでは、その方針はまだ変わっていません。",
+      "en": "Insofar as I know, that policy has not changed yet.",
+      "theme": "business",
+      "tips": "insofar as ~ で「~する限りにおいて」"
+    },
+    {
+      "id": "s800-300",
+      "ja": "反対があったにもかかわらず、計画は予定通り進みました。",
+      "en": "Notwithstanding the objections, the project moved ahead as planned.",
+      "theme": "business",
+      "tips": "notwithstanding ~ で「~にもかかわらず」"
+    },
+    {
+      "id": "s800-301",
+      "ja": "その提案は興味深いものの、早期の実現は困難です。",
+      "en": "The proposal is interesting, albeit difficult to realize quickly.",
+      "theme": "business",
+      "tips": "albeit ~ で「~ではあるが」と簡潔に譲歩する"
+    },
+    {
+      "id": "s800-302",
+      "ja": "これは複数の部署が同時に作業できる仕組みです。",
+      "en": "This is a system whereby several departments can work at once.",
+      "theme": "business",
+      "tips": "whereby ~ で「それによって~する」という関係副詞"
+    },
+    {
+      "id": "s800-303",
+      "ja": "工程を自動化し、それによって人件費を大幅に削減しました。",
+      "en": "We automated the process, thereby reducing our labor costs considerably.",
+      "theme": "business",
+      "tips": "thereby ~ing で「それによって~する」と結果を示す"
+    },
+    {
+      "id": "s800-304",
+      "ja": "需要が落ちているので、在庫を減らす必要があります。",
+      "en": "Demand is falling; hence we need to reduce our inventory.",
+      "theme": "business",
+      "tips": "hence は「したがって」と結論を導く副詞"
+    },
+    {
+      "id": "s800-305",
+      "ja": "予算が削られたので、それに応じて計画を修正しました。",
+      "en": "The budget was cut, so we revised the plan accordingly.",
+      "theme": "business",
+      "tips": "accordingly で「それに応じて」"
+    },
+    {
+      "id": "s800-306",
+      "ja": "国内売上は伸びましたが、逆に海外は大きく落ち込みました。",
+      "en": "Domestic sales rose; conversely, overseas sales dropped sharply this quarter.",
+      "theme": "business",
+      "tips": "conversely で「逆に、反対に」と対比する"
+    },
+    {
+      "id": "s800-307",
+      "ja": "あるいは、外部の業者に委託することもできます。",
+      "en": "Alternatively, we could outsource the work to an external vendor.",
+      "theme": "business",
+      "tips": "alternatively で「あるいは、代わりに」と別案を示す"
+    },
+    {
+      "id": "s800-308",
+      "ja": "それまでの間は現行の手順を続けてください。",
+      "en": "In the meantime, please continue to follow the current procedure.",
+      "theme": "business",
+      "tips": "in the meantime で「その間、それまでは」"
+    },
+    {
+      "id": "s800-309",
+      "ja": "彼は着任したばかりなので、判断は保留すべきです。",
+      "en": "He is new here, and as such we should reserve judgment.",
+      "theme": "business",
+      "tips": "as such で「そういうものとして、したがって」"
+    },
+    {
+      "id": "s800-310",
+      "ja": "その数字は正しいのですが、とはいえ説明が必要です。",
+      "en": "The figures are correct; that said, they still need explaining.",
+      "theme": "business",
+      "tips": "that said で「とはいうものの」"
+    },
+    {
+      "id": "s800-311",
+      "ja": "まず第一に、我々には十分な人員がいません。",
+      "en": "For one thing, we simply do not have enough people available.",
+      "theme": "business",
+      "tips": "for one thing で「一つには」と理由を列挙し始める"
+    },
+    {
+      "id": "s800-312",
+      "ja": "その目的のために専任チームを立ち上げました。",
+      "en": "To that end, we have formed a dedicated project team.",
+      "theme": "business",
+      "tips": "to that end で「その目的のために」"
+    },
+    {
+      "id": "s800-313",
+      "ja": "その点を念頭に置いて、日程を一から組み直しました。",
+      "en": "With that in mind, we rebuilt the entire project schedule.",
+      "theme": "business",
+      "tips": "with that in mind で「それを念頭に置いて」"
+    },
+    {
+      "id": "s800-314",
+      "ja": "予算には厳しい制約があることを念頭に置いてください。",
+      "en": "Please bear in mind that our budget is strictly limited.",
+      "theme": "business",
+      "tips": "bear in mind that ~ で「~を心に留めておく」"
+    },
+    {
+      "id": "s800-315",
+      "ja": "為替の変動も考慮に入れる必要があります。",
+      "en": "We need to take exchange rate fluctuations into account as well.",
+      "theme": "business",
+      "tips": "take ~ into account で「~を考慮に入れる」"
+    },
+    {
+      "id": "s800-316",
+      "ja": "最終価格を決める前に輸送費も計算に入れるべきです。",
+      "en": "We should factor in transportation costs before setting the final price.",
+      "theme": "business",
+      "tips": "factor in ~ で「~を要因として計算に入れる」"
+    },
+    {
+      "id": "s800-317",
+      "ja": "その可能性はまだ完全には排除できません。",
+      "en": "We cannot completely rule out that possibility just yet.",
+      "theme": "business",
+      "tips": "rule out ~ で「~を除外する、可能性を排除する」"
+    },
+    {
+      "id": "s800-318",
+      "ja": "その投資は損失として処理することにしました。",
+      "en": "We decided to write off the investment as a total loss.",
+      "theme": "business",
+      "tips": "write off ~ で「~を損失として計上する、見切りをつける」"
+    },
+    {
+      "id": "s800-319",
+      "ja": "売上減の半分は円安で説明がつきます。",
+      "en": "The weaker yen accounts for half of the drop in sales.",
+      "theme": "business",
+      "tips": "account for ~ で「~の割合を占める、~を説明する」"
+    },
+    {
+      "id": "s800-320",
+      "ja": "この案件の成否は先方の資金調達にかかっています。",
+      "en": "This deal hinges on whether the client can secure funding.",
+      "theme": "business",
+      "tips": "hinge on ~ で「~次第である、~にかかっている」"
+    },
+    {
+      "id": "s800-321",
+      "ja": "大口顧客1社だけを当てにするのは危険です。",
+      "en": "It is risky to bank on a single major client.",
+      "theme": "business",
+      "tips": "bank on ~ で「~を当てにする」"
+    },
+    {
+      "id": "s800-322",
+      "ja": "私は納期の前倒しに強く異議を唱えました。",
+      "en": "I pushed back hard on moving the deadline forward.",
+      "theme": "business",
+      "tips": "push back on ~ で「~に異議を唱える、抵抗する」"
+    },
+    {
+      "id": "s800-323",
+      "ja": "最終版には部長の承認が必要です。",
+      "en": "The manager has to sign off on the final version.",
+      "theme": "business",
+      "tips": "sign off on ~ で「~を承認する」"
+    },
+    {
+      "id": "s800-324",
+      "ja": "彼は決めたことを必ず最後までやり遂げます。",
+      "en": "He always follows through on what he has decided to do.",
+      "theme": "business",
+      "tips": "follow through on ~ で「~を最後までやり通す」"
+    },
+    {
+      "id": "s800-325",
+      "ja": "その件は来週の会議であらためて取り上げましょう。",
+      "en": "Let's circle back to that issue at next week's meeting.",
+      "theme": "business",
+      "tips": "circle back to ~ で「~の話に戻る」"
+    },
+    {
+      "id": "s800-326",
+      "ja": "進捗の確認のため金曜に一度ご連絡します。",
+      "en": "I'll touch base with you on Friday to check the progress.",
+      "theme": "business",
+      "tips": "touch base with ~ で「~と連絡を取る」"
+    },
+    {
+      "id": "s800-327",
+      "ja": "契約の細かい条件を詰める必要があります。",
+      "en": "We still need to iron out the details of the contract.",
+      "theme": "business",
+      "tips": "iron out ~ で「(問題点を)解決する、調整する」"
+    },
+    {
+      "id": "s800-328",
+      "ja": "両社で合意案をまとめるのに3日かかりました。",
+      "en": "It took three days to hammer out an agreement between the companies.",
+      "theme": "business",
+      "tips": "hammer out ~ で「(協議して)~をまとめ上げる」"
+    },
+    {
+      "id": "s800-329",
+      "ja": "その企画案をもっと具体的に肉付けしてください。",
+      "en": "Please flesh out the proposal with more concrete examples.",
+      "theme": "business",
+      "tips": "flesh out ~ で「~を肉付けする、具体化する」"
+    },
+    {
+      "id": "s800-330",
+      "ja": "来期の戦略を今まさに練り上げているところです。",
+      "en": "We are mapping out our strategy for the next fiscal year.",
+      "theme": "business",
+      "tips": "map out ~ で「~を綿密に計画する」"
+    },
+    {
+      "id": "s800-331",
+      "ja": "新システムは全国の支店に順次導入されます。",
+      "en": "The new system will be rolled out to all branches gradually.",
+      "theme": "business",
+      "tips": "roll out ~ で「~を段階的に展開する」"
+    },
+    {
+      "id": "s800-332",
+      "ja": "旧型モデルは年内に段階的に生産を終えます。",
+      "en": "We will phase out the older model by the end of this year.",
+      "theme": "business",
+      "tips": "phase out ~ で「~を段階的に廃止する」"
+    },
+    {
+      "id": "s800-333",
+      "ja": "業績不振により海外事業を縮小することにしました。",
+      "en": "Poor results forced us to scale back our overseas operations.",
+      "theme": "business",
+      "tips": "scale back ~ で「~を縮小する」"
+    },
+    {
+      "id": "s800-334",
+      "ja": "需要の急増を受けて生産を一気に増強しました。",
+      "en": "We ramped up production in response to the sudden surge in demand.",
+      "theme": "business",
+      "tips": "ramp up ~ で「~を急速に増強する」"
+    },
+    {
+      "id": "s800-335",
+      "ja": "彼は批判にもかかわらず自説をさらに押し通しました。",
+      "en": "He doubled down on his position despite all the criticism.",
+      "theme": "business",
+      "tips": "double down on ~ で「~にさらに固執する」"
+    },
+    {
+      "id": "s800-336",
+      "ja": "安全性は納期を守ることより優先されます。",
+      "en": "Safety takes precedence over meeting the delivery schedule.",
+      "theme": "business",
+      "tips": "take precedence over ~ で「~より優先される」"
+    },
+    {
+      "id": "s800-337",
+      "ja": "その新サービスはようやく市場に浸透してきました。",
+      "en": "The new service is finally gaining traction in the market.",
+      "theme": "business",
+      "tips": "gain traction で「勢いを得る、浸透し始める」"
+    },
+    {
+      "id": "s800-338",
+      "ja": "長年の研究がようやく実を結び始めました。",
+      "en": "Years of research have finally begun to bear fruit.",
+      "theme": "business",
+      "tips": "bear fruit で「実を結ぶ、成果が出る」"
+    },
+    {
+      "id": "s800-339",
+      "ja": "この部署では実質的に彼が実権を握っています。",
+      "en": "In this department, he is the one who calls the shots.",
+      "theme": "business",
+      "tips": "call the shots で「実権を握る、采配を振るう」"
+    },
+    {
+      "id": "s800-340",
+      "ja": "まずは小規模な試験から着手しましょう。",
+      "en": "Let's get the ball rolling with a small pilot test.",
+      "theme": "business",
+      "tips": "get the ball rolling で「物事を始動させる」"
+    },
+    {
+      "id": "s800-341",
+      "ja": "早く予約していれば、今ごろは海辺でくつろいでいたでしょう。",
+      "en": "Had we booked earlier, we would have been relaxing by the sea now.",
+      "theme": "travel",
+      "tips": "would have been ~ing で仮定法過去完了の進行形を表す"
+    },
+    {
+      "id": "s800-342",
+      "ja": "彼はまるで何度も来たことがあるかのように街を案内してくれました。",
+      "en": "He showed us around as though he had visited the city many times.",
+      "theme": "travel",
+      "tips": "as though + 過去完了で「まるで~したかのように」"
+    },
+    {
+      "id": "s800-343",
+      "ja": "大雪やら遅延やらで、到着は真夜中になりました。",
+      "en": "What with the heavy snow and the delays, we arrived at midnight.",
+      "theme": "travel",
+      "tips": "What with A and B で「AやらBやらで」と原因を並べる"
+    },
+    {
+      "id": "s800-344",
+      "ja": "その店まで歩いて行ったのに、閉まっていました。",
+      "en": "We walked all the way to the shop, only to find it closed.",
+      "theme": "travel",
+      "tips": "only to find ~ で「~だとわかっただけだった」と残念な結末を表す"
+    },
+    {
+      "id": "s800-345",
+      "ja": "何があってもこの旅行は決行します。",
+      "en": "No matter what happens, we are going on this trip.",
+      "theme": "travel",
+      "tips": "No matter what ~ で「何が~しようとも」"
+    },
+    {
+      "id": "s800-346",
+      "ja": "何が起ころうとも、明日の朝早くに出発します。",
+      "en": "Come what may, we will set out early tomorrow morning.",
+      "theme": "travel",
+      "tips": "Come what may で「何が起ころうとも」という慣用表現"
+    },
+    {
+      "id": "s800-347",
+      "ja": "言葉が通じない苦労はあったが、旅はすばらしかった。",
+      "en": "For all the language problems, the trip was still wonderful.",
+      "theme": "travel",
+      "tips": "For all ~ で「~にもかかわらず」という譲歩を表す"
+    },
+    {
+      "id": "s800-348",
+      "ja": "驚いたことに、その小さな宿は満室でした。",
+      "en": "Much to my surprise, the tiny inn was completely full.",
+      "theme": "travel",
+      "tips": "Much to one's surprise で「~が非常に驚いたことに」"
+    },
+    {
+      "id": "s800-349",
+      "ja": "さらに悪いことに、電車で財布を失くしてしまいました。",
+      "en": "To make matters worse, I lost my wallet on the train.",
+      "theme": "travel",
+      "tips": "To make matters worse で「さらに悪いことに」"
+    },
+    {
+      "id": "s800-350",
+      "ja": "その宿は安く、しかも駅から歩いてすぐでした。",
+      "en": "The inn was cheap; what is more, it was near the station.",
+      "theme": "travel",
+      "tips": "what is more で「そのうえ、さらに」"
+    },
+    {
+      "id": "s800-351",
+      "ja": "運のいいことに、最後の1席がまだ空いていました。",
+      "en": "As luck would have it, one last seat was still available.",
+      "theme": "travel",
+      "tips": "As luck would have it で「運よく(運悪く)」"
+    },
+    {
+      "id": "s800-352",
+      "ja": "結果的にその回り道が一番の思い出になりました。",
+      "en": "As it turned out, that detour became the best memory of all.",
+      "theme": "travel",
+      "tips": "As it turned out で「結果的には」"
+    },
+    {
+      "id": "s800-353",
+      "ja": "私たちが着いたころには、祭りはもう終わっていました。",
+      "en": "By the time we arrived, the festival had already ended.",
+      "theme": "travel",
+      "tips": "By the time ~ の主節にはしばしば過去完了が来る"
+    },
+    {
+      "id": "s800-354",
+      "ja": "その景色を見た瞬間、来てよかったと思いました。",
+      "en": "The moment I saw that view, I knew the trip was worth it.",
+      "theme": "travel",
+      "tips": "The moment S V ~ は「~した瞬間に」という接続詞として働く"
+    },
+    {
+      "id": "s800-355",
+      "ja": "電車を降りた瞬間、潮の香りがしました。",
+      "en": "The instant I stepped off the train, I smelled the sea.",
+      "theme": "travel",
+      "tips": "The instant S V ~ も「~するやいなや」を表す接続詞"
+    },
+    {
+      "id": "s800-356",
+      "ja": "地元の食堂は有名店に勝るとも劣りませんでした。",
+      "en": "The local diner was every bit as good as the famous restaurant.",
+      "theme": "travel",
+      "tips": "every bit as ~ as... で「まったく…と同じくらい~」"
+    },
+    {
+      "id": "s800-357",
+      "ja": "写真は実際の景色の美しさには遠く及びません。",
+      "en": "The photos come nowhere near the beauty of the real view.",
+      "theme": "travel",
+      "tips": "nowhere near ~ で「~には遠く及ばない」"
+    },
+    {
+      "id": "s800-358",
+      "ja": "山頂からの眺めはまさに絶景でした。",
+      "en": "The view from the summit was nothing short of spectacular.",
+      "theme": "travel",
+      "tips": "nothing short of ~ で「まさに~にほかならない」"
+    },
+    {
+      "id": "s800-359",
+      "ja": "あの人気ぶりでは、値上げも時間の問題でしょう。",
+      "en": "With that popularity, a price rise is only a matter of time.",
+      "theme": "travel",
+      "tips": "a matter of time で「時間の問題」"
+    },
+    {
+      "id": "s800-360",
+      "ja": "長い回り道をしてでも訪れる価値のある町でした。",
+      "en": "The town was worth our while even with the long detour.",
+      "theme": "travel",
+      "tips": "worth one's while で「時間を割く価値がある」"
+    },
+    {
+      "id": "s800-361",
+      "ja": "その村は観光地から外れた静かな場所にあります。",
+      "en": "The village lies quietly off the beaten track.",
+      "theme": "travel",
+      "tips": "off the beaten track で「人があまり行かない場所に」"
+    },
+    {
+      "id": "s800-362",
+      "ja": "旅の途中で突然、昔の友人から連絡がありました。",
+      "en": "An old friend contacted me out of the blue during the trip.",
+      "theme": "travel",
+      "tips": "out of the blue で「思いがけなく、突然に」"
+    },
+    {
+      "id": "s800-363",
+      "ja": "バスが故障し、私たちは人里離れた場所で立ち往生しました。",
+      "en": "The bus broke down and left us in the middle of nowhere.",
+      "theme": "travel",
+      "tips": "in the middle of nowhere で「人里離れた場所に」"
+    },
+    {
+      "id": "s800-364",
+      "ja": "山では天候に左右されるので装備が重要です。",
+      "en": "In the mountains you are at the mercy of the weather.",
+      "theme": "travel",
+      "tips": "at the mercy of ~ で「~のなすがままに」"
+    },
+    {
+      "id": "s800-365",
+      "ja": "急な話でしたが、なんとか宿を確保できました。",
+      "en": "We found a room at short notice without much trouble.",
+      "theme": "travel",
+      "tips": "at short notice で「急な知らせで、直前に」"
+    },
+    {
+      "id": "s800-366",
+      "ja": "滞在中はずっと車を自由に使わせてもらえました。",
+      "en": "We had a car at our disposal during the entire stay.",
+      "theme": "travel",
+      "tips": "at one's disposal で「自由に使える状態で」"
+    },
+    {
+      "id": "s800-367",
+      "ja": "ぎりぎりのところで最終列車に間に合いました。",
+      "en": "We caught the last train in the nick of time.",
+      "theme": "travel",
+      "tips": "in the nick of time で「ぎりぎり間に合って」"
+    },
+    {
+      "id": "s800-368",
+      "ja": "わずかの差で乗り継ぎ便に間に合いました。",
+      "en": "We made our connecting flight by a narrow margin.",
+      "theme": "travel",
+      "tips": "by a narrow margin で「わずかの差で」"
+    },
+    {
+      "id": "s800-369",
+      "ja": "悪条件にもかかわらず、日没前に山頂に着きました。",
+      "en": "Against all odds, we reached the summit before sunset.",
+      "theme": "travel",
+      "tips": "Against all odds で「あらゆる困難を押して」"
+    },
+    {
+      "id": "s800-370",
+      "ja": "思い切って1か月の一人旅に出ました。",
+      "en": "I finally took the plunge and traveled alone for a month.",
+      "theme": "travel",
+      "tips": "take the plunge で「思い切って始める」"
+    },
+    {
+      "id": "s800-371",
+      "ja": "細かく計画せず、流れに任せることにしました。",
+      "en": "We decided to go with the flow instead of planning everything.",
+      "theme": "travel",
+      "tips": "go with the flow で「流れに身を任せる」"
+    },
+    {
+      "id": "s800-372",
+      "ja": "その通りは店が多すぎて選ぶのに困るほどです。",
+      "en": "On that street you are spoilt for choice when it comes to shops.",
+      "theme": "travel",
+      "tips": "be spoilt for choice で「選択肢が多すぎて迷う」"
+    },
+    {
+      "id": "s800-373",
+      "ja": "宿で会った旅行者とすぐに意気投合しました。",
+      "en": "I hit it off right away with a traveler at the hostel.",
+      "theme": "travel",
+      "tips": "hit it off with ~ で「~と意気投合する」"
+    },
+    {
+      "id": "s800-374",
+      "ja": "彼の冗談がツアー客の間の緊張を解いてくれました。",
+      "en": "His joke helped break the ice among the tour group.",
+      "theme": "travel",
+      "tips": "break the ice で「場の緊張をほぐす」"
+    },
+    {
+      "id": "s800-375",
+      "ja": "駅を出て、まず自分の方角を確かめました。",
+      "en": "I left the station and got my bearings before walking on.",
+      "theme": "travel",
+      "tips": "get one's bearings で「自分の位置や方角をつかむ」"
+    },
+    {
+      "id": "s800-376",
+      "ja": "朝市を歩いていて時間を忘れてしまいました。",
+      "en": "I lost track of time wandering through the morning market.",
+      "theme": "travel",
+      "tips": "lose track of time で「時間の経過を忘れる」"
+    },
+    {
+      "id": "s800-377",
+      "ja": "短い滞在でしたが、最大限に楽しみました。",
+      "en": "It was a short stay, but we made the most of it.",
+      "theme": "travel",
+      "tips": "make the most of ~ で「~を最大限に活用する」"
+    },
+    {
+      "id": "s800-378",
+      "ja": "一日中雨でしたが、その状況を精一杯楽しみました。",
+      "en": "It rained all day, but we made the best of it.",
+      "theme": "travel",
+      "tips": "make the best of ~ で「悪条件の中で最善を尽くす」"
+    },
+    {
+      "id": "s800-379",
+      "ja": "私は丘の上でしばらく景色に見入っていました。",
+      "en": "I stood on the hill and took in the view for a while.",
+      "theme": "travel",
+      "tips": "take in ~ で「(景色などを)じっくり眺める」"
+    },
+    {
+      "id": "s800-380",
+      "ja": "私たちは午後いっぱい日差しを浴びて過ごしました。",
+      "en": "We spent the whole afternoon soaking up the sunshine.",
+      "theme": "travel",
+      "tips": "soak up ~ で「~を存分に浴びる、吸収する」"
+    },
+    {
+      "id": "s800-381",
+      "ja": "彼は次の旅先を北欧に定めました。",
+      "en": "He has set his sights on northern Europe for his next trip.",
+      "theme": "travel",
+      "tips": "set one's sights on ~ で「~を目標に定める」"
+    },
+    {
+      "id": "s800-382",
+      "ja": "妹はその島に行くと決めて譲りません。",
+      "en": "My sister has her heart set on visiting that island.",
+      "theme": "travel",
+      "tips": "have one's heart set on ~ で「~を心に決めている」"
+    },
+    {
+      "id": "s800-383",
+      "ja": "最終的な請求額を見て私は思わず面食らいました。",
+      "en": "I was taken aback when I saw the final bill.",
+      "theme": "travel",
+      "tips": "be taken aback で「不意を突かれて驚く」"
+    },
+    {
+      "id": "s800-384",
+      "ja": "その大聖堂の美しさに私は圧倒されました。",
+      "en": "I was completely blown away by the beauty of the cathedral.",
+      "theme": "travel",
+      "tips": "be blown away by ~ で「~に圧倒される、感動する」"
+    },
+    {
+      "id": "s800-385",
+      "ja": "長い行列にうんざりして、別の店に行きました。",
+      "en": "We were put off by the long line and went elsewhere.",
+      "theme": "travel",
+      "tips": "be put off by ~ で「~に嫌気がさす」"
+    },
+    {
+      "id": "s800-386",
+      "ja": "最初は地味に思えた町が、だんだん好きになりました。",
+      "en": "The town seemed plain at first, but it grew on me.",
+      "theme": "travel",
+      "tips": "grow on 人 で「だんだん好きになる」"
+    },
+    {
+      "id": "s800-387",
+      "ja": "その日は疲れていたので早めに切り上げました。",
+      "en": "We were tired, so we called it a night early.",
+      "theme": "travel",
+      "tips": "call it a night で「その日の活動を切り上げる」"
+    },
+    {
+      "id": "s800-388",
+      "ja": "あの旅では不便な暮らしもかえって楽しめました。",
+      "en": "We actually enjoyed roughing it during that particular trip.",
+      "theme": "travel",
+      "tips": "rough it で「不自由な生活を我慢する」"
+    },
+    {
+      "id": "s800-389",
+      "ja": "学生のころは切り詰めて旅行をしていました。",
+      "en": "As a student, I used to travel on a shoestring.",
+      "theme": "travel",
+      "tips": "on a shoestring で「わずかな費用で」"
+    },
+    {
+      "id": "s800-390",
+      "ja": "これ以上欲張るのはやめましょう、天気が崩れそうです。",
+      "en": "Let's not push our luck; the weather may turn bad.",
+      "theme": "travel",
+      "tips": "push one's luck で「調子に乗って無理をする」"
+    },
+    {
+      "id": "s800-391",
+      "ja": "集合時間ぎりぎりに戻ってきました。",
+      "en": "We cut it fine getting back before the meeting time.",
+      "theme": "travel",
+      "tips": "cut it fine で「ぎりぎりにする」"
+    },
+    {
+      "id": "s800-392",
+      "ja": "花火大会を見逃してしまい残念でした。",
+      "en": "I was sorry to miss out on the fireworks festival.",
+      "theme": "travel",
+      "tips": "miss out on ~ で「(よい機会など)を逃す」"
+    },
+    {
+      "id": "s800-393",
+      "ja": "あの小さな地図はきわめて役に立ちました。",
+      "en": "That little map was worth its weight in gold.",
+      "theme": "travel",
+      "tips": "worth its weight in gold で「非常に価値がある」"
+    },
+    {
+      "id": "s800-394",
+      "ja": "路地裏で穴場のカフェを見つけました。",
+      "en": "We found a hidden gem of a cafe down a back street.",
+      "theme": "travel",
+      "tips": "a hidden gem で「知る人ぞ知る名所」"
+    },
+    {
+      "id": "s800-395",
+      "ja": "あれは本当に一生に一度の旅行でした。",
+      "en": "That was truly the trip of a lifetime.",
+      "theme": "travel",
+      "tips": "the trip of a lifetime で「一生に一度の旅」"
+    },
+    {
+      "id": "s800-396",
+      "ja": "移動は長かったが、その景色が十分に埋め合わせてくれました。",
+      "en": "The journey was long, but the scenery more than made up for it.",
+      "theme": "travel",
+      "tips": "more than make up for ~ で「~を十分に補って余りある」"
+    },
+    {
+      "id": "s800-397",
+      "ja": "その旅館のもてなしは他に類を見ません。",
+      "en": "The hospitality at that inn is second to none.",
+      "theme": "travel",
+      "tips": "second to none で「何物にも劣らない」"
+    },
+    {
+      "id": "s800-398",
+      "ja": "あの夕日の美しさは比べるものがありません。",
+      "en": "The beauty of that sunset was beyond compare.",
+      "theme": "travel",
+      "tips": "beyond compare で「比類のない」"
+    },
+    {
+      "id": "s800-399",
+      "ja": "その滝は遠回りしてでも見る価値が十分あります。",
+      "en": "The waterfall is well worth the extra detour.",
+      "theme": "travel",
+      "tips": "well worth ~ で「十分~に値する」"
+    },
+    {
+      "id": "s800-400",
+      "ja": "一本の映画がその小さな村を有名にしました。",
+      "en": "A single film put that small village on the map.",
+      "theme": "travel",
+      "tips": "put ~ on the map で「~を有名にする」"
     }
   ]
 }

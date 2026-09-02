@@ -1400,6 +1400,1406 @@
       "en": "This trip has exposed me to many new cultures.",
       "theme": "travel",
       "tips": "expose A to Bで「AをBに触れさせる」"
+    },
+    {
+      "id": "s700-201",
+      "ja": "妹は料理も掃除も両方得意です。",
+      "en": "My sister is good at both cooking and cleaning.",
+      "theme": "daily",
+      "tips": "both A and B で「AもBも両方」"
+    },
+    {
+      "id": "s700-202",
+      "ja": "今夜は和食か中華のどちらかにしましょう。",
+      "en": "Let's have either Japanese or Chinese food tonight.",
+      "theme": "daily",
+      "tips": "either A or B で「AかBのどちらか」"
+    },
+    {
+      "id": "s700-203",
+      "ja": "父はコーヒーも紅茶も飲みません。",
+      "en": "My father drinks neither coffee nor tea.",
+      "theme": "daily",
+      "tips": "neither A nor B で「AもBも~ない」"
+    },
+    {
+      "id": "s700-204",
+      "ja": "駅まで歩いて15分かかります。",
+      "en": "It takes me fifteen minutes to walk to the station.",
+      "theme": "daily",
+      "tips": "It takes 人 時間 to do で所要時間を表す"
+    },
+    {
+      "id": "s700-205",
+      "ja": "空港に着くまでどれくらい時間がかかりますか。",
+      "en": "How long does it take to get to the airport?",
+      "theme": "daily",
+      "tips": "How long does it take ~? で所要時間を尋ねる"
+    },
+    {
+      "id": "s700-206",
+      "ja": "母は私に部屋を片づけさせました。",
+      "en": "My mother made me clean up my room.",
+      "theme": "daily",
+      "tips": "使役動詞 make + 人 + 原形で「強制的に~させる」"
+    },
+    {
+      "id": "s700-207",
+      "ja": "両親は私を一人で旅行に行かせてくれました。",
+      "en": "My parents let me go on a trip by myself.",
+      "theme": "daily",
+      "tips": "使役動詞 let + 人 + 原形で「許可して~させる」"
+    },
+    {
+      "id": "s700-208",
+      "ja": "妹が引っ越しの荷造りを手伝ってくれました。",
+      "en": "My sister helped me pack for the move.",
+      "theme": "daily",
+      "tips": "help + 人 + 原形で「~するのを手伝う」"
+    },
+    {
+      "id": "s700-209",
+      "ja": "友達に駅まで来てくれるよう頼みました。",
+      "en": "I asked my friend to meet me at the station.",
+      "theme": "daily",
+      "tips": "ask + 人 + to do で「~するよう頼む」"
+    },
+    {
+      "id": "s700-210",
+      "ja": "医者は私にもっと運動するように言いました。",
+      "en": "The doctor told me to exercise more often.",
+      "theme": "daily",
+      "tips": "tell + 人 + to do で「~するように言う」"
+    },
+    {
+      "id": "s700-211",
+      "ja": "彼は最近とても忙しいようです。",
+      "en": "It seems that he has been very busy lately.",
+      "theme": "daily",
+      "tips": "It seems that ~ で「~のようだ」と推量を表す"
+    },
+    {
+      "id": "s700-212",
+      "ja": "彼女はまるで何も知らないかのように話しました。",
+      "en": "She talked as if she knew nothing about it.",
+      "theme": "daily",
+      "tips": "as if + 過去形で現実と違う様子を表す"
+    },
+    {
+      "id": "s700-213",
+      "ja": "とても良い天気だったので公園まで歩きました。",
+      "en": "It was such a nice day that we walked to the park.",
+      "theme": "daily",
+      "tips": "such a + 形容詞 + 名詞 + that... で結果を表す"
+    },
+    {
+      "id": "s700-214",
+      "ja": "私はバスより電車で通勤するほうが好きです。",
+      "en": "I prefer taking the train to riding the bus.",
+      "theme": "daily",
+      "tips": "prefer A to B で「BよりAを好む」、Aには動名詞も来る"
+    },
+    {
+      "id": "s700-215",
+      "ja": "私はもう早起きにすっかり慣れました。",
+      "en": "I'm completely used to getting up early now.",
+      "theme": "daily",
+      "tips": "be used to ~ing で「~することに慣れている」"
+    },
+    {
+      "id": "s700-216",
+      "ja": "新しい職場に慣れるのに1か月かかりました。",
+      "en": "It took me a month to get used to my new workplace.",
+      "theme": "daily",
+      "tips": "get used to ~ で「~に慣れる」という変化を表す"
+    },
+    {
+      "id": "s700-217",
+      "ja": "息子は最近、宇宙にとても興味を持っています。",
+      "en": "My son is very interested in space these days.",
+      "theme": "daily",
+      "tips": "be interested in ~ で「~に興味がある」"
+    },
+    {
+      "id": "s700-218",
+      "ja": "私は母の健康のことをずっと心配しています。",
+      "en": "I've been worried about my mother's health.",
+      "theme": "daily",
+      "tips": "be worried about ~ で「~を心配している」"
+    },
+    {
+      "id": "s700-219",
+      "ja": "私は今の生活にとても満足しています。",
+      "en": "I'm quite satisfied with the way I live now.",
+      "theme": "daily",
+      "tips": "be satisfied with ~ で「~に満足している」"
+    },
+    {
+      "id": "s700-220",
+      "ja": "彼が突然辞めたことに私は驚きました。",
+      "en": "I was surprised at how suddenly he quit his job.",
+      "theme": "daily",
+      "tips": "be surprised at ~ で「~に驚く」"
+    },
+    {
+      "id": "s700-221",
+      "ja": "朝起きたら庭が雪で覆われていました。",
+      "en": "The garden was covered with snow when I woke up.",
+      "theme": "daily",
+      "tips": "be covered with ~ で「~で覆われている」"
+    },
+    {
+      "id": "s700-222",
+      "ja": "その部屋は焼きたてのパンの香りで満ちていました。",
+      "en": "The room was filled with the smell of fresh bread.",
+      "theme": "daily",
+      "tips": "be filled with ~ で「~でいっぱいだ」"
+    },
+    {
+      "id": "s700-223",
+      "ja": "日曜日の商店街はいつも買い物客で混雑しています。",
+      "en": "The shopping street is always crowded with shoppers on Sundays.",
+      "theme": "daily",
+      "tips": "be crowded with ~ で「~で混雑している」"
+    },
+    {
+      "id": "s700-224",
+      "ja": "私は毎日6時に子どもを保育園へ迎えに行きます。",
+      "en": "I pick up my child from daycare at six every day.",
+      "theme": "daily",
+      "tips": "pick up ~ で「~を迎えに行く、車で拾う」"
+    },
+    {
+      "id": "s700-225",
+      "ja": "駅まで車で送っていきましょうか。",
+      "en": "Shall I drop you off at the station?",
+      "theme": "daily",
+      "tips": "drop 人 off で「~を降ろす、送り届ける」"
+    },
+    {
+      "id": "s700-226",
+      "ja": "そのコートを試着してもいいですか。",
+      "en": "Could I try that coat on before I decide?",
+      "theme": "daily",
+      "tips": "try ~ on で「(服を)試着する」"
+    },
+    {
+      "id": "s700-227",
+      "ja": "昨日、駅で偶然昔の同級生に会いました。",
+      "en": "I ran into an old classmate at the station yesterday.",
+      "theme": "daily",
+      "tips": "run into ~ で「~に偶然出会う」"
+    },
+    {
+      "id": "s700-228",
+      "ja": "私は隣に住む人たちとうまくやっています。",
+      "en": "I get along well with the people next door.",
+      "theme": "daily",
+      "tips": "get along with ~ で「~と仲良くやる」"
+    },
+    {
+      "id": "s700-229",
+      "ja": "古い写真を整理していたら手紙が出てきました。",
+      "en": "I came across an old letter while sorting my photos.",
+      "theme": "daily",
+      "tips": "come across ~ で「~を偶然見つける」"
+    },
+    {
+      "id": "s700-230",
+      "ja": "この機械の使い方がどうしてもわかりません。",
+      "en": "I can't figure out how to use this machine.",
+      "theme": "daily",
+      "tips": "figure out ~ で「~を理解する、解明する」"
+    },
+    {
+      "id": "s700-231",
+      "ja": "彼女の誕生日がいつなのか調べておきます。",
+      "en": "I'll find out when her birthday is.",
+      "theme": "daily",
+      "tips": "find out ~ で「(調べて)~がわかる」"
+    },
+    {
+      "id": "s700-232",
+      "ja": "留守の間、猫の世話をしてもらえますか。",
+      "en": "Could you take care of my cat while I'm away?",
+      "theme": "daily",
+      "tips": "take care of ~ で「~の世話をする」"
+    },
+    {
+      "id": "s700-233",
+      "ja": "上の階の騒音にはもう我慢できません。",
+      "en": "I can't put up with the noise from upstairs anymore.",
+      "theme": "daily",
+      "tips": "put up with ~ で「~を我慢する」"
+    },
+    {
+      "id": "s700-234",
+      "ja": "帰りにスーパーに寄ってきます。",
+      "en": "I'll drop by the supermarket on my way home.",
+      "theme": "daily",
+      "tips": "drop by ~ で「~にちょっと立ち寄る」"
+    },
+    {
+      "id": "s700-235",
+      "ja": "彼は約束の時間に30分遅れて現れました。",
+      "en": "He showed up thirty minutes late for our appointment.",
+      "theme": "daily",
+      "tips": "show up で「姿を現す、来る」"
+    },
+    {
+      "id": "s700-236",
+      "ja": "私は週に3回ジムで体を動かしています。",
+      "en": "I work out at the gym three times a week.",
+      "theme": "daily",
+      "tips": "work out で「運動する、トレーニングする」"
+    },
+    {
+      "id": "s700-237",
+      "ja": "私たちは月に一度くらい外食します。",
+      "en": "We eat out about once a month.",
+      "theme": "daily",
+      "tips": "eat out で「外食する」"
+    },
+    {
+      "id": "s700-238",
+      "ja": "ちょうど家を出ようとしたときに電話が鳴りました。",
+      "en": "I was about to leave home when the phone rang.",
+      "theme": "daily",
+      "tips": "be about to do で「まさに~しようとしている」"
+    },
+    {
+      "id": "s700-239",
+      "ja": "今日は傘を持っていったほうがいいですよ。",
+      "en": "You had better take an umbrella with you today.",
+      "theme": "daily",
+      "tips": "had better do で「~したほうがいい」という強めの助言"
+    },
+    {
+      "id": "s700-240",
+      "ja": "彼は昨日ここに来るはずだったのですが。",
+      "en": "He was supposed to come here yesterday.",
+      "theme": "daily",
+      "tips": "be supposed to do で「~することになっている」"
+    },
+    {
+      "id": "s700-241",
+      "ja": "明日の午後は雨が降りそうです。",
+      "en": "It's likely to rain tomorrow afternoon.",
+      "theme": "daily",
+      "tips": "be likely to do で「~しそうだ」という見込みを表す"
+    },
+    {
+      "id": "s700-242",
+      "ja": "彼はいつでも喜んで手伝ってくれます。",
+      "en": "He's always willing to give me a hand.",
+      "theme": "daily",
+      "tips": "be willing to do で「進んで~する」"
+    },
+    {
+      "id": "s700-243",
+      "ja": "私たちはたまたま同じ電車に乗り合わせました。",
+      "en": "We happened to be on the same train.",
+      "theme": "daily",
+      "tips": "happen to do で「たまたま~する」"
+    },
+    {
+      "id": "s700-244",
+      "ja": "私は疲れていると甘いものを食べがちです。",
+      "en": "I tend to eat sweets when I'm tired.",
+      "theme": "daily",
+      "tips": "tend to do で「~しがちだ」という傾向を表す"
+    },
+    {
+      "id": "s700-245",
+      "ja": "今は新しい車を買う余裕がありません。",
+      "en": "I can't afford to buy a new car right now.",
+      "theme": "daily",
+      "tips": "afford to do で「~する余裕がある」"
+    },
+    {
+      "id": "s700-246",
+      "ja": "彼にその話をしたことをはっきり覚えています。",
+      "en": "I clearly remember telling him about it.",
+      "theme": "daily",
+      "tips": "remember ~ing は「~したことを覚えている」と過去を指す"
+    },
+    {
+      "id": "s700-247",
+      "ja": "帰りに牛乳を買うのを忘れないでください。",
+      "en": "Don't forget to buy some milk on your way back.",
+      "theme": "daily",
+      "tips": "forget to do は「~するのを忘れる」とこれからの行為を指す"
+    },
+    {
+      "id": "s700-248",
+      "ja": "父は3年前にたばこを吸うのをやめました。",
+      "en": "My father stopped smoking three years ago.",
+      "theme": "daily",
+      "tips": "stop ~ing は「~するのをやめる」"
+    },
+    {
+      "id": "s700-249",
+      "ja": "一度この方法で試してみてください。",
+      "en": "Try doing it this way once.",
+      "theme": "daily",
+      "tips": "try ~ing は「試しに~してみる」"
+    },
+    {
+      "id": "s700-250",
+      "ja": "窓を開けてもかまいませんか。",
+      "en": "Would you mind opening the window?",
+      "theme": "daily",
+      "tips": "Would you mind ~ing? で丁寧に許可を求める"
+    },
+    {
+      "id": "s700-251",
+      "ja": "レポートを書き終えたら連絡します。",
+      "en": "I'll call you when I finish writing the report.",
+      "theme": "daily",
+      "tips": "finish の後は動名詞のみで不定詞は使えない"
+    },
+    {
+      "id": "s700-252",
+      "ja": "彼は1時間ずっと同じ話をし続けました。",
+      "en": "He kept telling the same story for an hour.",
+      "theme": "daily",
+      "tips": "keep ~ing で「~し続ける」"
+    },
+    {
+      "id": "s700-253",
+      "ja": "その映画はもう一度見る価値があります。",
+      "en": "That movie is worth watching again.",
+      "theme": "daily",
+      "tips": "be worth ~ing で「~する価値がある」"
+    },
+    {
+      "id": "s700-254",
+      "ja": "今さら後悔しても仕方がありません。",
+      "en": "It's no use regretting it now.",
+      "theme": "daily",
+      "tips": "It's no use ~ing で「~しても無駄だ」"
+    },
+    {
+      "id": "s700-255",
+      "ja": "終電に間に合うように早めに家を出ました。",
+      "en": "I left home early in order to catch the last train.",
+      "theme": "daily",
+      "tips": "in order to do で「~するために」と目的を明示する"
+    },
+    {
+      "id": "s700-256",
+      "ja": "みんなに聞こえるように大きな声で話してください。",
+      "en": "Please speak loudly so that everyone can hear you.",
+      "theme": "daily",
+      "tips": "so that S can ~ で「Sが~できるように」"
+    },
+    {
+      "id": "s700-257",
+      "ja": "静かにしていればここにいてもいいですよ。",
+      "en": "You can stay here as long as you keep quiet.",
+      "theme": "daily",
+      "tips": "as long as ~ で「~しさえすれば」と条件を表す"
+    },
+    {
+      "id": "s700-258",
+      "ja": "雨が降るといけないので傘を持っていきます。",
+      "en": "I'll take an umbrella in case it rains.",
+      "theme": "daily",
+      "tips": "in case ~ で「~の場合に備えて」"
+    },
+    {
+      "id": "s700-259",
+      "ja": "たとえ雨が降っても試合は行われます。",
+      "en": "The game will be held even if it rains.",
+      "theme": "daily",
+      "tips": "even if ~ で「たとえ~でも」という譲歩を表す"
+    },
+    {
+      "id": "s700-260",
+      "ja": "東京に来たときはいつでも連絡してください。",
+      "en": "Call me whenever you come to Tokyo.",
+      "theme": "daily",
+      "tips": "whenever ~ で「~するときはいつでも」"
+    },
+    {
+      "id": "s700-261",
+      "ja": "早く始めれば始めるほど早く終わります。",
+      "en": "The earlier you start, the sooner you finish.",
+      "theme": "daily",
+      "tips": "The 比較級 ~, the 比較級 ... で「~するほど…」"
+    },
+    {
+      "id": "s700-262",
+      "ja": "兄は私の2倍の量の本を読みます。",
+      "en": "My brother reads twice as many books as I do.",
+      "theme": "daily",
+      "tips": "twice as many + 名詞 + as で「~の2倍の数の」"
+    },
+    {
+      "id": "s700-263",
+      "ja": "今年の夏は去年ほど蒸し暑くありません。",
+      "en": "This summer is less humid than last year.",
+      "theme": "daily",
+      "tips": "less + 形容詞 + than で「~ほど…でない」"
+    },
+    {
+      "id": "s700-264",
+      "ja": "ここから見る景色はなんて美しいのでしょう。",
+      "en": "What a beautiful view we have from here!",
+      "theme": "daily",
+      "tips": "What a + 形容詞 + 名詞 ~! の感嘆文"
+    },
+    {
+      "id": "s700-265",
+      "ja": "そのとき私は何を言えばいいのかわかりませんでした。",
+      "en": "I didn't know what to say at that moment.",
+      "theme": "daily",
+      "tips": "疑問詞 + to do が名詞のかたまりとして目的語になる"
+    },
+    {
+      "id": "s700-266",
+      "ja": "あなたが言ったことは正しいと思います。",
+      "en": "I think what you said is right.",
+      "theme": "daily",
+      "tips": "関係代名詞 what は「~すること・もの」を表し先行詞をとらない"
+    },
+    {
+      "id": "s700-267",
+      "ja": "彼はまた遅刻してきましたが、それはよくあることです。",
+      "en": "He came late again, which happens quite often.",
+      "theme": "daily",
+      "tips": "非限定用法の which は前の文全体を受けられる"
+    },
+    {
+      "id": "s700-268",
+      "ja": "その店にはお客さんがほとんどいませんでした。",
+      "en": "There were few customers in the shop that day.",
+      "theme": "daily",
+      "tips": "few + 可算名詞は「ほとんどない」という否定的な意味になる"
+    },
+    {
+      "id": "s700-269",
+      "ja": "そろそろ寝る時間です。",
+      "en": "It's about time to go to bed.",
+      "theme": "daily",
+      "tips": "It's time to do で「~する時間だ」"
+    },
+    {
+      "id": "s700-270",
+      "ja": "大雨のせいで私たちは外出できませんでした。",
+      "en": "The heavy rain prevented us from going out.",
+      "theme": "daily",
+      "tips": "prevent 人 from ~ing で「人が~するのを妨げる」"
+    },
+    {
+      "id": "s700-271",
+      "ja": "新製品の品質管理は私が担当しています。",
+      "en": "I'm responsible for quality control on the new product.",
+      "theme": "business",
+      "tips": "be responsible for ~ で「~を担当している」"
+    },
+    {
+      "id": "s700-272",
+      "ja": "金曜までに契約書へ署名するよう彼に念を押してください。",
+      "en": "Please remind him to sign the contract before Friday.",
+      "theme": "business",
+      "tips": "remind 人 to do で「人に~するよう思い出させる」"
+    },
+    {
+      "id": "s700-273",
+      "ja": "迅速にご対応いただきありがとうございます。",
+      "en": "Thank you for handling the matter so quickly.",
+      "theme": "business",
+      "tips": "thank 人 for ~ing で「~してくれたことに感謝する」"
+    },
+    {
+      "id": "s700-274",
+      "ja": "返信が遅くなり申し訳ありません。",
+      "en": "I apologize for the delay in getting back to you.",
+      "theme": "business",
+      "tips": "apologize for ~ で「~について謝罪する」"
+    },
+    {
+      "id": "s700-275",
+      "ja": "営業部長へのご昇進おめでとうございます。",
+      "en": "Congratulations on your promotion to sales manager.",
+      "theme": "business",
+      "tips": "congratulate 人 on ~ / Congratulations on ~ で祝意を表す"
+    },
+    {
+      "id": "s700-276",
+      "ja": "発売日は工場の生産状況次第です。",
+      "en": "The launch date depends on the factory's production schedule.",
+      "theme": "business",
+      "tips": "depend on ~ で「~次第である」"
+    },
+    {
+      "id": "s700-277",
+      "ja": "その遅れは大きな損失につながりました。",
+      "en": "The delay resulted in a significant loss for us.",
+      "theme": "business",
+      "tips": "result in ~ で「(結果として)~をもたらす」"
+    },
+    {
+      "id": "s700-278",
+      "ja": "小さなミスが深刻な問題につながることもあります。",
+      "en": "A small mistake can lead to a serious problem.",
+      "theme": "business",
+      "tips": "lead to ~ で「~を引き起こす、~につながる」"
+    },
+    {
+      "id": "s700-279",
+      "ja": "参加者全員に当日の資料をお配りします。",
+      "en": "We will provide all participants with the materials.",
+      "theme": "business",
+      "tips": "provide A with B で「AにBを提供する」"
+    },
+    {
+      "id": "s700-280",
+      "ja": "配送には別途500円を申し受けます。",
+      "en": "We charge customers an extra 500 yen for delivery.",
+      "theme": "business",
+      "tips": "charge 人 金額 for ~ で「~の代金を請求する」"
+    },
+    {
+      "id": "s700-281",
+      "ja": "当社は昨年、広告費に多額を投じました。",
+      "en": "Our company spent a lot on advertising last year.",
+      "theme": "business",
+      "tips": "spend 金額 on ~ で「~にお金を使う」"
+    },
+    {
+      "id": "s700-282",
+      "ja": "私は来週の展示会に出席する予定です。",
+      "en": "I'm going to attend the trade show next week.",
+      "theme": "business",
+      "tips": "attend は他動詞なので to は不要"
+    },
+    {
+      "id": "s700-283",
+      "ja": "何かあれば携帯にいつでもご連絡ください。",
+      "en": "You can reach me on my cell phone anytime.",
+      "theme": "business",
+      "tips": "reach 人 で「(連絡が)人に届く、connect する」"
+    },
+    {
+      "id": "s700-284",
+      "ja": "彼は会議でその件に一言も触れませんでした。",
+      "en": "He didn't mention the issue at all during the meeting.",
+      "theme": "business",
+      "tips": "mention は他動詞で about をつけない"
+    },
+    {
+      "id": "s700-285",
+      "ja": "価格改定について取引先にお知らせしました。",
+      "en": "We informed our clients of the price revision.",
+      "theme": "business",
+      "tips": "inform 人 of ~ で「人に~を知らせる」"
+    },
+    {
+      "id": "s700-286",
+      "ja": "変更があり次第すぐにお知らせします。",
+      "en": "We will notify you of any changes right away.",
+      "theme": "business",
+      "tips": "notify 人 of ~ で「人に~を通知する」"
+    },
+    {
+      "id": "s700-287",
+      "ja": "納期は必ず守りますのでご安心ください。",
+      "en": "I assure you that we will meet the delivery date.",
+      "theme": "business",
+      "tips": "assure 人 that ~ で「人に~だと保証する」"
+    },
+    {
+      "id": "s700-288",
+      "ja": "彼を説得して計画を見直してもらいました。",
+      "en": "I convinced him to review the plan again.",
+      "theme": "business",
+      "tips": "convince 人 to do で「説得して~させる」"
+    },
+    {
+      "id": "s700-289",
+      "ja": "部長を説得して予算を増やしてもらいました。",
+      "en": "We persuaded the manager to increase the budget.",
+      "theme": "business",
+      "tips": "persuade 人 to do で「人を説得して~させる」"
+    },
+    {
+      "id": "s700-290",
+      "ja": "会社は社員に週2日の在宅勤務を認めています。",
+      "en": "The company allows employees to work from home twice a week.",
+      "theme": "business",
+      "tips": "allow 人 to do で「人が~するのを許可する」"
+    },
+    {
+      "id": "s700-291",
+      "ja": "規則では全員に身分証の携帯を義務づけています。",
+      "en": "The rules require everyone to carry an ID card.",
+      "theme": "business",
+      "tips": "require 人 to do で「人に~するよう要求する」"
+    },
+    {
+      "id": "s700-292",
+      "ja": "上司は私に新しい資格を取るよう勧めてくれました。",
+      "en": "My boss encouraged me to get a new certification.",
+      "theme": "business",
+      "tips": "encourage 人 to do で「人に~するよう勧める」"
+    },
+    {
+      "id": "s700-293",
+      "ja": "弁護士は契約書をもう一度読むよう助言しました。",
+      "en": "The lawyer advised us to read the contract again.",
+      "theme": "business",
+      "tips": "advise 人 to do で「人に~するよう助言する」"
+    },
+    {
+      "id": "s700-294",
+      "ja": "来月には結果が出ると見込んでいます。",
+      "en": "We expect to see the results next month.",
+      "theme": "business",
+      "tips": "expect to do で「~すると見込む」"
+    },
+    {
+      "id": "s700-295",
+      "ja": "来年、支店を2つ開く計画です。",
+      "en": "We plan to open two branches next year.",
+      "theme": "business",
+      "tips": "plan to do で「~する予定である」"
+    },
+    {
+      "id": "s700-296",
+      "ja": "私はこの提案を明日発表するつもりです。",
+      "en": "I intend to present this proposal tomorrow.",
+      "theme": "business",
+      "tips": "intend to do で「~するつもりだ」と意図を表す"
+    },
+    {
+      "id": "s700-297",
+      "ja": "ご不明な点は遠慮なくお尋ねください。",
+      "en": "Please don't hesitate to ask if anything is unclear.",
+      "theme": "business",
+      "tips": "don't hesitate to do で「遠慮なく~してください」"
+    },
+    {
+      "id": "s700-298",
+      "ja": "彼は期限までに書類を提出できませんでした。",
+      "en": "He failed to submit the documents by the deadline.",
+      "theme": "business",
+      "tips": "fail to do で「~しそこなう、~できない」"
+    },
+    {
+      "id": "s700-299",
+      "ja": "先方は値下げの要求に応じませんでした。",
+      "en": "They refused to accept our request for a discount.",
+      "theme": "business",
+      "tips": "refuse to do で「~することを拒む」"
+    },
+    {
+      "id": "s700-300",
+      "ja": "彼は金曜日までに見積もりを送ると約束しました。",
+      "en": "He promised to send the estimate by Friday.",
+      "theme": "business",
+      "tips": "promise to do で「~すると約束する」"
+    },
+    {
+      "id": "s700-301",
+      "ja": "先方は契約条件の変更に同意しました。",
+      "en": "They agreed to change the terms of the contract.",
+      "theme": "business",
+      "tips": "agree to do で「~することに同意する」"
+    },
+    {
+      "id": "s700-302",
+      "ja": "この書類には上司の署名が必要です。",
+      "en": "It is necessary to get your manager's signature here.",
+      "theme": "business",
+      "tips": "It is necessary to do で「~することが必要だ」"
+    },
+    {
+      "id": "s700-303",
+      "ja": "全員が定刻に出席することが重要です。",
+      "en": "It is important that everyone be present on time.",
+      "theme": "business",
+      "tips": "important などの後の that 節は原形を使う(仮定法現在)"
+    },
+    {
+      "id": "s700-304",
+      "ja": "彼は会議を延期してはどうかと提案しました。",
+      "en": "He suggested that we postpone the meeting.",
+      "theme": "business",
+      "tips": "suggest that S + 原形で提案を表す"
+    },
+    {
+      "id": "s700-305",
+      "ja": "彼は数字をすべて自分で確認すると言い張りました。",
+      "en": "He insisted on checking every figure himself.",
+      "theme": "business",
+      "tips": "insist on ~ing で「~すると言い張る」"
+    },
+    {
+      "id": "s700-306",
+      "ja": "彼らは急な計画変更に反対しました。",
+      "en": "They objected to changing the plan so suddenly.",
+      "theme": "business",
+      "tips": "object to の to は前置詞なので動名詞が続く"
+    },
+    {
+      "id": "s700-307",
+      "ja": "当社は品質の向上に全力で取り組んでいます。",
+      "en": "Our company is committed to improving product quality.",
+      "theme": "business",
+      "tips": "be committed to ~ing の to も前置詞で動名詞が続く"
+    },
+    {
+      "id": "s700-308",
+      "ja": "その苦情については私が調べて回答します。",
+      "en": "I'll look into the complaint and get an answer.",
+      "theme": "business",
+      "tips": "look into ~ で「~を調査する」"
+    },
+    {
+      "id": "s700-309",
+      "ja": "ほかの仕入れ先をいくつか調べてみましょう。",
+      "en": "Let's check out a few other suppliers first.",
+      "theme": "business",
+      "tips": "check out ~ で「~を調べる、確認する」"
+    },
+    {
+      "id": "s700-310",
+      "ja": "私は先週その研修に申し込みました。",
+      "en": "I signed up for the training program last week.",
+      "theme": "business",
+      "tips": "sign up for ~ で「~に申し込む」"
+    },
+    {
+      "id": "s700-311",
+      "ja": "彼が来月から私の業務を引き継ぎます。",
+      "en": "He will take over my job starting next month.",
+      "theme": "business",
+      "tips": "take over ~ で「~を引き継ぐ」"
+    },
+    {
+      "id": "s700-312",
+      "ja": "契約書にもう一度目を通しましょう。",
+      "en": "Let's go over the contract one more time.",
+      "theme": "business",
+      "tips": "go over ~ で「~を見直す、検討する」"
+    },
+    {
+      "id": "s700-313",
+      "ja": "報告書は金曜日の午後までに提出してください。",
+      "en": "Please hand in your report by Friday afternoon.",
+      "theme": "business",
+      "tips": "hand in ~ で「~を提出する」"
+    },
+    {
+      "id": "s700-314",
+      "ja": "悪天候のため出張は中止になりました。",
+      "en": "The business trip was called off due to bad weather.",
+      "theme": "business",
+      "tips": "call off ~ で「~を中止する」"
+    },
+    {
+      "id": "s700-315",
+      "ja": "私たちは先週その申し出を丁重にお断りしました。",
+      "en": "We politely turned down their offer last week.",
+      "theme": "business",
+      "tips": "turn down ~ で「~を断る」"
+    },
+    {
+      "id": "s700-316",
+      "ja": "彼は会議で予算の問題を持ち出しました。",
+      "en": "He brought up the budget issue at the meeting.",
+      "theme": "business",
+      "tips": "bring up ~ で「(話題を)持ち出す」"
+    },
+    {
+      "id": "s700-317",
+      "ja": "彼女は私の報告書の誤りを指摘してくれました。",
+      "en": "She pointed out an error in my report.",
+      "theme": "business",
+      "tips": "point out ~ で「~を指摘する」"
+    },
+    {
+      "id": "s700-318",
+      "ja": "この用紙にご記入のうえご提出ください。",
+      "en": "Please fill out this form and submit it.",
+      "theme": "business",
+      "tips": "fill out ~ で「(書類に)記入する」"
+    },
+    {
+      "id": "s700-319",
+      "ja": "私が今週中に新しい契約書を作成します。",
+      "en": "I will draw up a new contract this week.",
+      "theme": "business",
+      "tips": "draw up ~ で「(文書を)作成する」"
+    },
+    {
+      "id": "s700-320",
+      "ja": "その問題は今週中に解決します。",
+      "en": "We'll sort out the problem by the end of this week.",
+      "theme": "business",
+      "tips": "sort out ~ で「~を整理する、解決する」"
+    },
+    {
+      "id": "s700-321",
+      "ja": "チームを代表して御礼申し上げます。",
+      "en": "On behalf of the team, I'd like to thank you.",
+      "theme": "business",
+      "tips": "on behalf of ~ で「~を代表して」"
+    },
+    {
+      "id": "s700-322",
+      "ja": "会議室は事前にご予約ください。",
+      "en": "Please reserve the meeting room in advance.",
+      "theme": "business",
+      "tips": "in advance で「事前に、前もって」"
+    },
+    {
+      "id": "s700-323",
+      "ja": "値引きは最大で20パーセントまで可能です。",
+      "en": "We can offer a discount of up to twenty percent.",
+      "theme": "business",
+      "tips": "up to ~ で「最大~まで」という上限を表す"
+    },
+    {
+      "id": "s700-324",
+      "ja": "少なくとも3社から見積もりを取るべきです。",
+      "en": "We should get estimates from at least three companies.",
+      "theme": "business",
+      "tips": "at least で「少なくとも」という下限を表す"
+    },
+    {
+      "id": "s700-325",
+      "ja": "今回はメールではなく電話で連絡しました。",
+      "en": "I called them instead of sending an email this time.",
+      "theme": "business",
+      "tips": "instead of ~ing で「~する代わりに」"
+    },
+    {
+      "id": "s700-326",
+      "ja": "1件を除いてすべて対応済みです。",
+      "en": "Everything has been handled except for one case.",
+      "theme": "business",
+      "tips": "except for ~ で「~を除いては」"
+    },
+    {
+      "id": "s700-327",
+      "ja": "経験の有無にかかわらず応募できます。",
+      "en": "Anyone can apply regardless of previous experience.",
+      "theme": "business",
+      "tips": "regardless of ~ で「~に関係なく」"
+    },
+    {
+      "id": "s700-328",
+      "ja": "報告書によれば売上は3割伸びました。",
+      "en": "According to the report, sales grew by thirty percent.",
+      "theme": "business",
+      "tips": "according to ~ で「~によれば」と出典を示す"
+    },
+    {
+      "id": "s700-329",
+      "ja": "費用の面ではこちらの案が優れています。",
+      "en": "This plan is better in terms of cost.",
+      "theme": "business",
+      "tips": "in terms of ~ で「~の観点では」"
+    },
+    {
+      "id": "s700-330",
+      "ja": "昨年と比べて問い合わせが倍増しました。",
+      "en": "Inquiries have doubled compared to last year.",
+      "theme": "business",
+      "tips": "compared to ~ で「~と比べて」"
+    },
+    {
+      "id": "s700-331",
+      "ja": "皆さんのご協力のおかげで間に合いました。",
+      "en": "Thanks to everyone's help, we made it on time.",
+      "theme": "business",
+      "tips": "thanks to ~ で「~のおかげで」"
+    },
+    {
+      "id": "s700-332",
+      "ja": "準備期間が短かったにもかかわらず発表は成功しました。",
+      "en": "Despite the short preparation time, the presentation went well.",
+      "theme": "business",
+      "tips": "despite は前置詞なので後ろに名詞句が続く"
+    },
+    {
+      "id": "s700-333",
+      "ja": "東京支店は好調ですが、大阪支店は苦戦しています。",
+      "en": "The Tokyo branch is doing well, whereas Osaka is struggling.",
+      "theme": "business",
+      "tips": "whereas ~ で2つの事柄を対比する"
+    },
+    {
+      "id": "s700-334",
+      "ja": "したがって計画の見直しが必要です。",
+      "en": "Therefore, we need to revise the plan.",
+      "theme": "business",
+      "tips": "therefore は「したがって」と結論を導く副詞"
+    },
+    {
+      "id": "s700-335",
+      "ja": "基本給に加えて交通費も支給されます。",
+      "en": "In addition to the base salary, we cover commuting costs.",
+      "theme": "business",
+      "tips": "in addition to ~ で「~に加えて」"
+    },
+    {
+      "id": "s700-336",
+      "ja": "彼は英語だけでなく中国語も話せます。",
+      "en": "He can speak Chinese as well as English.",
+      "theme": "business",
+      "tips": "A as well as B で「BだけでなくAも」、重点はAにある"
+    },
+    {
+      "id": "s700-337",
+      "ja": "全員が資料を受け取ったか確認してください。",
+      "en": "Please make sure that everyone has received the materials.",
+      "theme": "business",
+      "tips": "make sure that ~ で「~であることを確認する」"
+    },
+    {
+      "id": "s700-338",
+      "ja": "会議は3階の大会議室で行われます。",
+      "en": "The meeting will take place in the large room upstairs.",
+      "theme": "business",
+      "tips": "take place で「(行事が)行われる」、受動態にしない"
+    },
+    {
+      "id": "s700-339",
+      "ja": "彼女はこの企画で重要な役割を果たしました。",
+      "en": "She played an important role in this project.",
+      "theme": "business",
+      "tips": "play a role in ~ で「~で役割を果たす」"
+    },
+    {
+      "id": "s700-340",
+      "ja": "私はこのシステムの操作に慣れています。",
+      "en": "I'm familiar with how this system works.",
+      "theme": "business",
+      "tips": "be familiar with ~ で「~をよく知っている」"
+    },
+    {
+      "id": "s700-341",
+      "ja": "まずホテルの近くを少し見て回りましょう。",
+      "en": "Let's look around the area near the hotel first.",
+      "theme": "travel",
+      "tips": "look around ~ で「~を見て回る」"
+    },
+    {
+      "id": "s700-342",
+      "ja": "次の駅で急行に乗ってください。",
+      "en": "Get on the express train at the next station.",
+      "theme": "travel",
+      "tips": "get on は電車・バスなど大きな乗り物に「乗る」"
+    },
+    {
+      "id": "s700-343",
+      "ja": "ここから3つ目の停留所で降りてください。",
+      "en": "Please get off at the third stop from here.",
+      "theme": "travel",
+      "tips": "get off は電車・バスから「降りる」"
+    },
+    {
+      "id": "s700-344",
+      "ja": "新宿で山手線に乗り換えてください。",
+      "en": "You need to transfer to the Yamanote Line at Shinjuku.",
+      "theme": "travel",
+      "tips": "transfer to ~ で「~に乗り換える」"
+    },
+    {
+      "id": "s700-345",
+      "ja": "私たちの便は予定より1時間遅れて離陸しました。",
+      "en": "Our flight took off an hour behind schedule.",
+      "theme": "travel",
+      "tips": "take off は飛行機が「離陸する」"
+    },
+    {
+      "id": "s700-346",
+      "ja": "飛行機は午後3時に着陸する予定です。",
+      "en": "The plane will land at three in the afternoon.",
+      "theme": "travel",
+      "tips": "land は「着陸する」という自動詞"
+    },
+    {
+      "id": "s700-347",
+      "ja": "保安検査を通るのに30分かかりました。",
+      "en": "It took us thirty minutes to go through security.",
+      "theme": "travel",
+      "tips": "go through security で「保安検査を通過する」"
+    },
+    {
+      "id": "s700-348",
+      "ja": "私たちは朝早く海岸へ向かいました。",
+      "en": "We headed for the coast early in the morning.",
+      "theme": "travel",
+      "tips": "head for ~ で「~へ向かう」"
+    },
+    {
+      "id": "s700-349",
+      "ja": "最終バスに2分前で間に合いました。",
+      "en": "We made it to the last bus with two minutes to spare.",
+      "theme": "travel",
+      "tips": "make it to ~ で「~に間に合う、たどり着く」"
+    },
+    {
+      "id": "s700-350",
+      "ja": "道路工事のため回り道をしました。",
+      "en": "We took a detour because of the road construction.",
+      "theme": "travel",
+      "tips": "take a detour で「回り道をする」"
+    },
+    {
+      "id": "s700-351",
+      "ja": "この街は自転車で移動するのが一番です。",
+      "en": "The best way to get around this city is by bicycle.",
+      "theme": "travel",
+      "tips": "get around で「(あちこち)移動する」"
+    },
+    {
+      "id": "s700-352",
+      "ja": "私たちは次に来たバスに飛び乗りました。",
+      "en": "We hopped on the next bus that came along.",
+      "theme": "travel",
+      "tips": "hop on ~ で「~にひょいと乗り込む」"
+    },
+    {
+      "id": "s700-353",
+      "ja": "香港で一晩乗り継ぎをします。",
+      "en": "We'll stop over in Hong Kong for one night.",
+      "theme": "travel",
+      "tips": "stop over で「途中降機する、立ち寄る」"
+    },
+    {
+      "id": "s700-354",
+      "ja": "その美術館はこの街で必見の場所です。",
+      "en": "That museum is a must-see in this city.",
+      "theme": "travel",
+      "tips": "must-see は「必見のもの」を表す名詞"
+    },
+    {
+      "id": "s700-355",
+      "ja": "人気のツアーはすでに売り切れていました。",
+      "en": "The popular tour was already sold out.",
+      "theme": "travel",
+      "tips": "sold out で「売り切れの」"
+    },
+    {
+      "id": "s700-356",
+      "ja": "その旅館は週末はすべて予約で埋まっています。",
+      "en": "The inn is fully booked on weekends.",
+      "theme": "travel",
+      "tips": "fully booked で「予約でいっぱいの」"
+    },
+    {
+      "id": "s700-357",
+      "ja": "6月ならまだ空いている部屋がございます。",
+      "en": "We still have some rooms available in June.",
+      "theme": "travel",
+      "tips": "available は「利用できる、空きがある」で名詞を後ろから修飾する"
+    },
+    {
+      "id": "s700-358",
+      "ja": "今夜は空室がございません。",
+      "en": "There are no vacancies for tonight.",
+      "theme": "travel",
+      "tips": "vacancy は「(部屋の)空き」を表す名詞"
+    },
+    {
+      "id": "s700-359",
+      "ja": "片道の切符を2枚お願いします。",
+      "en": "I'd like two one-way tickets, please.",
+      "theme": "travel",
+      "tips": "one-way は「片道の」、往復は round-trip"
+    },
+    {
+      "id": "s700-360",
+      "ja": "通路側の席をお願いできますか。",
+      "en": "Could I have an aisle seat, please?",
+      "theme": "travel",
+      "tips": "aisle seat で「通路側の席」、窓側は window seat"
+    },
+    {
+      "id": "s700-361",
+      "ja": "機内持ち込みの荷物は1つまでです。",
+      "en": "You are allowed only one carry-on bag.",
+      "theme": "travel",
+      "tips": "carry-on は「機内持ち込みの」という形容詞"
+    },
+    {
+      "id": "s700-362",
+      "ja": "手荷物受取所で待ち合わせましょう。",
+      "en": "Let's meet at the baggage claim area.",
+      "theme": "travel",
+      "tips": "baggage claim で「手荷物受取所」"
+    },
+    {
+      "id": "s700-363",
+      "ja": "時差ぼけが治るのに3日かかりました。",
+      "en": "It took me three days to get over the jet lag.",
+      "theme": "travel",
+      "tips": "jet lag で「時差ぼけ」、get over ~ は「~から回復する」"
+    },
+    {
+      "id": "s700-364",
+      "ja": "閑散期は宿泊費がずっと安くなります。",
+      "en": "Hotels are much cheaper during the off-season.",
+      "theme": "travel",
+      "tips": "off-season で「オフシーズン、閑散期」"
+    },
+    {
+      "id": "s700-365",
+      "ja": "繁忙期は早めの予約をお勧めします。",
+      "en": "I recommend booking early during the peak season.",
+      "theme": "travel",
+      "tips": "peak season で「繁忙期、最盛期」"
+    },
+    {
+      "id": "s700-366",
+      "ja": "現地時間ではもう真夜中でした。",
+      "en": "It was already midnight in local time.",
+      "theme": "travel",
+      "tips": "local time で「現地時間」"
+    },
+    {
+      "id": "s700-367",
+      "ja": "駅はホテルから歩いて行ける距離にあります。",
+      "en": "The station is within walking distance of the hotel.",
+      "theme": "travel",
+      "tips": "within walking distance of ~ で「~から徒歩圏内に」"
+    },
+    {
+      "id": "s700-368",
+      "ja": "ビーチはここから歩いてすぐです。",
+      "en": "The beach is a short walk from here.",
+      "theme": "travel",
+      "tips": "a short walk from ~ で「~から歩いてすぐ」"
+    },
+    {
+      "id": "s700-369",
+      "ja": "その町までは車で1時間しかかかりません。",
+      "en": "It takes no more than an hour to drive there.",
+      "theme": "travel",
+      "tips": "no more than ~ で「~しか、たった~」と少なさを強調する"
+    },
+    {
+      "id": "s700-370",
+      "ja": "遅くとも6時までにはここに集合してください。",
+      "en": "Please meet here by six at the latest.",
+      "theme": "travel",
+      "tips": "at the latest で「遅くとも」"
+    },
+    {
+      "id": "s700-371",
+      "ja": "私たちはぎりぎり搭乗に間に合いました。",
+      "en": "We arrived just in time to board the plane.",
+      "theme": "travel",
+      "tips": "in time は「間に合って」、on time は「時間ちょうどに」"
+    },
+    {
+      "id": "s700-372",
+      "ja": "私はいつも余裕をもって空港に着くようにしています。",
+      "en": "I always get to the airport ahead of time.",
+      "theme": "travel",
+      "tips": "ahead of time で「予定より早めに」"
+    },
+    {
+      "id": "s700-373",
+      "ja": "その神社を見るために坂をずっと登りました。",
+      "en": "We walked all the way up the hill to see the shrine.",
+      "theme": "travel",
+      "tips": "all the way で「ずっと、はるばる」と距離を強調する"
+    },
+    {
+      "id": "s700-374",
+      "ja": "彼女は昨年の夏、たった一人でヨーロッパを旅しました。",
+      "en": "She traveled across Europe all by herself last summer.",
+      "theme": "travel",
+      "tips": "by oneself で「一人で、独力で」"
+    },
+    {
+      "id": "s700-375",
+      "ja": "私は自分だけでその街をくまなく歩きました。",
+      "en": "I explored the whole city on my own.",
+      "theme": "travel",
+      "tips": "on one's own で「自分の力で、単独で」"
+    },
+    {
+      "id": "s700-376",
+      "ja": "そのお寺には歩いて行くしかありません。",
+      "en": "You can only reach the temple on foot.",
+      "theme": "travel",
+      "tips": "on foot で「徒歩で」、冠詞をつけない"
+    },
+    {
+      "id": "s700-377",
+      "ja": "初めて富士山を見たときは感動しました。",
+      "en": "I was moved when I saw Mount Fuji for the first time.",
+      "theme": "travel",
+      "tips": "for the first time で「初めて」"
+    },
+    {
+      "id": "s700-378",
+      "ja": "初めて海外に行ったのは20歳のときでした。",
+      "en": "The first time I went abroad, I was twenty.",
+      "theme": "travel",
+      "tips": "The first time S V ~ は接続詞のように節を導く"
+    },
+    {
+      "id": "s700-379",
+      "ja": "この街に来るたびに新しい発見があります。",
+      "en": "Every time I come to this city, I discover something new.",
+      "theme": "travel",
+      "tips": "every time S V で「~するたびに」"
+    },
+    {
+      "id": "s700-380",
+      "ja": "席がどこになっても私はかまいません。",
+      "en": "It doesn't matter to me where we sit.",
+      "theme": "travel",
+      "tips": "It doesn't matter ~ で「~はどうでもよい」"
+    },
+    {
+      "id": "s700-381",
+      "ja": "夕食をどこにするかはあなたにお任せします。",
+      "en": "Where we have dinner is up to you.",
+      "theme": "travel",
+      "tips": "be up to 人 で「人の判断次第だ」"
+    },
+    {
+      "id": "s700-382",
+      "ja": "今夜は外に出かける気分ではありません。",
+      "en": "I don't feel like going out tonight.",
+      "theme": "travel",
+      "tips": "feel like ~ing で「~したい気分だ」"
+    },
+    {
+      "id": "s700-383",
+      "ja": "山が見える部屋をお願いしたいのですが。",
+      "en": "I would like a room with a mountain view.",
+      "theme": "travel",
+      "tips": "would like + 名詞は want より丁寧な言い方"
+    },
+    {
+      "id": "s700-384",
+      "ja": "その祭りを見るのが待ちきれません。",
+      "en": "I can't wait to see the festival.",
+      "theme": "travel",
+      "tips": "can't wait to do で「~するのが待ちきれない」"
+    },
+    {
+      "id": "s700-385",
+      "ja": "彼は地元の料理をぜひ試したがっていました。",
+      "en": "He was eager to try the local dishes.",
+      "theme": "travel",
+      "tips": "be eager to do で「しきりに~したがる」"
+    },
+    {
+      "id": "s700-386",
+      "ja": "出発の前夜に荷造りを済ませました。",
+      "en": "I packed my suitcase the night before we left.",
+      "theme": "travel",
+      "tips": "pack は「荷物を詰める」という動詞"
+    },
+    {
+      "id": "s700-387",
+      "ja": "ホテルに着いてすぐ荷物を解きました。",
+      "en": "I unpacked as soon as we reached the hotel.",
+      "theme": "travel",
+      "tips": "unpack は「荷物を解く」で pack の反対語"
+    },
+    {
+      "id": "s700-388",
+      "ja": "キャンセル料を引いた額の払い戻しを受けました。",
+      "en": "We got a refund minus the cancellation fee.",
+      "theme": "travel",
+      "tips": "get a refund で「払い戻しを受ける」"
+    },
+    {
+      "id": "s700-389",
+      "ja": "彼は直前になって行き先を変えました。",
+      "en": "He changed his mind about the destination at the last minute.",
+      "theme": "travel",
+      "tips": "change one's mind で「気が変わる、考えを変える」"
+    },
+    {
+      "id": "s700-390",
+      "ja": "3名で7時に予約をお願いします。",
+      "en": "I'd like to make a reservation for three at seven.",
+      "theme": "travel",
+      "tips": "make a reservation で「予約する」"
+    },
+    {
+      "id": "s700-391",
+      "ja": "体調が悪かったので予約を取り消しました。",
+      "en": "I canceled my reservation because I felt sick.",
+      "theme": "travel",
+      "tips": "cancel a reservation で「予約を取り消す」"
+    },
+    {
+      "id": "s700-392",
+      "ja": "出発の3日前に予約をご確認ください。",
+      "en": "Please confirm your booking three days before departure.",
+      "theme": "travel",
+      "tips": "confirm a booking で「予約を確認する」"
+    },
+    {
+      "id": "s700-393",
+      "ja": "搭乗券をお手元にご用意ください。",
+      "en": "Please have your boarding pass ready.",
+      "theme": "travel",
+      "tips": "boarding pass で「搭乗券」"
+    },
+    {
+      "id": "s700-394",
+      "ja": "離陸前にシートベルトをお締めください。",
+      "en": "Please fasten your seat belts before takeoff.",
+      "theme": "travel",
+      "tips": "fasten a seat belt で「シートベルトを締める」"
+    },
+    {
+      "id": "s700-395",
+      "ja": "免税店で贈り物をいくつか買いました。",
+      "en": "I bought some gifts at the duty-free shop.",
+      "theme": "travel",
+      "tips": "duty-free で「免税の」"
+    },
+    {
+      "id": "s700-396",
+      "ja": "友人に何かお土産を買いたいです。",
+      "en": "I want to buy a souvenir for my friend.",
+      "theme": "travel",
+      "tips": "souvenir は「(旅行の)土産、記念品」"
+    },
+    {
+      "id": "s700-397",
+      "ja": "その国では現地通貨しか使えません。",
+      "en": "You can only use the local currency there.",
+      "theme": "travel",
+      "tips": "currency で「通貨」"
+    },
+    {
+      "id": "s700-398",
+      "ja": "その国ではチップを渡す習慣がありません。",
+      "en": "People don't leave a tip in that country.",
+      "theme": "travel",
+      "tips": "leave a tip で「チップを置く」"
+    },
+    {
+      "id": "s700-399",
+      "ja": "私たちは1日でこの街の名所を回りました。",
+      "en": "We saw the sights of this city in one day.",
+      "theme": "travel",
+      "tips": "see the sights で「観光する、名所を見て回る」"
+    },
+    {
+      "id": "s700-400",
+      "ja": "明日は隣町まで日帰り旅行をします。",
+      "en": "We're taking a day trip to the next town tomorrow.",
+      "theme": "travel",
+      "tips": "take a day trip で「日帰り旅行をする」"
     }
   ]
 }
