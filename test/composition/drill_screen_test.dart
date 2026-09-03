@@ -17,6 +17,7 @@ import 'package:pj_walter/screens/composition/drill_screen.dart';
 import 'package:pj_walter/services/gemini_service.dart';
 import 'package:pj_walter/services/history_service.dart';
 import 'package:pj_walter/services/settings_service.dart';
+import 'package:pj_walter/models/token_usage.dart';
 import 'package:pj_walter/services/speech_input_service.dart';
 import 'package:provider/provider.dart';
 
@@ -25,12 +26,18 @@ import '../test_support/hive_test_support.dart';
 /// テスト用のフェイク音声入力サービス。
 ///
 /// [start]は常に固定のpartialテキストを1回流し、[stop]は
-/// あらかじめ設定した[stopResult]（またはエラー）を返す。
+/// あらかじめ設定した[stopResult]（またはエラー）を[stopUsage]付きで返す。
 class FakeSpeechInputService implements SpeechInputService {
   String stopResult = 'this is my spoken answer';
   Object? stopError;
   bool startCalled = false;
   bool stopCalled = false;
+
+  /// 文字起こし1回分のトークン使用量（音声入力分は入力300・出力10）
+  TokenUsage stopUsage = const TokenUsage(
+    promptTokens: 300,
+    candidatesTokens: 10,
+  );
 
   @override
   Future<bool> get isAvailable async => true;
@@ -46,17 +53,19 @@ class FakeSpeechInputService implements SpeechInputService {
   }
 
   @override
-  Future<String> stop() async {
+  Future<SpeechInputResult> stop() async {
     stopCalled = true;
     final error = stopError;
     if (error != null) throw error;
-    return stopResult;
+    return SpeechInputResult(text: stopResult, usage: stopUsage);
   }
 
   @override
   void dispose() {}
 }
 
+/// Gemini応答のエンベロープ。usageMetadataはトークン計測のテスト用に固定値
+/// （入力100・出力20・思考5）を付ける。
 Map<String, dynamic> _geminiEnvelope(Object payload) => {
   'candidates': [
     {
@@ -67,6 +76,12 @@ Map<String, dynamic> _geminiEnvelope(Object payload) => {
       },
     },
   ],
+  'usageMetadata': {
+    'promptTokenCount': 100,
+    'candidatesTokenCount': 20,
+    'thoughtsTokenCount': 5,
+    'totalTokenCount': 125,
+  },
 };
 
 http.Response _jsonResponse(Object payload, int statusCode) => http.Response(
@@ -245,6 +260,17 @@ void main() {
     expect(find.textContaining('日本語の例文1'), findsOneWidget);
     expect(find.textContaining('日本語の例文2'), findsOneWidget);
     expect(historyService.drillHistory, hasLength(2));
+
+    // トークン使用量: 2問とも音声入力なので
+    //   文字起こし = フェイクの (300 / 10) × 2 = 600 / 20
+    //   添削     = MockClientの (100 / 20+思考5) × 2 = 200 / 50
+    expect(find.text('APIトークン使用量'), findsOneWidget);
+    expect(find.text('入力 600 · 出力 20'), findsOneWidget);
+    expect(find.text('入力 200 · 出力 50'), findsOneWidget);
+    expect(find.text('入力 800 · 出力 70'), findsOneWidget);
+    expect(find.text('出力のうち思考トークン 10'), findsOneWidget);
+    // 問ごとの行（コストは単価の適用日に依存するため数値は見ない）
+    expect(find.textContaining('入力 400 · 出力 35 · \$'), findsNWidgets(2));
   });
 
   testWidgets('録音はボタンを押すまで始まらず、カウントダウンは表示と同時に始まる', (tester) async {

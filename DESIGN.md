@@ -34,12 +34,14 @@ lib/
     sentence.dart           # 教材文
     topic.dart              # 独り言のお題
     drill_result.dart       # 口頭英作文の1問の結果＋添削
+    token_usage.dart        # Gemini APIのトークン使用量（usageMetadata由来）
     monologue_result.dart   # 独り言1回の結果＋添削
     srs_item.dart           # SRS復習アイテム
     phrase.dart             # フレーズ帳エントリ
   services/
     settings_service.dart   # 設定の読み書き（ChangeNotifier）
-    gemini_service.dart     # Gemini REST クライアント
+    gemini_service.dart     # Gemini REST クライアント（結果＋TokenUsageを返す）
+    gemini_pricing.dart     # gemini-3.8-flash の単価とコスト計算
     speech_input_service.dart # STT/録音の抽象化
     sentence_repository.dart  # 教材JSONのロード・フィルタ
     history_service.dart    # 履歴・SRS・フレーズ帳・日次統計の永続化（ChangeNotifier）
@@ -182,6 +184,20 @@ APIキーだけは `flutter_secure_storage`（キー名 `gemini_api_key`）。
   "useful_phrases": [ { "en": "It slipped my mind.", "ja": "うっかり忘れていた" } ],  // 3-5個、次回使える表現
   "overall_feedback_ja": "良かった点＋改善点（日本語、3-4文）" }
 ```
+
+### トークン使用量とコスト
+
+- 全ての呼び出しでレスポンスの `usageMetadata`（`promptTokenCount` / `candidatesTokenCount` / `thoughtsTokenCount`）を `TokenUsage` に読み取り、結果と一緒に返す（`correctComposition` → `CorrectionResult`、`transcribe` → `TranscriptionResult` など Dart の record）。`usageMetadata` が無ければゼロ扱い
+- 課金上の出力トークン = 返答本文 + 思考（`billedOutputTokens`）
+- 単価は `GeminiPricing`（`gemini-3.8-flash`、Standardティア、出典 https://ai.google.dev/gemini-api/docs/pricing 2026-09-03確認）
+  - 2026-12-31まで: 入力 $0.75 / 出力 $3.75 per 1M tokens（導入価格）
+  - 2027-01-01から: 入力 $1.50 / 出力 $7.50 per 1M tokens（標準価格）
+  - 音声入力も入力単価をそのまま適用（このモデルでは音声の別単価なし）。コンテキストキャッシュ・Batchは未使用
+- 口頭英作文の `DrillScreen` は問ごとに文字起こしと添削の `TokenUsage` を `DrillSummaryEntry.usage`（`DrillQuestionUsage`）に積み（「もう一度」のやり直し分も加算）、全問終了後の `DrillSummaryScreen` で
+  - 「APIトークン使用量」カード: 文字起こし／添削／合計の入力・出力トークンとコスト（USD、小数4桁）、思考トークン数、適用単価
+  - 問ごとの行: `入力 N · 出力 M · $X.XXXX`（使用量ゼロの問は非表示）
+- 独り言英会話は使用量を受け取るが表示はまだしない
+- Hive には保存しない（セッション内表示のみ）
 
 ### 音声文字起こし
 

@@ -5,7 +5,20 @@ import 'package:http/http.dart' as http;
 
 import '../models/drill_result.dart';
 import '../models/monologue_result.dart';
+import '../models/token_usage.dart';
 import 'settings_service.dart';
+
+/// [GeminiService.correctComposition]の結果（添削＋トークン使用量）。
+typedef CorrectionResult = ({CompositionFeedback feedback, TokenUsage usage});
+
+/// [GeminiService.reviewMonologue]の結果（フィードバック＋トークン使用量）。
+typedef MonologueReviewResult = ({
+  MonologueFeedback feedback,
+  TokenUsage usage,
+});
+
+/// [GeminiService.transcribe]の結果（文字起こし＋トークン使用量）。
+typedef TranscriptionResult = ({String text, TokenUsage usage});
 
 /// Gemini API呼び出し失敗時に投げられる例外。
 ///
@@ -22,6 +35,8 @@ class GeminiException implements Exception {
 /// Gemini REST APIクライアント（DESIGN.md「Gemini API契約」参照）。
 ///
 /// APIキーは[SettingsService]から取得し、モデルは[modelName]に固定する。
+/// 各メソッドはレスポンスの`usageMetadata`から読んだ[TokenUsage]を結果と
+/// 一緒に返す（料金表示用。DESIGN.md「トークン使用量とコスト」参照）。
 /// テスト容易性のため[http.Client]はコンストラクタ注入できる。
 class GeminiService {
   GeminiService({required SettingsService settingsService, http.Client? client})
@@ -45,7 +60,7 @@ class GeminiService {
   final http.Client _client;
 
   /// 口頭英作文の発話をGeminiに添削させる。
-  Future<CompositionFeedback> correctComposition({
+  Future<CorrectionResult> correctComposition({
     required String ja,
     required String modelAnswer,
     required String spoken,
@@ -79,16 +94,19 @@ class GeminiService {
 - comparison_ja: 模範解答との違いや、どちらでも良い点の解説（日本語）
 ''';
 
-    final json = await _generate(prompt: prompt, schema: _compositionSchema);
+    final (:json, :usage) = await _generate(
+      prompt: prompt,
+      schema: _compositionSchema,
+    );
     try {
-      return CompositionFeedback.fromJson(json);
+      return (feedback: CompositionFeedback.fromJson(json), usage: usage);
     } catch (_) {
       throw GeminiException('Geminiからの応答を解析できませんでした。時間を置いて再度お試しください。');
     }
   }
 
   /// 独り言英会話のトランスクリプトをGeminiにレビューさせる。
-  Future<MonologueFeedback> reviewMonologue({
+  Future<MonologueReviewResult> reviewMonologue({
     required String topicJa,
     required String topicEn,
     required int seconds,
@@ -119,16 +137,19 @@ class GeminiService {
 - overall_feedback_ja: 良かった点と改善点を含む総評（日本語、3〜4文）
 ''';
 
-    final json = await _generate(prompt: prompt, schema: _monologueSchema);
+    final (:json, :usage) = await _generate(
+      prompt: prompt,
+      schema: _monologueSchema,
+    );
     try {
-      return MonologueFeedback.fromJson(json);
+      return (feedback: MonologueFeedback.fromJson(json), usage: usage);
     } catch (_) {
       throw GeminiException('Geminiからの応答を解析できませんでした。時間を置いて再度お試しください。');
     }
   }
 
-  /// 録音済み音声をGeminiに文字起こしさせる（STT方式=geminiのとき使用）。
-  Future<String> transcribe({
+  /// 録音済み音声をGeminiに文字起こしさせる。
+  Future<TranscriptionResult> transcribe({
     required List<int> audioBytes,
     required String mimeType,
   }) async {
@@ -163,10 +184,12 @@ class GeminiService {
     final response = await _post(uri: uri, apiKey: apiKey, body: body);
     _checkStatus(response);
     final String text;
+    final TokenUsage usage;
     try {
       final decoded =
           jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
       text = _extractText(decoded).trim();
+      usage = _extractUsage(decoded);
     } catch (_) {
       throw GeminiException('Geminiからの応答を解析できませんでした。時間を置いて再度お試しください。');
     }
@@ -175,10 +198,11 @@ class GeminiService {
     if (text.isEmpty) {
       throw GeminiException('音声を聞き取れませんでした。もう一度お試しください。');
     }
-    return text;
+    return (text: text, usage: usage);
   }
 
-  Future<Map<String, dynamic>> _generate({
+  /// 構造化出力（JSON）でGeminiを呼び出し、パース済みのMapとトークン使用量を返す。
+  Future<({Map<String, dynamic> json, TokenUsage usage})> _generate({
     required String prompt,
     required Map<String, dynamic> schema,
   }) async {
@@ -205,10 +229,20 @@ class GeminiService {
       final decoded =
           jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
       final text = _extractText(decoded);
-      return jsonDecode(text) as Map<String, dynamic>;
+      return (
+        json: jsonDecode(text) as Map<String, dynamic>,
+        usage: _extractUsage(decoded),
+      );
     } catch (_) {
       throw GeminiException('Geminiからの応答を解析できませんでした。時間を置いて再度お試しください。');
     }
+  }
+
+  /// レスポンスの`usageMetadata`を読む。無ければ[TokenUsage.zero]。
+  TokenUsage _extractUsage(Map<String, dynamic> decoded) {
+    final metadata = decoded['usageMetadata'];
+    if (metadata is! Map) return TokenUsage.zero;
+    return TokenUsage.fromUsageMetadata(Map<String, dynamic>.from(metadata));
   }
 
   String _extractText(Map<String, dynamic> decoded) {

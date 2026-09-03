@@ -17,6 +17,7 @@ import 'package:pj_walter/screens/monologue/monologue_speak_screen.dart';
 import 'package:pj_walter/services/gemini_service.dart';
 import 'package:pj_walter/services/history_service.dart';
 import 'package:pj_walter/services/settings_service.dart';
+import 'package:pj_walter/models/token_usage.dart';
 import 'package:pj_walter/services/speech_input_service.dart';
 import 'package:provider/provider.dart';
 
@@ -45,15 +46,17 @@ class FakeSpeechInputService implements SpeechInputService {
   }
 
   @override
-  Future<String> stop() async {
+  Future<SpeechInputResult> stop() async {
     stopCalled = true;
-    return stopResult;
+    return SpeechInputResult(text: stopResult, usage: TokenUsage.zero);
   }
 
   @override
   void dispose() {}
 }
 
+/// Gemini応答のエンベロープ。usageMetadataはトークン計測のテスト用に固定値
+/// （入力100・出力20・思考5）を付ける。
 Map<String, dynamic> _geminiEnvelope(Object payload) => {
   'candidates': [
     {
@@ -64,6 +67,12 @@ Map<String, dynamic> _geminiEnvelope(Object payload) => {
       },
     },
   ],
+  'usageMetadata': {
+    'promptTokenCount': 100,
+    'candidatesTokenCount': 20,
+    'thoughtsTokenCount': 5,
+    'totalTokenCount': 125,
+  },
 };
 
 http.Response _jsonResponse(Object payload, int statusCode) => http.Response(

@@ -86,7 +86,7 @@ class _MonologueFeedbackScreenState extends State<MonologueFeedbackScreen> {
     final speech = widget.speechInput!;
     String transcript;
     try {
-      transcript = await speech.stop();
+      transcript = (await speech.stop()).text;
     } on SpeechInputException catch (e) {
       _failAndExit(e.message);
       return;
@@ -116,7 +116,8 @@ class _MonologueFeedbackScreenState extends State<MonologueFeedbackScreen> {
     final gemini = context.read<GeminiService>();
     final historyService = context.read<HistoryService>();
     try {
-      final feedback = await gemini.reviewMonologue(
+      // 独り言ではトークン使用量の表示はまだ行わない（口頭英作文のまとめ画面のみ）。
+      final (:feedback, usage: _) = await gemini.reviewMonologue(
         topicJa: widget.topic.ja,
         topicEn: widget.topic.en,
         seconds: widget.seconds,
