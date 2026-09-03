@@ -4,11 +4,21 @@
 
 ## プロダクト概要
 
-英語スピーキング特化の学習アプリ。ユーザーは TOEIC 750 前後の日本人。UIは全て日本語。
+外国語スピーキング特化の学習アプリ。ユーザーは日本人学習者。UIは全て日本語。
+
+学習対象言語は設定画面で切り替える:
+
+| 言語 | デッキ | 想定レベル |
+|---|---|---|
+| 英語 | TOEIC 700点台 / 800点台 | TOEIC 750 前後 |
+| 中国語 | HSK 3級 / 4級 | HSK 3〜4（累計 600〜1200語） |
 
 2つのトレーニング:
-1. **口頭英作文**: 日本語文を見て制限時間内に英語で発話 → 音声認識で文字化 → Gemini が添削
-2. **独り言英会話**: お題について 30秒/1分/2分/3分 スピーキング → 文字起こし → Gemini がフィードバック
+1. **口頭作文**（英語なら「口頭英作文」、中国語なら「口頭中作文」）: 日本語文を見て制限時間内に学習言語で発話 → 音声認識で文字化 → Gemini が添削
+2. **独り言**（英語なら「独り言英会話」、中国語なら「独り言中国語会話」）: お題について 30秒/1分/2分/3分 スピーキング → 文字起こし → Gemini がフィードバック
+
+**発音・声調は採点対象外。** 文法・語彙・語順のみを見る。音声認識を経た時点で発音の情報は失われており、
+LLMに発音を評価させると根拠のない指摘（ハルシネーション）になるため、プロンプトで明示的に除外している。
 
 補助機能: SRS復習、フレーズ帳、学習記録（ストリーク・カレンダー・グラフ）、設定（Gemini APIキー等）。
 
@@ -106,19 +116,39 @@ assets/data/
 
 ## データモデル
 
-### 教材 (assets/data/sentences_*.json)
+### 教材 (assets/data/{言語}/sentences_{level}.json)
 
 ```json
 { "level": 700,
   "sentences": [
     { "id": "s700-001", "ja": "この件については後ほど折り返しご連絡します。",
-      "en": "I'll get back to you on this matter later.",
+      "target": "I'll get back to you on this matter later.",
       "theme": "business",            // "daily" | "business" | "travel"
-      "tips": "get back to A on B で「BについてAに折り返す」" }
+      "tips": "get back to A on B で「BについてAに折り返す」",
+      "reading": null }               // 発音表記。英語はnull、中国語はピンイン
   ] }
 ```
 
-`id` は `s{level}-{連番3桁}`。約数十文ごとの「ユニット」には分けず、テーマ×レベルでフィルタして出題。
+`target` は学習言語の模範解答。`en` は英語専用だった頃のキー名で、
+保存済みデータのために `fromJson` が読めるようにしてあるが、新規データでは使わない。
+
+`id` は言語をまたいで一意にする（英語 `s{level}-{連番3桁}` / 中国語 `z{level}-{連番3桁}`）。
+SRSの `srs_items` box が `sentenceId` をキーにしているため、衝突すると復習キューが混ざる。
+
+約数十文ごとの「ユニット」には分けず、テーマ×レベルでフィルタして出題。
+
+#### 中国語教材の作り方
+
+**教材文は勘で書かない。** 出発点は「その級の学習者が話せるようになるべきこと」で、
+そのうえで使う語彙が公式リストの外に出ないことを機械的に検証する。手順は
+[tool/hsk/README.md](./tool/hsk/README.md) を参照（許容語彙の定義・検証コマンド・
+ピンイン生成）。教材を追加・修正したら必ず `verify_vocabulary.py` を通すこと。
+
+難易度の考え方: 易しすぎる文はスピーキング練習にならないため、
+「読めば意味は取れるが自分では言えない」構文（把構文・被構文・様態補語・結果補語・
+方向補語・離合詞・時量補語・可能補語など、日本語と語順や発想が異なるもの）を
+会話文の中に織り込む。ただしこれは難易度を保つための味付けであって、
+文法項目の網羅がデッキの目的ではない。
 
 ### 独り言お題 (assets/data/topics.json)
 
@@ -128,15 +158,28 @@ assets/data/
 
 50題以上。theme は教材と同じ3分類。
 
+### 学習言語の抽象化
+
+言語で分岐する設定は `models/learning_language.dart` の `LanguageProfile` に集約する。
+言語を増やすときは `LanguageProfile.values` に1件足し、教材アセットを置くだけで済むようにしてある。
+
+`LanguageProfile` が持つもの: 言語コード / 表示名 / トレーニングの呼び名 /
+音声認識ロケール（`en_US`・`zh_CN`）/ 教材アセットのディレクトリ / デッキのレベル一覧 /
+発音表記のラベル（中国語のみ「ピンイン」）/ 分かち書きする言語かどうか。
+
+「分かち書きするか」は差分表示に効く。`utils/word_diff.dart` は空白分割ではなく
+CJK文字を1文字1トークンとして切るため、中国語でも語レベルに近い差分が出る
+（空白分割だと文全体が1トークンになり「全消し・全追加」になってしまう）。
+
 ### Hive ボックス（全て Map を格納、モデルの toJson/fromJson で変換）
 
 | box名 | キー | 内容 |
 |---|---|---|
-| `settings` | 固定キー | モデル名、STT方式(`device`/`gemini`)、独り言デフォルト秒数など非秘匿設定 |
-| `drill_results` | uuid | DrillResult（sentenceId, spoken, feedback一式, timestamp） |
-| `monologue_results` | uuid | MonologueResult（topicId, seconds, transcript, feedback一式, timestamp） |
-| `srs_items` | sentenceId | SrsItem（stage, dueDate, lapses, lastResult） |
-| `phrases` | uuid | Phrase（en, ja, source, createdAt） |
+| `settings` | 固定キー | 学習言語、モデル名、STT方式(`device`/`gemini`)、独り言デフォルト秒数など非秘匿設定 |
+| `drill_results` | uuid | DrillResult（sentenceId, language, level, spoken, feedback一式, timestamp） |
+| `monologue_results` | uuid | MonologueResult（topicId, language, seconds, transcript, feedback一式, timestamp） |
+| `srs_items` | sentenceId | SrsItem（language, level, stage, dueDate, lapses, lastResult） |
+| `phrases` | uuid | Phrase（target, ja, source, createdAt） |
 | `daily_stats` | `YYYY-MM-DD` | その日の学習量（drillCount, monologueCount, studySeconds） |
 
 APIキーだけは `flutter_secure_storage`（キー名 `gemini_api_key`）。
@@ -178,13 +221,13 @@ APIキーだけは `flutter_secure_storage`（キー名 `gemini_api_key`）。
 { "fluency_score": 72,
   "corrected_transcript": "全文を自然な英語に直したもの",
   "corrections": [ { "original": "...", "corrected": "...", "reason_ja": "..." } ],
-  "useful_phrases": [ { "en": "It slipped my mind.", "ja": "うっかり忘れていた" } ],  // 3-5個、次回使える表現
+  "useful_phrases": [ { "target": "It slipped my mind.", "ja": "うっかり忘れていた" } ],  // 3-5個
   "overall_feedback_ja": "良かった点＋改善点（日本語、3-4文）" }
 ```
 
 ### 音声文字起こし（STT方式=gemini のとき）
 
-`inline_data`（base64、mimeType は録音フォーマットに一致: wav推奨）＋指示「Transcribe this English speech verbatim. Return only the transcript.」。プレーンテキスト応答。録音は `record` パッケージで wav (16kHz mono)。
+`inline_data`（base64、mimeType は録音フォーマットに一致: wav推奨）＋指示「Transcribe this {言語} speech verbatim. Return only the transcript.」（言語名は `LanguageProfile.label`）。プレーンテキスト応答。録音は `record` パッケージで wav (16kHz mono)。
 
 ## 音声入力の抽象化
 
@@ -196,7 +239,7 @@ APIキーだけは `flutter_secure_storage`（キー名 `gemini_api_key`）。
 ## コーディング規約
 
 - `flutter analyze` 警告ゼロ、`dart format` 適用、flutter_lints デフォルト準拠
-- UI文言は日本語ハードコード（i18n しない）。コメントも日本語可
+- UI文言は日本語ハードコード（i18n しない）。日本語話者向けアプリなので、学習言語が増えてもUIの言語は日本語のまま。学習言語で変わる文言は `LanguageProfile` から取る。コメントも日本語可
 - 1ファイル400行を目安に分割。ウィジェットの深いネストはメソッド/クラス抽出
 - モデルは immutable（final フィールド＋fromJson/toJson）
 - 新規依存パッケージの追加は原則しない（必要なら PR 説明に理由を書く）
