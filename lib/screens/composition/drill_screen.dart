@@ -66,7 +66,7 @@ class DrillScreen extends StatefulWidget {
   /// へは遷移せず、呼び出し元（[ReviewScreen]）に戻る。
   final bool isReview;
 
-  /// テスト注入用。省略時は設定に応じたインスタンスを自動生成する。
+  /// テスト注入用。省略時は本番用のインスタンスを自動生成する。
   final SpeechInputService? speechInputService;
 
   /// 1問あたりの制限時間（秒）。テスト注入用で、省略時は[_questionSeconds]（30秒）。
@@ -105,10 +105,7 @@ class _DrillScreenState extends State<DrillScreen> {
     super.initState();
     _speechInput =
         widget.speechInputService ??
-        createSpeechInputService(
-          settingsService: context.read<SettingsService>(),
-          geminiService: context.read<GeminiService>(),
-        );
+        createSpeechInputService(geminiService: context.read<GeminiService>());
     // カウントダウンは画面表示と同時に開始する（「読む時間」もカウントに
     // 含まれる前提）。録音は「答える」ボタンが押されるまで始めない。
     _startTimer();
@@ -474,9 +471,7 @@ class _DrillScreenState extends State<DrillScreen> {
       children: [
         // 画面上端の残り時間ゲージ（6px）。pre=#C9CCD1 / rec=オレンジ、残り5秒以下で赤
         TweenAnimationBuilder<double>(
-          tween: Tween<double>(
-            end: _secondsLeft / widget.questionSeconds,
-          ),
+          tween: Tween<double>(end: _secondsLeft / widget.questionSeconds),
           duration: const Duration(seconds: 1),
           curve: Curves.linear,
           builder: (context, value, child) => LinearProgressIndicator(

@@ -38,8 +38,6 @@ class FakeSpeechInputService implements SpeechInputService {
   Future<void> start({
     required void Function(String text) onPartial,
     void Function(double level)? onLevel,
-    Duration? listenFor,
-    Duration? pauseFor,
   }) async {
     startCalled = true;
     onPartial('partial text...');

@@ -39,8 +39,6 @@ class FakeSpeechInputService implements SpeechInputService {
   Future<void> start({
     required void Function(String text) onPartial,
     void Function(double level)? onLevel,
-    Duration? listenFor,
-    Duration? pauseFor,
   }) async {
     startCalled = true;
     onPartial('partial text...');
@@ -333,7 +331,10 @@ void main() {
     expect(find.text('One-press corrected answer'), findsOneWidget);
     expect(find.text('this is my spoken answer'), findsOneWidget);
     expect(historyService.drillHistory, hasLength(1));
-    expect(historyService.drillHistory.first.spoken, 'this is my spoken answer');
+    expect(
+      historyService.drillHistory.first.spoken,
+      'this is my spoken answer',
+    );
   });
 
   testWidgets('GeminiExceptionが発生するとSnackBarとリトライボタンが表示される', (tester) async {
