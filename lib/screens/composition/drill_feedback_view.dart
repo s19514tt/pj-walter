@@ -84,7 +84,8 @@ class DrillFeedbackView extends StatelessWidget {
                 _Section(
                   icon: Icons.menu_book_outlined,
                   title: '模範解答',
-                  content: sentence.en,
+                  content: sentence.target,
+                  reading: sentence.reading,
                   tips: sentence.tips,
                   highlight: _timedOut,
                 ),
@@ -314,6 +315,7 @@ class _Section extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.content,
+    this.reading,
     this.tips,
     this.highlight = false,
   });
@@ -321,6 +323,9 @@ class _Section extends StatelessWidget {
   final IconData icon;
   final String title;
   final String content;
+
+  /// [content]の発音表記（中国語のピンインなど）。無い言語ではnull。
+  final String? reading;
   final String? tips;
   final bool highlight;
 
@@ -341,6 +346,16 @@ class _Section extends StatelessWidget {
               color: highlight ? AppColors.primary : AppColors.textPrimary,
             ),
           ),
+          if (reading != null && reading!.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              reading!,
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
           if (tips != null && tips!.isNotEmpty) ...[
             const SizedBox(height: 10),
             Container(

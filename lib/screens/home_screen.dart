@@ -55,6 +55,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final history = context.watch<HistoryService>();
     final settings = context.watch<SettingsService>();
+    final profile = settings.languageProfile;
     final dueItems = history.dueSrsItems;
     final todayStats = history.statsForDate(DateTime.now());
 
@@ -92,8 +93,8 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 12),
           _TrainingShortcutCard(
             icon: Icons.edit_note,
-            title: '口頭英作文',
-            description: '日本語文を見て制限時間内に英語で発話し、AIが添削します。',
+            title: profile.compositionTitle,
+            description: '日本語文を見て制限時間内に${profile.label}で発話し、AIが添削します。',
             onTap: () {
               Navigator.of(
                 context,
@@ -103,7 +104,7 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 12),
           _TrainingShortcutCard(
             icon: Icons.mic_none,
-            title: '独り言英会話',
+            title: profile.monologueTitle,
             description: 'お題について自由に話し、AIがフィードバックします。',
             onTap: () {
               Navigator.of(

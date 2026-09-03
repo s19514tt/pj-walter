@@ -1,0 +1,298 @@
+{
+  "topics": [
+    {
+      "id": "zt-001",
+      "ja": "今日一日の出来事を話してください",
+      "target": "请说一说你今天做了什么。",
+      "theme": "daily",
+      "reading": "qǐng shuō yī shuō nǐ jīn tiān zuò le shén me"
+    },
+    {
+      "id": "zt-002",
+      "ja": "あなたの一日の習慣について話してください",
+      "target": "请介绍一下你每天的生活习惯。",
+      "theme": "daily",
+      "reading": "qǐng jiè shào yī xià nǐ měi tiān de shēng huó xí guàn"
+    },
+    {
+      "id": "zt-003",
+      "ja": "自分の家族を紹介してください",
+      "target": "请介绍一下你的家人。",
+      "theme": "daily",
+      "reading": "qǐng jiè shào yī xià nǐ de jiā rén"
+    },
+    {
+      "id": "zt-004",
+      "ja": "住んでいる町について話してください",
+      "target": "请介绍一下你住的城市。",
+      "theme": "daily",
+      "reading": "qǐng jiè shào yī xià nǐ zhù de chéng shì"
+    },
+    {
+      "id": "zt-005",
+      "ja": "あなたの趣味について話してください",
+      "target": "请说一说你的爱好。",
+      "theme": "daily",
+      "reading": "qǐng shuō yī shuō nǐ de ài hào"
+    },
+    {
+      "id": "zt-006",
+      "ja": "週末はいつも何をしますか",
+      "target": "你周末一般做什么？请说一说。",
+      "theme": "daily",
+      "reading": "nǐ zhōu mò yì bān zuò shén me qǐng shuō yī shuō"
+    },
+    {
+      "id": "zt-007",
+      "ja": "いちばん好きな食べ物について話してください",
+      "target": "请说一说你最喜欢吃的东西。",
+      "theme": "daily",
+      "reading": "qǐng shuō yī shuō nǐ zuì xǐ huān chī de dōng xī"
+    },
+    {
+      "id": "zt-008",
+      "ja": "最近見た映画やドラマの感想を話してください",
+      "target": "请说一说你最近看的电影或者电视节目。",
+      "theme": "daily",
+      "reading": "qǐng shuō yī shuō nǐ zuì jìn kàn de diàn yǐng huò zhě diàn shì jié mù"
+    },
+    {
+      "id": "zt-009",
+      "ja": "健康のためにしていることを話してください",
+      "target": "为了身体健康，你平时做什么？请说一说。",
+      "theme": "daily",
+      "reading": "wèi le shēn tǐ jiàn kāng nǐ píng shí zuò shén me qǐng shuō yī shuō"
+    },
+    {
+      "id": "zt-010",
+      "ja": "中国語を勉強し始めた理由を話してください",
+      "target": "请说一说你为什么开始学习汉语。",
+      "theme": "daily",
+      "reading": "qǐng shuō yī shuō nǐ wèi shén me kāi shǐ xué xí hàn yǔ"
+    },
+    {
+      "id": "zt-011",
+      "ja": "中国語の勉強で難しいと感じることを話してください",
+      "target": "学习汉语的时候，你觉得什么最难？请说一说。",
+      "theme": "daily",
+      "reading": "xué xí hàn yǔ de shí hòu nǐ jué de shén me zuì nán qǐng shuō yī shuō"
+    },
+    {
+      "id": "zt-012",
+      "ja": "友達とどんなことをして過ごしますか",
+      "target": "你跟朋友在一起的时候，一般做什么？",
+      "theme": "daily",
+      "reading": "nǐ gēn péng yǒu zài yì qǐ de shí hòu yì bān zuò shén me"
+    },
+    {
+      "id": "zt-013",
+      "ja": "子どもの頃の思い出を一つ話してください",
+      "target": "请说一说你小时候的一件事情。",
+      "theme": "daily",
+      "reading": "qǐng shuō yī shuō nǐ xiǎo shí hòu de yī jiàn shì qíng"
+    },
+    {
+      "id": "zt-014",
+      "ja": "最近うれしかったことを話してください",
+      "target": "请说一说最近让你觉得高兴的一件事情。",
+      "theme": "daily",
+      "reading": "qǐng shuō yī shuō zuì jìn ràng nǐ jué de gāo xìng de yī jiàn shì qíng"
+    },
+    {
+      "id": "zt-015",
+      "ja": "自分の性格について話してください",
+      "target": "请说一说你是什么样的性格。",
+      "theme": "daily",
+      "reading": "qǐng shuō yī shuō nǐ shì shén me yàng de xìng gé"
+    },
+    {
+      "id": "zt-016",
+      "ja": "今年やってみたいことを話してください",
+      "target": "今年你想做什么新的事情？请说一说。",
+      "theme": "daily",
+      "reading": "jīn nián nǐ xiǎng zuò shén me xīn de shì qíng qǐng shuō yī shuō"
+    },
+    {
+      "id": "zt-017",
+      "ja": "あなたの一日の食事について話してください",
+      "target": "请说一说你一天吃什么。",
+      "theme": "daily",
+      "reading": "qǐng shuō yī shuō nǐ yī tiān chī shén me"
+    },
+    {
+      "id": "zt-018",
+      "ja": "季節の中でいちばん好きな季節と、その理由を話してください",
+      "target": "你最喜欢哪个季节？为什么？请说一说。",
+      "theme": "daily",
+      "reading": "nǐ zuì xǐ huān nǎ ge jì jié wèi shén me qǐng shuō yī shuō"
+    },
+    {
+      "id": "zt-019",
+      "ja": "あなたの仕事の内容を紹介してください",
+      "target": "请介绍一下你的工作。",
+      "theme": "business",
+      "reading": "qǐng jiè shào yī xià nǐ de gōng zuò"
+    },
+    {
+      "id": "zt-020",
+      "ja": "職場の一日の流れを説明してください",
+      "target": "请说一说你在公司一天的安排。",
+      "theme": "business",
+      "reading": "qǐng shuō yī shuō nǐ zài gōng sī yī tiān de ān pái"
+    },
+    {
+      "id": "zt-021",
+      "ja": "仕事で大変だったことを一つ話してください",
+      "target": "请说一说工作中让你觉得困难的一件事情。",
+      "theme": "business",
+      "reading": "qǐng shuō yī shuō gōng zuò zhōng ràng nǐ jué de kùn nán de yī jiàn shì qíng"
+    },
+    {
+      "id": "zt-022",
+      "ja": "同僚とどのように協力していますか",
+      "target": "你跟同事怎么一起工作？请说一说。",
+      "theme": "business",
+      "reading": "nǐ gēn tóng shì zěn me yì qǐ gōng zuò qǐng shuō yī shuō"
+    },
+    {
+      "id": "zt-023",
+      "ja": "会議で自分の意見をどう伝えますか",
+      "target": "开会的时候，你怎么说自己的看法？请说一说。",
+      "theme": "business",
+      "reading": "kāi huì de shí hòu nǐ zěn me shuō zì jǐ de kàn fǎ qǐng shuō yī shuō"
+    },
+    {
+      "id": "zt-024",
+      "ja": "仕事の予定をどう管理しているか話してください",
+      "target": "请说一说你怎么安排自己的工作时间。",
+      "theme": "business",
+      "reading": "qǐng shuō yī shuō nǐ zěn me ān pái zì jǐ de gōng zuò shí jiān"
+    },
+    {
+      "id": "zt-025",
+      "ja": "残業についてどう思いますか",
+      "target": "你对加班有什么看法？请说一说。",
+      "theme": "business",
+      "reading": "nǐ duì jiā bān yǒu shén me kàn fǎ qǐng shuō yī shuō"
+    },
+    {
+      "id": "zt-026",
+      "ja": "理想の働き方について話してください",
+      "target": "你觉得什么样的工作最适合你？请说一说。",
+      "theme": "business",
+      "reading": "nǐ jué de shén me yàng de gōng zuò zuì shì hé nǐ qǐng shuō yī shuō"
+    },
+    {
+      "id": "zt-027",
+      "ja": "仕事で失敗したときどうしますか",
+      "target": "工作中出现问题的时候，你会怎么做？请说一说。",
+      "theme": "business",
+      "reading": "gōng zuò zhōng chū xiàn wèn tí de shí hòu nǐ huì zěn me zuò qǐng shuō yī shuō"
+    },
+    {
+      "id": "zt-028",
+      "ja": "上司や先輩から学んだことを話してください",
+      "target": "请说一说你从经理或者同事那儿学到的东西。",
+      "theme": "business",
+      "reading": "qǐng shuō yī shuō nǐ cóng jīng lǐ huò zhě tóng shì nàr xué dào de dōng xī"
+    },
+    {
+      "id": "zt-029",
+      "ja": "仕事とプライベートのバランスについて話してください",
+      "target": "你怎么安排工作和休息的时间？请说一说。",
+      "theme": "business",
+      "reading": "nǐ zěn me ān pái gōng zuò hé xiū xī de shí jiān qǐng shuō yī shuō"
+    },
+    {
+      "id": "zt-030",
+      "ja": "これから伸ばしたい能力について話してください",
+      "target": "你希望提高自己的什么能力？请说一说。",
+      "theme": "business",
+      "reading": "nǐ xī wàng tí gāo zì jǐ de shén me néng lì qǐng shuō yī shuō"
+    },
+    {
+      "id": "zt-031",
+      "ja": "いちばん印象に残っている旅行について話してください",
+      "target": "请说一说让你印象最深的一次旅游。",
+      "theme": "travel",
+      "reading": "qǐng shuō yī shuō ràng nǐ yìn xiàng zuì shēn de yī cì lǚ yóu"
+    },
+    {
+      "id": "zt-032",
+      "ja": "行ってみたい国とその理由を話してください",
+      "target": "你最想去哪个国家？为什么？请说一说。",
+      "theme": "travel",
+      "reading": "nǐ zuì xiǎng qù nǎ ge guó jiā wèi shén me qǐng shuō yī shuō"
+    },
+    {
+      "id": "zt-033",
+      "ja": "旅行の準備で何をしますか",
+      "target": "去旅游以前，你一般准备什么？请说一说。",
+      "theme": "travel",
+      "reading": "qù lǚ yóu yǐ qián nǐ yì bān zhǔn bèi shén me qǐng shuō yī shuō"
+    },
+    {
+      "id": "zt-034",
+      "ja": "旅行中に困ったことを話してください",
+      "target": "请说一说旅游的时候遇到的问题。",
+      "theme": "travel",
+      "reading": "qǐng shuō yī shuō lǚ yóu de shí hòu yù dào de wèn tí"
+    },
+    {
+      "id": "zt-035",
+      "ja": "一人旅と大勢での旅、どちらが好きですか",
+      "target": "你喜欢一个人旅游还是跟别人一起？为什么？",
+      "theme": "travel",
+      "reading": "nǐ xǐ huān yí gè rén lǚ yóu hái shì gēn bié rén yì qǐ wèi shén me"
+    },
+    {
+      "id": "zt-036",
+      "ja": "外国で食べた料理について話してください",
+      "target": "请说一说你在别的国家吃过的东西。",
+      "theme": "travel",
+      "reading": "qǐng shuō yī shuō nǐ zài bié de guó jiā chī guò de dōng xī"
+    },
+    {
+      "id": "zt-037",
+      "ja": "自分の国のおすすめの場所を紹介してください",
+      "target": "请给外国朋友介绍一个你们国家的地方。",
+      "theme": "travel",
+      "reading": "qǐng gěi wài guó péng yǒu jiè shào yí gè nǐ men guó jiā de dì fāng"
+    },
+    {
+      "id": "zt-038",
+      "ja": "旅行で写真を撮ることについて話してください",
+      "target": "旅游的时候你喜欢照相吗？请说一说。",
+      "theme": "travel",
+      "reading": "lǚ yóu de shí hòu nǐ xǐ huān zhào xiàng ma qǐng shuō yī shuō"
+    },
+    {
+      "id": "zt-039",
+      "ja": "交通手段の選び方について話してください",
+      "target": "旅游的时候你一般坐什么车？为什么？",
+      "theme": "travel",
+      "reading": "lǚ yóu de shí hòu nǐ yì bān zuò shén me chē wèi shén me"
+    },
+    {
+      "id": "zt-040",
+      "ja": "中国に行ったらしてみたいことを話してください",
+      "target": "如果你去中国，最想做什么？请说一说。",
+      "theme": "travel",
+      "reading": "rú guǒ nǐ qù zhōng guó zuì xiǎng zuò shén me qǐng shuō yī shuō"
+    },
+    {
+      "id": "zt-041",
+      "ja": "旅行と休息、旅先での過ごし方を話してください",
+      "target": "在旅游的地方，你喜欢怎么过？请说一说。",
+      "theme": "travel",
+      "reading": "zài lǚ yóu de dì fāng nǐ xǐ huān zěn me guò qǐng shuō yī shuō"
+    },
+    {
+      "id": "zt-042",
+      "ja": "旅行にお金をかけることについてどう思いますか",
+      "target": "你觉得旅游的时候花很多钱值得吗？请说一说。",
+      "theme": "travel",
+      "reading": "nǐ jué de lǚ yóu de shí hòu huā hěn duō qián zhí dé ma qǐng shuō yī shuō"
+    }
+  ]
+}

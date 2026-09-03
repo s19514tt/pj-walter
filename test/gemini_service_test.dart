@@ -15,6 +15,7 @@ import 'package:pj_walter/services/gemini_service.dart';
 import 'package:pj_walter/services/settings_service.dart';
 
 import 'test_support/hive_test_support.dart';
+import 'package:pj_walter/models/learning_language.dart';
 
 Map<String, dynamic> _geminiEnvelope(Object payload) => {
   'candidates': [
@@ -75,6 +76,7 @@ void main() {
       final service = GeminiService(settingsService: settings, client: client);
 
       final feedback = await service.correctComposition(
+        profile: LanguageProfile.english,
         ja: 'この件については後ほど折り返しご連絡します。',
         modelAnswer: "I'll get back to you on this matter later.",
         spoken: "I'll call you back later",
@@ -98,6 +100,7 @@ void main() {
 
       expect(
         () => service.correctComposition(
+          profile: LanguageProfile.english,
           ja: 'ja',
           modelAnswer: 'model',
           spoken: 'spoken',
@@ -120,6 +123,7 @@ void main() {
 
       expect(
         () => service.correctComposition(
+          profile: LanguageProfile.english,
           ja: 'ja',
           modelAnswer: 'model',
           spoken: 'spoken',
@@ -136,6 +140,7 @@ void main() {
 
       expect(
         () => service.correctComposition(
+          profile: LanguageProfile.english,
           ja: 'ja',
           modelAnswer: 'model',
           spoken: 'spoken',
@@ -153,6 +158,7 @@ void main() {
 
       expect(
         () => service.correctComposition(
+          profile: LanguageProfile.english,
           ja: 'ja',
           modelAnswer: 'model',
           spoken: 'spoken',
@@ -193,15 +199,16 @@ void main() {
       final service = GeminiService(settingsService: settings, client: client);
 
       final feedback = await service.reviewMonologue(
+        profile: LanguageProfile.english,
         topicJa: '朝ごはんについて話してください',
-        topicEn: 'Talk about your breakfast',
+        topicTarget: 'Talk about your breakfast',
         seconds: 60,
         transcript: 'I eat toast this morning.',
       );
 
       expect(feedback.fluencyScore, 72);
       expect(feedback.corrections, hasLength(1));
-      expect(feedback.usefulPhrases.single.en, 'It slipped my mind.');
+      expect(feedback.usefulPhrases.single.target, 'It slipped my mind.');
     });
   });
 
@@ -213,6 +220,7 @@ void main() {
       final service = GeminiService(settingsService: settings, client: client);
 
       final text = await service.transcribe(
+        profile: LanguageProfile.english,
         audioBytes: [1, 2, 3],
         mimeType: 'audio/wav',
       );

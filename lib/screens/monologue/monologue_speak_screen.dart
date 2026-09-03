@@ -167,14 +167,16 @@ class _MonologueSpeakScreenState extends State<MonologueSpeakScreen> {
     final gemini = context.read<GeminiService>();
     try {
       final feedback = await gemini.reviewMonologue(
+        profile: settings.languageProfile,
         topicJa: widget.topic.ja,
-        topicEn: widget.topic.en,
+        topicTarget: widget.topic.target,
         seconds: widget.seconds,
         transcript: transcript,
       );
       final result = MonologueResult(
         id: const Uuid().v4(),
         topicId: widget.topic.id,
+        language: settings.languageProfile.code,
         seconds: widget.seconds,
         transcript: transcript,
         timestamp: DateTime.now(),
@@ -243,7 +245,11 @@ class _MonologueSpeakScreenState extends State<MonologueSpeakScreen> {
     final urgent = ratio <= _urgentRatio;
     final ringColor = urgent ? AppColors.scoreLow : AppColors.primary;
     return Scaffold(
-      appBar: AppBar(title: const Text('独り言英会話')),
+      appBar: AppBar(
+        title: Text(
+          context.watch<SettingsService>().languageProfile.monologueTitle,
+        ),
+      ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
@@ -269,7 +275,7 @@ class _MonologueSpeakScreenState extends State<MonologueSpeakScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    widget.topic.en,
+                    widget.topic.target,
                     style: const TextStyle(
                       fontSize: 14,
                       color: AppColors.textSecondary,

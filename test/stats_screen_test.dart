@@ -81,6 +81,7 @@ void main() {
         DrillResult(
           id: 'd-1',
           sentenceId: 's700-001',
+          language: 'en',
           level: 700,
           spoken: 'this is my spoken answer',
           timestamp: DateTime.now(),
@@ -97,6 +98,7 @@ void main() {
         MonologueResult(
           id: 'm-1',
           topicId: 't-001',
+          language: 'en',
           seconds: 60,
           transcript: 'my monologue transcript',
           timestamp: DateTime.now(),

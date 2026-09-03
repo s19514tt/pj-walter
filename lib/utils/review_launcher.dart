@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../models/learning_language.dart';
 import '../models/srs_item.dart';
 import '../screens/composition/drill_screen.dart';
 import '../services/review_question_resolver.dart';
 import '../services/sentence_repository.dart';
+import '../services/settings_service.dart';
 import 'app_route.dart';
 
 /// 「今日の復習」開始処理の共通ロジック。
@@ -20,9 +22,16 @@ class ReviewSessionLauncher {
   /// [dueItems]を出題し、復習セッション（[DrillScreen]）が終わるまで待つ。
   Future<void> start(BuildContext context, List<SrsItem> dueItems) async {
     final repository = context.read<SentenceRepository>();
+    final settings = context.read<SettingsService>();
     final sentences = await resolver.resolve(
       items: dueItems,
-      sentencesByLevel: (level) => repository.sentencesFor(level: level),
+      sentencesForDeck: (language, level) => repository.sentencesFor(
+        profile: LanguageProfile.values.firstWhere(
+          (profile) => profile.code == language,
+          orElse: () => settings.languageProfile,
+        ),
+        level: level,
+      ),
     );
     if (!context.mounted) return;
 

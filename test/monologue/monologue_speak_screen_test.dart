@@ -75,7 +75,7 @@ http.Response _jsonResponse(Object payload, int statusCode) => http.Response(
 const _topic = Topic(
   id: 't-001',
   ja: '今日の朝ごはんについて話してください',
-  en: 'Talk about what you had for breakfast today',
+  target: 'Talk about what you had for breakfast today',
   theme: 'daily',
 );
 
@@ -173,7 +173,7 @@ void main() {
 
     // お題・残り時間が表示されている
     expect(find.text(_topic.ja), findsOneWidget);
-    expect(find.text(_topic.en), findsOneWidget);
+    expect(find.text(_topic.target), findsOneWidget);
     expect(find.text('00:30'), findsOneWidget);
 
     // マイクをタップ -> 音声入力開始（partialがリアルタイム表示される）
@@ -228,7 +228,7 @@ void main() {
     await tester.pump();
 
     expect(historyService.phrases, hasLength(1));
-    expect(historyService.phrases.first.en, 'It slipped my mind.');
+    expect(historyService.phrases.first.target, 'It slipped my mind.');
     expect(historyService.phrases.first.source, 't-001');
     expect(find.byIcon(Icons.check_circle), findsOneWidget);
     expect(find.text('追加済み'), findsOneWidget);

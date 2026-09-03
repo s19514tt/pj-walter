@@ -78,7 +78,7 @@ http.Response _jsonResponse(Object payload, int statusCode) => http.Response(
 Sentence _sentence(int i) => Sentence(
   id: 's700-${i.toString().padLeft(3, '0')}',
   ja: '日本語の例文$i',
-  en: 'English sentence $i',
+  target: 'English sentence $i',
   theme: 'daily',
   tips: 'tips $i',
   level: 700,

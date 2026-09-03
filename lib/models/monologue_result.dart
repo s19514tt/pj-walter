@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-/// 独り言英会話の添削で指摘された1件の修正（原文→修正文＋理由）。
+/// 独り言トレーニングの添削で指摘された1件の修正（原文→修正文＋理由）。
 @immutable
 class Correction {
   const Correction({
@@ -38,32 +38,38 @@ class Correction {
   int get hashCode => Object.hash(original, corrected, reasonJa);
 }
 
-/// 独り言英会話で提案される「次回使える表現」。
+/// 独り言トレーニングで提案される「次回使える表現」。
 @immutable
 class UsefulPhrase {
-  const UsefulPhrase({required this.en, required this.ja});
+  const UsefulPhrase({required this.target, required this.ja});
 
-  final String en;
+  /// 学習言語での表現
+  final String target;
+
+  /// 日本語訳
   final String ja;
 
-  factory UsefulPhrase.fromJson(Map<String, dynamic> json) =>
-      UsefulPhrase(en: json['en'] as String, ja: json['ja'] as String);
+  factory UsefulPhrase.fromJson(Map<String, dynamic> json) => UsefulPhrase(
+    // 'en'は学習言語が英語だけだった頃のキー名。保存済みデータのために残す。
+    target: (json['target'] ?? json['en']) as String,
+    ja: json['ja'] as String,
+  );
 
-  Map<String, dynamic> toJson() => {'en': en, 'ja': ja};
+  Map<String, dynamic> toJson() => {'target': target, 'ja': ja};
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is UsefulPhrase &&
           runtimeType == other.runtimeType &&
-          en == other.en &&
+          target == other.target &&
           ja == other.ja;
 
   @override
-  int get hashCode => Object.hash(en, ja);
+  int get hashCode => Object.hash(target, ja);
 }
 
-/// 独り言英会話1回分のGeminiフィードバック。
+/// 独り言トレーニング1回分のGeminiフィードバック。
 ///
 /// JSONキーはGemini APIのレスポンススキーマ（DESIGN.md参照）に合わせて
 /// スネークケースとしている。
@@ -80,7 +86,7 @@ class MonologueFeedback {
   /// 流暢さスコア（0-100）
   final int fluencyScore;
 
-  /// 全文を自然な英語に直したもの
+  /// 全文を自然な学習言語の文に直したもの
   final String correctedTranscript;
 
   /// 個別の修正点一覧
@@ -135,12 +141,13 @@ class MonologueFeedback {
   );
 }
 
-/// 独り言英会話1回分の結果（発話内容＋Geminiフィードバック）。
+/// 独り言トレーニング1回分の結果（発話内容＋Geminiフィードバック）。
 @immutable
 class MonologueResult {
   const MonologueResult({
     required this.id,
     required this.topicId,
+    required this.language,
     required this.seconds,
     required this.transcript,
     required this.timestamp,
@@ -152,6 +159,9 @@ class MonologueResult {
 
   /// 出題されたお題のid
   final String topicId;
+
+  /// お題の学習言語コード（[LanguageProfile.code]）
+  final String language;
 
   /// 発話時間（秒）
   final int seconds;
@@ -169,6 +179,8 @@ class MonologueResult {
       MonologueResult(
         id: json['id'] as String,
         topicId: json['topicId'] as String,
+        // languageが無いのは中国語対応より前に保存された結果。英語とみなす。
+        language: (json['language'] as String?) ?? 'en',
         seconds: (json['seconds'] as num).toInt(),
         transcript: json['transcript'] as String,
         timestamp: DateTime.parse(json['timestamp'] as String),
@@ -180,6 +192,7 @@ class MonologueResult {
   Map<String, dynamic> toJson() => {
     'id': id,
     'topicId': topicId,
+    'language': language,
     'seconds': seconds,
     'transcript': transcript,
     'timestamp': timestamp.toIso8601String(),
@@ -193,12 +206,20 @@ class MonologueResult {
           runtimeType == other.runtimeType &&
           id == other.id &&
           topicId == other.topicId &&
+          language == other.language &&
           seconds == other.seconds &&
           transcript == other.transcript &&
           timestamp == other.timestamp &&
           feedback == other.feedback;
 
   @override
-  int get hashCode =>
-      Object.hash(id, topicId, seconds, transcript, timestamp, feedback);
+  int get hashCode => Object.hash(
+    id,
+    topicId,
+    language,
+    seconds,
+    transcript,
+    timestamp,
+    feedback,
+  );
 }

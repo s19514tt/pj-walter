@@ -1,0 +1,805 @@
+{
+  "level": 3,
+  "sentences": [
+    {
+      "id": "z3-001",
+      "ja": "すみません、ちょっと手伝ってもらえますか。",
+      "target": "请问，你能帮我一下吗？",
+      "theme": "daily",
+      "tips": "「一下」を動詞の後ろに付けると依頼がやわらかくなる。「帮我」だけだと少しきつく響く。",
+      "reading": "qǐng wèn nǐ néng bāng wǒ yī xià ma"
+    },
+    {
+      "id": "z3-002",
+      "ja": "ちょっとお聞きしたいことがあるのですが。",
+      "target": "我想问你一件事情。",
+      "theme": "business",
+      "tips": "「事情」の量詞は「件」。数量詞は必ず名詞の前に置く。",
+      "reading": "wǒ xiǎng wèn nǐ yī jiàn shì qíng"
+    },
+    {
+      "id": "z3-003",
+      "ja": "ペンをちょっと貸してもらえますか。",
+      "target": "你的铅笔可以借我用一下吗？",
+      "theme": "daily",
+      "tips": "「借」は「借りる」と「貸す」の両方に使う。誰から誰へかは「借我」「跟你借」で示す。",
+      "reading": "nǐ de qiān bǐ kě yǐ jiè wǒ yòng yī xià ma"
+    },
+    {
+      "id": "z3-004",
+      "ja": "明日の午後、お時間ありますか。",
+      "target": "你明天下午有时间吗？",
+      "theme": "business",
+      "tips": "時間を表す語は動詞の前。「你有时间明天下午吗」は誤り。",
+      "reading": "nǐ míng tiān xià wǔ yǒu shí jiān ma"
+    },
+    {
+      "id": "z3-005",
+      "ja": "三時に駅で待ち合わせましょう。",
+      "target": "我们三点在火车站见面吧。",
+      "theme": "daily",
+      "tips": "「時間→場所→動詞」の順。日本語と違い、場所の「在…」は動詞の前に来る。",
+      "reading": "wǒ men sān diǎn zài huǒ chē zhàn jiàn miàn ba"
+    },
+    {
+      "id": "z3-006",
+      "ja": "今日は用事があるので、明日でもいいですか。",
+      "target": "我今天有事情，明天可以吗？",
+      "theme": "business",
+      "tips": "理由を先に言い、提案を後に置く。中国語は結論より事情説明が先に来ることが多い。",
+      "reading": "wǒ jīn tiān yǒu shì qíng míng tiān kě yǐ ma"
+    },
+    {
+      "id": "z3-007",
+      "ja": "遅れそうです。十分ほど待ってください。",
+      "target": "我可能会迟到，请等我十分钟。",
+      "theme": "business",
+      "tips": "時間量「十分钟」は動詞と目的語の後ろ。「等十分钟我」は誤り。",
+      "reading": "wǒ kě néng huì chí dào qǐng děng wǒ shí fēn zhōng"
+    },
+    {
+      "id": "z3-008",
+      "ja": "申し訳ありませんが、その日は都合がつきません。",
+      "target": "对不起，那天我没有时间。",
+      "theme": "business",
+      "tips": "「有」の否定は必ず「没有」。「不有」とは言えない。",
+      "reading": "duì bù qǐ nà tiān wǒ méi yǒu shí jiān"
+    },
+    {
+      "id": "z3-009",
+      "ja": "遅くなってすみません、道が混んでいまして。",
+      "target": "对不起，我来晚了，路上车太多了。",
+      "theme": "business",
+      "tips": "「来晚了」は動詞＋結果補語。「晚来了」とは言わない。",
+      "reading": "duì bù qǐ wǒ lái wǎn le lù shàng chē tài duō le"
+    },
+    {
+      "id": "z3-010",
+      "ja": "大丈夫ですよ、気にしないでください。",
+      "target": "没关系，你别担心。",
+      "theme": "daily",
+      "tips": "「别＋動詞」で「〜しないで」。「不担心」は単なる否定で禁止にならない。",
+      "reading": "méi guān xì nǐ bié dān xīn"
+    },
+    {
+      "id": "z3-011",
+      "ja": "風邪をひいたので、今日は一日休みたいです。",
+      "target": "我感冒了，今天想休息一天。",
+      "theme": "daily",
+      "tips": "「一天」は時間量なので動詞の後ろ。「一天休息」は誤り。",
+      "reading": "wǒ gǎn mào le jīn tiān xiǎng xiū xī yī tiān"
+    },
+    {
+      "id": "z3-012",
+      "ja": "熱が出て、まだ下がりません。",
+      "target": "我发烧了，还没好。",
+      "theme": "daily",
+      "tips": "「还没」で「まだ〜していない」。「还不好」だと状態の否定になり不自然。",
+      "reading": "wǒ fā shāo le hái méi hǎo"
+    },
+    {
+      "id": "z3-013",
+      "ja": "やはり病院で診てもらったほうがいいですよ。",
+      "target": "你还是去医院看看吧。",
+      "theme": "daily",
+      "tips": "「还是…吧」で「やはり〜したほうがいい」という提案。動詞の重複でやわらかくなる。",
+      "reading": "nǐ hái shì qù yī yuàn kàn kàn ba"
+    },
+    {
+      "id": "z3-014",
+      "ja": "お薬は食後に飲んでください。",
+      "target": "请你吃完饭以后吃药。",
+      "theme": "daily",
+      "tips": "中国語では薬も「吃」。「喝药」は液体の薬に限る。",
+      "reading": "qǐng nǐ chī wán fàn yǐ hòu chī yào"
+    },
+    {
+      "id": "z3-015",
+      "ja": "無理しないで、早めに帰って休んでください。",
+      "target": "你别太累了，早点儿回家休息吧。",
+      "theme": "daily",
+      "tips": "「早点儿」で「早めに」。「点儿」を付けると押しつけがましさが減る。",
+      "reading": "nǐ bié tài lèi le zǎo diǎnr huí jiā xiū xī ba"
+    },
+    {
+      "id": "z3-016",
+      "ja": "これは一ついくらですか。",
+      "target": "这个多少钱一个？",
+      "theme": "travel",
+      "tips": "「多少钱一个」で単価を尋ねる定型。語順を入れ替えて「一个多少钱」とも言える。",
+      "reading": "zhè ge duō shǎo qián yí gè"
+    },
+    {
+      "id": "z3-017",
+      "ja": "もう少し安くなりませんか。",
+      "target": "能不能再便宜一点儿？",
+      "theme": "travel",
+      "tips": "「能不能」は反復疑問で「吗」より柔らかい。「形容詞＋一点儿」で「もう少し〜に」。",
+      "reading": "néng bù néng zài pián yi yì diǎnr"
+    },
+    {
+      "id": "z3-018",
+      "ja": "ほかの色はありますか。",
+      "target": "有别的颜色吗？",
+      "theme": "travel",
+      "tips": "「别的」で「ほかの」。「别」単独は禁止の意味なので混同しない。",
+      "reading": "yǒu bié de yán sè ma"
+    },
+    {
+      "id": "z3-019",
+      "ja": "ちょっと着てみてもいいですか。",
+      "target": "我可以穿一下吗？",
+      "theme": "travel",
+      "tips": "許可を求めるときは「可以…吗」。「能」は能力・条件、「可以」は許可に傾く。",
+      "reading": "wǒ kě yǐ chuān yī xià ma"
+    },
+    {
+      "id": "z3-020",
+      "ja": "これをください。全部でいくらですか。",
+      "target": "我要这个，一共多少钱？",
+      "theme": "travel",
+      "tips": "「一共」は合計を表す副詞で動詞の前。「多少钱一共」は誤り。",
+      "reading": "wǒ yào zhè ge yī gòng duō shǎo qián"
+    },
+    {
+      "id": "z3-021",
+      "ja": "少し高いので、また今度にします。",
+      "target": "有点儿贵，我下次再买吧。",
+      "theme": "travel",
+      "tips": "「有点儿」は不満を含む「少し」。「一点儿贵」とは言えない。",
+      "reading": "yǒu diǎnr guì wǒ xià cì zài mǎi ba"
+    },
+    {
+      "id": "z3-022",
+      "ja": "おすすめの料理は何ですか。",
+      "target": "你们这儿什么菜好吃？",
+      "theme": "travel",
+      "tips": "「你们这儿」で「こちらのお店」。疑問詞「什么」は名詞の前に置いたまま語順を変えない。",
+      "reading": "nǐ men zhèr shén me cài hǎo chī"
+    },
+    {
+      "id": "z3-023",
+      "ja": "羊肉は食べられないので、ほかのものに替えられますか。",
+      "target": "我不吃羊肉，可以换别的菜吗？",
+      "theme": "travel",
+      "tips": "習慣的に食べないことは「不吃」。「没吃」は「食べなかった」で意味が違う。",
+      "reading": "wǒ bù chī yáng ròu kě yǐ huàn bié de cài ma"
+    },
+    {
+      "id": "z3-024",
+      "ja": "今日の料理は本当においしかったです。",
+      "target": "今天的菜真好吃。",
+      "theme": "travel",
+      "tips": "「真」は感嘆的な「本当に」。「很」より気持ちがこもる。",
+      "reading": "jīn tiān de cài zhēn hǎo chī"
+    },
+    {
+      "id": "z3-025",
+      "ja": "もうお腹がいっぱいです、ありがとうございます。",
+      "target": "我吃饱了，谢谢。",
+      "theme": "travel",
+      "tips": "「吃饱」は動詞＋結果補語。「饱了」だけでも通じるが「吃饱了」が自然。",
+      "reading": "wǒ chī bǎo le xiè xiè"
+    },
+    {
+      "id": "z3-026",
+      "ja": "すみません、駅へはどう行けばいいですか。",
+      "target": "请问，去火车站怎么走？",
+      "theme": "travel",
+      "tips": "道を尋ねる定型。「怎么走」は「どう行くか」で、乗り物の有無を問わない。",
+      "reading": "qǐng wèn qù huǒ chē zhàn zěn me zǒu"
+    },
+    {
+      "id": "z3-027",
+      "ja": "ここから遠いですか。",
+      "target": "离这儿远吗？",
+      "theme": "travel",
+      "tips": "二点間の距離は「离」。「从」は起点で、「从这儿远」とは言えない。",
+      "reading": "lí zhèr yuǎn ma"
+    },
+    {
+      "id": "z3-028",
+      "ja": "歩いて十分で着きますよ。",
+      "target": "走路十分钟就到了。",
+      "theme": "travel",
+      "tips": "「就」で「それだけで／すぐに」という含み。動詞の前に置く。",
+      "reading": "zǒu lù shí fēn zhōng jiù dào le"
+    },
+    {
+      "id": "z3-029",
+      "ja": "タクシーで行ったほうが速いですよ。",
+      "target": "你坐出租车去比较快。",
+      "theme": "travel",
+      "tips": "手段は「坐＋乗り物」で動詞の前。「去出租车」とは言わない。",
+      "reading": "nǐ zuò chū zū chē qù bǐ jiào kuài"
+    },
+    {
+      "id": "z3-030",
+      "ja": "どう行けばいいか分からなくなってしまいました。",
+      "target": "我不知道怎么走了。",
+      "theme": "travel",
+      "tips": "文末の「了」で「〜になってしまった」という状況の変化を表す。",
+      "reading": "wǒ bù zhī dào zěn me zǒu le"
+    },
+    {
+      "id": "z3-031",
+      "ja": "この電車は北京に行きますか。",
+      "target": "这个车到北京吗？",
+      "theme": "travel",
+      "tips": "「到＋場所」で到着先を示す。「去北京吗」も可。",
+      "reading": "zhè ge chē dào běi jīng ma"
+    },
+    {
+      "id": "z3-032",
+      "ja": "部屋を一つ取りたいのですが。",
+      "target": "我想要一个房间。",
+      "theme": "travel",
+      "tips": "「想要」で控えめな要望。「我要」だけだと強い要求に聞こえる。",
+      "reading": "wǒ xiǎng yào yí gè fáng jiān"
+    },
+    {
+      "id": "z3-033",
+      "ja": "荷物をちょっと見ていてもらえますか。",
+      "target": "你们能帮我看一下行李箱吗？",
+      "theme": "travel",
+      "tips": "「帮我＋動詞」で「〜してもらう」。日本語の「〜てもらう」に当たる形。",
+      "reading": "nǐ men néng bāng wǒ kàn yī xià xíng lǐ xiāng ma"
+    },
+    {
+      "id": "z3-034",
+      "ja": "明日は何時にホテルを出ればいいですか。",
+      "target": "我明天几点离开宾馆？",
+      "theme": "travel",
+      "tips": "「离开」は場所を目的語に取れる。「离开」と距離の「离」を混同しない。",
+      "reading": "wǒ míng tiān jǐ diǎn lí kāi bīn guǎn"
+    },
+    {
+      "id": "z3-035",
+      "ja": "ここで写真を撮ってもいいですか。",
+      "target": "我可以在这儿照相吗？",
+      "theme": "travel",
+      "tips": "「照相」は離合詞。「照相我们」とは言えず、対象は「给我们照相」と示す。",
+      "reading": "wǒ kě yǐ zài zhèr zhào xiàng ma"
+    },
+    {
+      "id": "z3-036",
+      "ja": "写真を一枚撮っていただけますか。",
+      "target": "你能帮我照张相吗？",
+      "theme": "travel",
+      "tips": "離合詞「照相」の間に量詞「张」が入る。分離するのが離合詞の特徴。",
+      "reading": "nǐ néng bāng wǒ zhào zhāng xiàng ma"
+    },
+    {
+      "id": "z3-037",
+      "ja": "北京には二回行ったことがあります。",
+      "target": "我去过两次北京。",
+      "theme": "travel",
+      "tips": "回数は動詞の後ろ、場所の目的語の前。「我去北京过两次」は誤り。",
+      "reading": "wǒ qù guò liǎng cì běi jīng"
+    },
+    {
+      "id": "z3-038",
+      "ja": "地図は持ってきました。",
+      "target": "我把地图带来了。",
+      "theme": "travel",
+      "tips": "把構文＋方向補語。「带了地图来」とは言わない。",
+      "reading": "wǒ bǎ dì tú dài lái le"
+    },
+    {
+      "id": "z3-039",
+      "ja": "パスポートはかばんの中に入れてあります。",
+      "target": "我把护照放在包里了。",
+      "theme": "travel",
+      "tips": "「把A放在B」で「AをBに置く」。「放护照在包里」は誤り。",
+      "reading": "wǒ bǎ hù zhào fàng zài bāo lǐ le"
+    },
+    {
+      "id": "z3-040",
+      "ja": "かばんを持って行かれてしまいました。",
+      "target": "我的包被人拿走了。",
+      "theme": "travel",
+      "tips": "被構文の動詞は裸では使えず、「走」のような結果が必要。「被人拿」だけでは文にならない。",
+      "reading": "wǒ de bāo bèi rén ná zǒu le"
+    },
+    {
+      "id": "z3-041",
+      "ja": "会議は三時から始まります。",
+      "target": "会议三点开始。",
+      "theme": "business",
+      "tips": "時点は動詞の前。中国語には「から」に当たる助詞がなく、時間を置くだけでよい。",
+      "reading": "huì yì sān diǎn kāi shǐ"
+    },
+    {
+      "id": "z3-042",
+      "ja": "資料はもう準備できています。",
+      "target": "东西我已经准备好了。",
+      "theme": "business",
+      "tips": "「准备好」の「好」は完成の結果補語。「准备了」だけだと準備中の含みが残る。",
+      "reading": "dōng xī wǒ yǐ jīng zhǔn bèi hǎo le"
+    },
+    {
+      "id": "z3-043",
+      "ja": "少し遅れて着きます。",
+      "target": "我可能会晚一点儿到。",
+      "theme": "business",
+      "tips": "「会」は未来の可能性。「晚一点儿」が「到」を修飾している。",
+      "reading": "wǒ kě néng huì wǎn yì diǎnr dào"
+    },
+    {
+      "id": "z3-044",
+      "ja": "この件は部長に聞いてみます。",
+      "target": "这件事情我问一下经理。",
+      "theme": "business",
+      "tips": "話題を文頭に出す主題化。「我问一下经理这件事情」より自然に響く。",
+      "reading": "zhè jiàn shì qíng wǒ wèn yī xià jīng lǐ"
+    },
+    {
+      "id": "z3-045",
+      "ja": "この仕事は明日までに終わりますか。",
+      "target": "这个工作明天以前能做完吗？",
+      "theme": "business",
+      "tips": "「以前」は時間名詞の後ろ。「以前明天」とは言わない。",
+      "reading": "zhè ge gōng zuò míng tiān yǐ qián néng zuò wán ma"
+    },
+    {
+      "id": "z3-046",
+      "ja": "今日の仕事はもう終わらせました。",
+      "target": "我把今天的工作做完了。",
+      "theme": "business",
+      "tips": "目的語が具体的で、処理し終えたと言うときは把構文が自然。",
+      "reading": "wǒ bǎ jīn tiān de gōng zuò zuò wán le"
+    },
+    {
+      "id": "z3-047",
+      "ja": "この件を皆さんに伝えてください。",
+      "target": "请把这件事情告诉大家。",
+      "theme": "business",
+      "tips": "「告诉」は「人に何を」の二重目的語。「何を」を前に出すと把構文になる。",
+      "reading": "qǐng bǎ zhè jiàn shì qíng gào sù dà jiā"
+    },
+    {
+      "id": "z3-048",
+      "ja": "会議の時間を変更しました。",
+      "target": "我们把会议的时间换了。",
+      "theme": "business",
+      "tips": "変更・処置を表す動詞は把構文と相性がよい。",
+      "reading": "wǒ men bǎ huì yì de shí jiān huàn le"
+    },
+    {
+      "id": "z3-049",
+      "ja": "その問題はもう解決しました。",
+      "target": "那个问题已经解决了。",
+      "theme": "business",
+      "tips": "「已经…了」で完了。「已经」だけで「了」を落とさない。",
+      "reading": "nà ge wèn tí yǐ jīng jiě jué le"
+    },
+    {
+      "id": "z3-050",
+      "ja": "明日は彼と会う約束があります。",
+      "target": "我明天跟他见面。",
+      "theme": "business",
+      "tips": "「见面」は離合詞で目的語を取れない。相手は「跟＋人」で動詞の前に置く。",
+      "reading": "wǒ míng tiān gēn tā jiàn miàn"
+    },
+    {
+      "id": "z3-051",
+      "ja": "私は毎日八時に出勤します。",
+      "target": "我每天八点上班。",
+      "theme": "business",
+      "tips": "「上班」も離合詞。「上班公司」とは言えず、場所は「在公司上班」。",
+      "reading": "wǒ měi tiān bā diǎn shàng bān"
+    },
+    {
+      "id": "z3-052",
+      "ja": "彼はこの会社で五年働いています。",
+      "target": "他在这个公司工作了五年了。",
+      "theme": "business",
+      "tips": "場所の「在…」は動詞の前、時間量は動詞の後ろ。前後に分かれるのが日本語と違う。",
+      "reading": "tā zài zhè ge gōng sī gōng zuò le wǔ nián le"
+    },
+    {
+      "id": "z3-053",
+      "ja": "彼を三十分待ちました。",
+      "target": "我等了他半个小时。",
+      "theme": "business",
+      "tips": "目的語が代名詞のときは「動詞＋人＋時間量」の順になる。",
+      "reading": "wǒ děng le tā bàn gè xiǎo shí"
+    },
+    {
+      "id": "z3-054",
+      "ja": "彼は九時になってやっと来ました。",
+      "target": "他九点才来。",
+      "theme": "business",
+      "tips": "「才」は予想より遅い。動詞の前に置き、文末に「了」は付けない。",
+      "reading": "tā jiǔ diǎn cái lái"
+    },
+    {
+      "id": "z3-055",
+      "ja": "彼は九時にはもう来ていました。",
+      "target": "他九点就来了。",
+      "theme": "business",
+      "tips": "「就」は予想より早い。「才」と対で覚えると位置も定着する。",
+      "reading": "tā jiǔ diǎn jiù lái le"
+    },
+    {
+      "id": "z3-056",
+      "ja": "彼はまた遅刻しました。",
+      "target": "他又迟到了。",
+      "theme": "business",
+      "tips": "「又」は既に起きた繰り返し、「再」はこれから。日本語の「また」は両方を含む。",
+      "reading": "tā yòu chí dào le"
+    },
+    {
+      "id": "z3-057",
+      "ja": "明日また参ります。",
+      "target": "我明天再来。",
+      "theme": "business",
+      "tips": "未来の繰り返しは「再」。「又来」だと過去の話になる。",
+      "reading": "wǒ míng tiān zài lái"
+    },
+    {
+      "id": "z3-058",
+      "ja": "もしもし、李さんはいらっしゃいますか。",
+      "target": "喂，请问小李在吗？",
+      "theme": "business",
+      "tips": "「在」だけで「その場にいる」を表せる。「在这儿」まで言わなくてよい。",
+      "reading": "wèi qǐng wèn xiǎo lǐ zài ma"
+    },
+    {
+      "id": "z3-059",
+      "ja": "今ちょっと立て込んでいます。",
+      "target": "我现在有点儿忙。",
+      "theme": "business",
+      "tips": "「有点儿忙」で婉曲に断る。「很忙」より角が立たない。",
+      "reading": "wǒ xiàn zài yǒu diǎnr máng"
+    },
+    {
+      "id": "z3-060",
+      "ja": "後でこちらからかけ直します。",
+      "target": "我一会儿再打给你。",
+      "theme": "business",
+      "tips": "「打给你」で「あなたにかける」。「打电话给你」も自然。",
+      "reading": "wǒ yī huìr zài dǎ gěi nǐ"
+    },
+    {
+      "id": "z3-061",
+      "ja": "電話番号をもう一度教えていただけますか。",
+      "target": "请你再说一次你的手机号。",
+      "theme": "business",
+      "tips": "回数「一次」は動詞の後ろ、目的語の前。",
+      "reading": "qǐng nǐ zài shuō yī cì nǐ de shǒu jī hào"
+    },
+    {
+      "id": "z3-062",
+      "ja": "中国語を三年勉強しています。",
+      "target": "我学了三年汉语了。",
+      "theme": "daily",
+      "tips": "時間量は動詞の直後。文末の「了」で今も続いていることを示す。",
+      "reading": "wǒ xué le sān nián hàn yǔ le"
+    },
+    {
+      "id": "z3-063",
+      "ja": "まだあまりうまく話せません。",
+      "target": "我说得还不太好。",
+      "theme": "daily",
+      "tips": "様態補語は動詞の後ろ。「我还不太好说」は誤り。",
+      "reading": "wǒ shuō de hái bù tài hǎo"
+    },
+    {
+      "id": "z3-064",
+      "ja": "もう一度言っていただけますか。",
+      "target": "请你再说一次，好吗？",
+      "theme": "daily",
+      "tips": "文末の「好吗」で確認を添えると丁寧になる。",
+      "reading": "qǐng nǐ zài shuō yī cì hǎo ma"
+    },
+    {
+      "id": "z3-065",
+      "ja": "もう少しゆっくり話していただけますか。",
+      "target": "请你说慢一点儿。",
+      "theme": "daily",
+      "tips": "「慢一点儿」は動詞の後ろ。「请你慢一点儿说」も可。",
+      "reading": "qǐng nǐ shuō màn yì diǎnr"
+    },
+    {
+      "id": "z3-066",
+      "ja": "すみません、聞き取れませんでした。",
+      "target": "对不起，我没听懂。",
+      "theme": "daily",
+      "tips": "「听懂」は結果補語。否定は「没」で、「不听懂」とは言わない。",
+      "reading": "duì bù qǐ wǒ méi tīng dǒng"
+    },
+    {
+      "id": "z3-067",
+      "ja": "この字はどう読むのですか。",
+      "target": "这个字怎么读？",
+      "theme": "daily",
+      "tips": "方法を尋ねる「怎么」は動詞の前。「读怎么」は誤り。",
+      "reading": "zhè ge zì zěn me dú"
+    },
+    {
+      "id": "z3-068",
+      "ja": "先生の話がやっと分かりました。",
+      "target": "老师的话我终于听懂了。",
+      "theme": "daily",
+      "tips": "「终于」は長く待った末の実現。動詞の前に置く。",
+      "reading": "lǎo shī de huà wǒ zhōng yú tīng dǒng le"
+    },
+    {
+      "id": "z3-069",
+      "ja": "彼は中国語を話すのがとても上手です。",
+      "target": "他汉语说得非常好。",
+      "theme": "daily",
+      "tips": "目的語つきの様態補語は「目的語＋動詞＋得」。「说汉语说得」と動詞を繰り返してもよい。",
+      "reading": "tā hàn yǔ shuō de fēi cháng hǎo"
+    },
+    {
+      "id": "z3-070",
+      "ja": "毎日少しずつ復習しています。",
+      "target": "我每天都复习一点儿。",
+      "theme": "daily",
+      "tips": "「每天」には「都」を添えるのが自然。習慣の全称を表す。",
+      "reading": "wǒ měi tiān dōu fù xí yì diǎnr"
+    },
+    {
+      "id": "z3-071",
+      "ja": "私は東京に住んでいます。",
+      "target": "我住在东京。",
+      "theme": "daily",
+      "tips": "「住在＋場所」で居住地。「在东京住」も可だが「住在」が定型。",
+      "reading": "wǒ zhù zài dōng jīng"
+    },
+    {
+      "id": "z3-072",
+      "ja": "会社で働いています。",
+      "target": "我在公司工作。",
+      "theme": "daily",
+      "tips": "場所の「在…」は動詞の前。「工作在公司」は誤り。",
+      "reading": "wǒ zài gōng sī gōng zuò"
+    },
+    {
+      "id": "z3-073",
+      "ja": "趣味は音楽を聴くことです。",
+      "target": "我的爱好是听音乐。",
+      "theme": "daily",
+      "tips": "動詞句がそのまま「是」の後ろに来られる。「听音乐的事」などは不要。",
+      "reading": "wǒ de ài hào shì tīng yīn yuè"
+    },
+    {
+      "id": "z3-074",
+      "ja": "家族は四人います。",
+      "target": "我家有四口人。",
+      "theme": "daily",
+      "tips": "家族の人数の量詞は「口」。「四个人」だと一般的な人数になる。",
+      "reading": "wǒ jiā yǒu sì kǒu rén"
+    },
+    {
+      "id": "z3-075",
+      "ja": "姉は去年結婚しました。",
+      "target": "我姐姐去年结婚了。",
+      "theme": "daily",
+      "tips": "「结婚」は離合詞。相手は「跟他结婚」で、「结婚他」は誤り。",
+      "reading": "wǒ jiě jiě qù nián jié hūn le"
+    },
+    {
+      "id": "z3-076",
+      "ja": "母は私に早く寝るように言います。",
+      "target": "妈妈让我早点儿睡觉。",
+      "theme": "daily",
+      "tips": "「让＋人＋動詞」の兼語文。「让」の目的語が次の動詞の主語を兼ねる。",
+      "reading": "mā mā ràng wǒ zǎo diǎnr shuì jiào"
+    },
+    {
+      "id": "z3-077",
+      "ja": "毎朝三十分走っています。",
+      "target": "我每天早上跑三十分钟的步。",
+      "theme": "daily",
+      "tips": "「跑步」は離合詞。時間量は「跑…的步」と割って入れる。",
+      "reading": "wǒ měi tiān zǎo shàng pǎo sān shí fēn zhōng de bù"
+    },
+    {
+      "id": "z3-078",
+      "ja": "昨日は七時間寝ました。",
+      "target": "我昨天睡了七个小时的觉。",
+      "theme": "daily",
+      "tips": "離合詞「睡觉」も同様に割れる。「睡觉了七个小时」は誤り。",
+      "reading": "wǒ zuó tiān shuì le qī gè xiǎo shí de jiào"
+    },
+    {
+      "id": "z3-079",
+      "ja": "手伝ってくれてありがとう。",
+      "target": "谢谢你帮我的忙。",
+      "theme": "daily",
+      "tips": "「帮忙」も離合詞。「帮忙我」は誤りで、間に「我的」を挟む。",
+      "reading": "xiè xiè nǐ bāng wǒ de máng"
+    },
+    {
+      "id": "z3-080",
+      "ja": "彼女は歌がとても上手です。",
+      "target": "她唱歌唱得很好。",
+      "theme": "daily",
+      "tips": "離合詞に様態補語を付けるときは動詞を繰り返す。「唱歌得很好」は誤り。",
+      "reading": "tā chàng gē chàng de hěn hǎo"
+    },
+    {
+      "id": "z3-081",
+      "ja": "明日は雨だそうです。",
+      "target": "听说明天下雨。",
+      "theme": "daily",
+      "tips": "「听说」で伝聞。文頭に置き、主語がなくてもよい。",
+      "reading": "tīng shuō míng tiān xià yǔ"
+    },
+    {
+      "id": "z3-082",
+      "ja": "だんだん暖かくなってきました。",
+      "target": "天气越来越好了。",
+      "theme": "daily",
+      "tips": "「越来越＋形容詞」で程度の変化。文末の「了」で変化の実現を示す。",
+      "reading": "tiān qì yuè lái yuè hǎo le"
+    },
+    {
+      "id": "z3-083",
+      "ja": "傘を持って行ったほうがいいですよ。",
+      "target": "你带把伞去吧。",
+      "theme": "daily",
+      "tips": "傘の量詞は「把」。処置文の「把」と同じ字だが別物なので注意。",
+      "reading": "nǐ dài bǎ sǎn qù ba"
+    },
+    {
+      "id": "z3-084",
+      "ja": "今日は昨日より寒いですね。",
+      "target": "今天比昨天冷。",
+      "theme": "daily",
+      "tips": "「比」の文では形容詞の前に「很」を付けない。「比昨天很冷」は誤り。",
+      "reading": "jīn tiān bǐ zuó tiān lěng"
+    },
+    {
+      "id": "z3-085",
+      "ja": "この店の料理はあの店よりずっとおいしいです。",
+      "target": "这家饭馆的菜比那家好吃多了。",
+      "theme": "travel",
+      "tips": "差が大きいときは形容詞の後ろに「多了」を置く。",
+      "reading": "zhè jiā fàn guǎn de cài bǐ nà jiā hǎo chī duō le"
+    },
+    {
+      "id": "z3-086",
+      "ja": "私の部屋は彼の部屋と同じ広さです。",
+      "target": "我的房间跟他的一样大。",
+      "theme": "daily",
+      "tips": "「跟…一样＋形容詞」で同等比較。「一样」の後ろに形容詞が来る。",
+      "reading": "wǒ de fáng jiān gēn tā de yī yàng dà"
+    },
+    {
+      "id": "z3-087",
+      "ja": "中国語は英語ほど簡単ではありません。",
+      "target": "汉语没有英语那么简单。",
+      "theme": "daily",
+      "tips": "否定の比較は「没有…那么」。「不比」は意味がずれる。",
+      "reading": "hàn yǔ méi yǒu yīng yǔ nà me jiǎn dān"
+    },
+    {
+      "id": "z3-088",
+      "ja": "もし明日雨が降ったら、行きません。",
+      "target": "如果明天下雨，我就不去了。",
+      "theme": "daily",
+      "tips": "「如果…就」。「就」は結論側の動詞の前に置く。",
+      "reading": "rú guǒ míng tiān xià yǔ wǒ jiù bù qù le"
+    },
+    {
+      "id": "z3-089",
+      "ja": "彼は忙しいけれど、毎日体を鍛えています。",
+      "target": "他虽然很忙，但是每天都锻炼身体。",
+      "theme": "daily",
+      "tips": "「虽然…但是」は両方残すのが普通。片方だけにしない。",
+      "reading": "tā suī rán hěn máng dàn shì měi tiān dōu duàn liàn shēn tǐ"
+    },
+    {
+      "id": "z3-090",
+      "ja": "この店は安いし、おいしいです。",
+      "target": "这家店又便宜又好吃。",
+      "theme": "travel",
+      "tips": "「又…又…」はそれぞれの形容詞の前に置く。「又便宜好吃」は誤り。",
+      "reading": "zhè jiā diàn yòu pián yi yòu hǎo chī"
+    },
+    {
+      "id": "z3-091",
+      "ja": "まず宿題をして、それからテレビを見なさい。",
+      "target": "你先做作业，然后再看电视。",
+      "theme": "daily",
+      "tips": "「先…然后再」で順序。「再」を入れると「〜してから」の含みが強まる。",
+      "reading": "nǐ xiān zuò zuò yè rán hòu zài kàn diàn shì"
+    },
+    {
+      "id": "z3-092",
+      "ja": "音楽を聴きながら勉強します。",
+      "target": "我一边听音乐一边学习。",
+      "theme": "daily",
+      "tips": "「一边…一边」は同時進行。それぞれの動詞の前に置く。",
+      "reading": "wǒ yī biān tīng yīn yuè yī biān xué xí"
+    },
+    {
+      "id": "z3-093",
+      "ja": "彼以外は皆来ました。",
+      "target": "除了他以外，大家都来了。",
+      "theme": "business",
+      "tips": "「除了…以外，都」で除外。後ろの「都」を落とさない。",
+      "reading": "chú le tā yǐ wài dà jiā dōu lái le"
+    },
+    {
+      "id": "z3-094",
+      "ja": "彼は中国語のほかに英語も話せます。",
+      "target": "除了汉语以外，他还会说英语。",
+      "theme": "business",
+      "tips": "「除了…以外，还」だと「〜に加えて」。「都」を使う除外の意味と区別する。",
+      "reading": "chú le hàn yǔ yǐ wài tā hái huì shuō yīng yǔ"
+    },
+    {
+      "id": "z3-095",
+      "ja": "コーヒーになさいますか、それともお茶になさいますか。",
+      "target": "你喝咖啡还是喝茶？",
+      "theme": "travel",
+      "tips": "選択疑問は「还是」。「或者」は平叙文にしか使えない。",
+      "reading": "nǐ hē kā fēi hái shì hē chá"
+    },
+    {
+      "id": "z3-096",
+      "ja": "土曜日でも日曜日でもかまいません。",
+      "target": "星期六或者星期天都可以。",
+      "theme": "business",
+      "tips": "平叙文の選択は「或者」。後ろに「都」を伴うことが多い。",
+      "reading": "xīng qī liù huò zhě xīng qī tiān dōu kě yǐ"
+    },
+    {
+      "id": "z3-097",
+      "ja": "私もそう思います。",
+      "target": "我也这么认为。",
+      "theme": "business",
+      "tips": "「这么」は方法・様態を指す。「认为」は判断で、「觉得」より硬い。",
+      "reading": "wǒ yě zhè me rèn wéi"
+    },
+    {
+      "id": "z3-098",
+      "ja": "それはいい方法ですね。",
+      "target": "这个办法很好。",
+      "theme": "business",
+      "tips": "形容詞述語文では「是」を使わない。「这个办法是很好」は誤り。",
+      "reading": "zhè ge bàn fǎ hěn hǎo"
+    },
+    {
+      "id": "z3-099",
+      "ja": "ちょっと難しいと思います。",
+      "target": "我觉得有点儿难。",
+      "theme": "business",
+      "tips": "「觉得」で主観的な感想。「有点儿」で言い方をやわらげる。",
+      "reading": "wǒ jué de yǒu diǎnr nán"
+    },
+    {
+      "id": "z3-100",
+      "ja": "この件はちょっと考えさせてください。",
+      "target": "这件事情让我想一想。",
+      "theme": "business",
+      "tips": "「让我＋動詞」で「〜させてください」。動詞の重複で「ちょっと」の含みが出る。",
+      "reading": "zhè jiàn shì qíng ràng wǒ xiǎng yī xiǎng"
+    }
+  ]
+}

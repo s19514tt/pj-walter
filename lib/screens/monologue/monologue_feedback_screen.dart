@@ -46,7 +46,7 @@ class _MonologueFeedbackScreenState extends State<MonologueFeedbackScreen> {
     await context.read<HistoryService>().addPhrase(
       Phrase(
         id: const Uuid().v4(),
-        en: phrase.en,
+        target: phrase.target,
         ja: phrase.ja,
         source: widget.topic.id,
         createdAt: DateTime.now(),
@@ -152,7 +152,7 @@ class _MonologueFeedbackScreenState extends State<MonologueFeedbackScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    feedback.usefulPhrases[i].en,
+                                    feedback.usefulPhrases[i].target,
                                     style: const TextStyle(
                                       fontSize: 15,
                                       fontWeight: FontWeight.bold,

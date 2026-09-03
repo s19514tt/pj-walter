@@ -37,6 +37,7 @@ DrillResult _drillResult({
 }) => DrillResult(
   id: 'drill-$sentenceId-$score-${DateTime.now().microsecondsSinceEpoch}',
   sentenceId: sentenceId,
+  language: 'en',
   level: level,
   spoken: 'spoken text',
   timestamp: DateTime.now(),
@@ -52,6 +53,7 @@ DrillResult _drillResult({
 MonologueResult _monologueResult({int seconds = 60}) => MonologueResult(
   id: 'mono-${DateTime.now().microsecondsSinceEpoch}',
   topicId: 't-001',
+  language: 'en',
   seconds: seconds,
   transcript: 'transcript',
   timestamp: DateTime.now(),
@@ -264,7 +266,7 @@ void main() {
       await historyService.addPhrase(
         Phrase(
           id: 'p-1',
-          en: 'first phrase',
+          target: 'first phrase',
           ja: '最初のフレーズ',
           source: 'manual',
           createdAt: DateTime.now(),
@@ -274,7 +276,7 @@ void main() {
       await historyService.addPhrase(
         Phrase(
           id: 'p-2',
-          en: 'second phrase',
+          target: 'second phrase',
           ja: '2番目のフレーズ',
           source: 'manual',
           createdAt: DateTime.now(),
@@ -292,7 +294,7 @@ void main() {
       await historyService.addPhrase(
         Phrase(
           id: 'p-10',
-          en: 'break the ice',
+          target: 'break the ice',
           ja: '緊張をほぐす',
           source: 'manual',
           createdAt: DateTime.now(),
@@ -301,7 +303,7 @@ void main() {
       await historyService.addPhrase(
         Phrase(
           id: 'p-11',
-          en: 'slip my mind',
+          target: 'slip my mind',
           ja: 'うっかり忘れる',
           source: 'manual',
           createdAt: DateTime.now(),

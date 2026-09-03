@@ -53,7 +53,10 @@ class _TopicSelectScreenState extends State<TopicSelectScreen> {
   }
 
   Future<List<Topic>> _loadTopics() =>
-      context.read<SentenceRepository>().topics(theme: _theme);
+      context.read<SentenceRepository>().topics(
+        profile: context.read<SettingsService>().languageProfile,
+        theme: _theme,
+      );
 
   void _setTheme(String? theme) {
     setState(() {
@@ -88,7 +91,11 @@ class _TopicSelectScreenState extends State<TopicSelectScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('独り言英会話')),
+      appBar: AppBar(
+        title: Text(
+          context.watch<SettingsService>().languageProfile.monologueTitle,
+        ),
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -165,7 +172,7 @@ class _TopicSelectScreenState extends State<TopicSelectScreen> {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            topic.en,
+                            topic.target,
                             style: const TextStyle(
                               fontSize: 13,
                               color: AppColors.textSecondary,

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../services/drill_question_selector.dart';
 import '../../services/sentence_repository.dart';
+import '../../services/settings_service.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/app_route.dart';
 import '../../utils/score_colors.dart';
@@ -59,7 +60,11 @@ class DrillSummaryScreen extends StatelessWidget {
 
   Future<void> _retry(BuildContext context) async {
     final repository = context.read<SentenceRepository>();
-    final sentences = await repository.sentencesFor(level: level, theme: theme);
+    final sentences = await repository.sentencesFor(
+      profile: context.read<SettingsService>().languageProfile,
+      level: level,
+      theme: theme,
+    );
     const selector = DrillQuestionSelector();
     final selected = selector.select(sentences);
     if (!context.mounted) return;

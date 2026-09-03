@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/drill_result.dart';
+import '../../models/learning_language.dart';
 import '../../models/monologue_result.dart';
 import '../../models/sentence.dart';
 import '../../models/topic.dart';
@@ -198,12 +199,15 @@ class _DrillDetailSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     return _DetailSheetScaffold(
       icon: Icons.edit_note,
-      title: '口頭英作文',
+      title: '口頭作文',
       timestamp: result.timestamp,
       score: result.feedback.score,
       children: [
         FutureBuilder<List<Sentence>>(
-          future: repository.sentencesFor(level: result.level),
+          future: repository.sentencesFor(
+            profile: _profileFor(result.language),
+            level: result.level,
+          ),
           builder: (context, snapshot) {
             final match = snapshot.data?.where(
               (s) => s.id == result.sentenceId,
@@ -230,7 +234,7 @@ class _DrillDetailSheet extends StatelessWidget {
   }
 }
 
-/// 独り言英会話の詳細（お題/トランスクリプト/総評）。
+/// 独り言トレーニングの詳細（お題/トランスクリプト/総評）。
 class _MonologueDetailSheet extends StatelessWidget {
   const _MonologueDetailSheet({required this.result, required this.repository});
 
@@ -241,12 +245,12 @@ class _MonologueDetailSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     return _DetailSheetScaffold(
       icon: Icons.mic_none,
-      title: '独り言英会話',
+      title: '独り言',
       timestamp: result.timestamp,
       score: result.feedback.fluencyScore,
       children: [
         FutureBuilder<List<Topic>>(
-          future: repository.topics(),
+          future: repository.topics(profile: _profileFor(result.language)),
           builder: (context, snapshot) {
             final match = snapshot.data?.where((t) => t.id == result.topicId);
             final ja = (match != null && match.isNotEmpty)
@@ -363,3 +367,12 @@ class _DetailField extends StatelessWidget {
     );
   }
 }
+
+/// 履歴に記録された言語コードから[LanguageProfile]を引く。
+///
+/// 未知のコード（教材構成が変わった場合など）は英語にフォールバックし、
+/// 履歴画面が開けなくなることを避ける。
+LanguageProfile _profileFor(String code) => LanguageProfile.values.firstWhere(
+  (profile) => profile.code == code,
+  orElse: () => LanguageProfile.english,
+);

@@ -163,6 +163,7 @@ class _DrillScreenState extends State<DrillScreen> {
     final result = DrillResult(
       id: const Uuid().v4(),
       sentenceId: sentence.id,
+      language: context.read<SettingsService>().languageProfile.code,
       level: sentence.level,
       spoken: '',
       timestamp: DateTime.now(),
@@ -238,13 +239,15 @@ class _DrillScreenState extends State<DrillScreen> {
     final sentence = _current;
     try {
       final feedback = await gemini.correctComposition(
+        profile: settings.languageProfile,
         ja: sentence.ja,
-        modelAnswer: sentence.en,
+        modelAnswer: sentence.target,
         spoken: spoken,
       );
       final result = DrillResult(
         id: const Uuid().v4(),
         sentenceId: sentence.id,
+        language: settings.languageProfile.code,
         level: sentence.level,
         spoken: spoken,
         timestamp: DateTime.now(),
@@ -351,10 +354,11 @@ class _DrillScreenState extends State<DrillScreen> {
   @override
   Widget build(BuildContext context) {
     final feedback = _feedback;
+    final settings = context.watch<SettingsService>();
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          '${widget.isReview ? '復習' : '口頭英作文'} '
+          '${widget.isReview ? '復習' : settings.languageProfile.compositionTitle} '
           '(${_index + 1}/${widget.sentences.length})',
         ),
       ),

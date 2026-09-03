@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:record/record.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
+import '../models/learning_language.dart';
 import '../utils/wav_builder.dart';
 import 'gemini_service.dart';
 import 'settings_service.dart';
@@ -61,9 +62,16 @@ abstract class SpeechInputService {
 /// リアルタイムに認識テキストを[onPartial]で流す。無料・高速だが、
 /// 端末やOSバージョンによっては利用できない場合がある。
 class DeviceSpeechInputService implements SpeechInputService {
-  DeviceSpeechInputService({stt.SpeechToText? speechToText})
-    : _speech = speechToText ?? stt.SpeechToText();
+  // コンストラクタの公開パラメータ名（profile）と内部フィールド名（_profile）を
+  // あえて分けているため、initializing formalは使わない。
+  DeviceSpeechInputService({
+    required LanguageProfile profile,
+    stt.SpeechToText? speechToText,
+    // ignore: prefer_initializing_formals
+  }) : _profile = profile,
+       _speech = speechToText ?? stt.SpeechToText();
 
+  final LanguageProfile _profile;
   final stt.SpeechToText _speech;
   bool _initialized = false;
   String _lastWords = '';
@@ -124,7 +132,7 @@ class DeviceSpeechInputService implements SpeechInputService {
       // localeIdはlistenOptions側に指定する（deprecatedな引数と併用すると
       // listenOptionsが優先されlocaleIdの旧引数は無視されるため）。
       listenOptions: stt.SpeechListenOptions(
-        localeId: 'en_US',
+        localeId: _profile.sttLocaleId,
         partialResults: true,
         listenMode: longForm
             ? stt.ListenMode.dictation
@@ -165,15 +173,19 @@ class GeminiSpeechInputService implements SpeechInputService {
   // （使うとパラメータ名がprivateになり外部から渡せなくなる）。
   GeminiSpeechInputService({
     required GeminiService geminiService,
+    required LanguageProfile profile,
     AudioRecorder? recorder,
     // ignore: prefer_initializing_formals
   }) : _geminiService = geminiService,
+       // ignore: prefer_initializing_formals
+       _profile = profile,
        _recorder = recorder ?? AudioRecorder();
 
   static const _sampleRate = 16000;
   static const _channels = 1;
 
   final GeminiService _geminiService;
+  final LanguageProfile _profile;
   final AudioRecorder _recorder;
   BytesBuilder? _bytesBuilder;
   StreamSubscription<Uint8List>? _subscription;
@@ -243,6 +255,7 @@ class GeminiSpeechInputService implements SpeechInputService {
       channels: _channels,
     );
     return await _geminiService.transcribe(
+      profile: _profile,
       audioBytes: wavBytes,
       mimeType: 'audio/wav',
     );
@@ -262,10 +275,14 @@ SpeechInputService createSpeechInputService({
   required SettingsService settingsService,
   required GeminiService geminiService,
 }) {
+  final profile = settingsService.languageProfile;
   switch (settingsService.sttMode) {
     case SttMode.device:
-      return DeviceSpeechInputService();
+      return DeviceSpeechInputService(profile: profile);
     case SttMode.gemini:
-      return GeminiSpeechInputService(geminiService: geminiService);
+      return GeminiSpeechInputService(
+        geminiService: geminiService,
+        profile: profile,
+      );
   }
 }

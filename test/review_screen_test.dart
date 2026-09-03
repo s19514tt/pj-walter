@@ -69,6 +69,7 @@ void main() {
         DrillResult(
           id: 'd-1',
           sentenceId: 's700-001',
+          language: 'en',
           level: 700,
           spoken: 'spoken text',
           timestamp: DateTime.now(),
@@ -108,7 +109,7 @@ void main() {
       await historyService.addPhrase(
         Phrase(
           id: 'p-1',
-          en: 'break the ice',
+          target: 'break the ice',
           ja: '緊張をほぐす',
           source: 'manual',
           createdAt: DateTime(2026, 1, 1),
@@ -117,7 +118,7 @@ void main() {
       await historyService.addPhrase(
         Phrase(
           id: 'p-2',
-          en: 'slip my mind',
+          target: 'slip my mind',
           ja: 'うっかり忘れる',
           source: 'manual',
           createdAt: DateTime(2026, 1, 2),

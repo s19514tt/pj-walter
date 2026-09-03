@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/sentence.dart';
+import '../../models/learning_language.dart';
 import '../../services/sentence_repository.dart';
+import '../../services/settings_service.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/theme_labels.dart';
 import '../../widgets/app_card.dart';
@@ -25,12 +27,15 @@ class SentenceListScreen extends StatefulWidget {
 
 class _SentenceListScreenState extends State<SentenceListScreen> {
   late final Future<List<Sentence>> _sentencesFuture;
+  late final LanguageProfile _profile;
 
   @override
   void initState() {
     super.initState();
     final repository = context.read<SentenceRepository>();
+    _profile = context.read<SettingsService>().languageProfile;
     _sentencesFuture = repository.sentencesFor(
+      profile: _profile,
       level: widget.level,
       theme: widget.theme,
     );
@@ -39,8 +44,11 @@ class _SentenceListScreenState extends State<SentenceListScreen> {
   @override
   Widget build(BuildContext context) {
     final themeText = widget.theme == null ? 'すべて' : themeLabel(widget.theme!);
+    final levelText = _profile.levels
+        .firstWhere((deck) => deck.value == widget.level)
+        .label;
     return Scaffold(
-      appBar: AppBar(title: Text('教材一覧（TOEIC ${widget.level}点台・$themeText）')),
+      appBar: AppBar(title: Text('教材一覧（$levelText・$themeText）')),
       body: FutureBuilder<List<Sentence>>(
         future: _sentencesFuture,
         builder: (context, snapshot) {
@@ -122,13 +130,23 @@ class _SentenceCardState extends State<_SentenceCard> {
                   const Divider(height: 1),
                   const SizedBox(height: 12),
                   Text(
-                    sentence.en,
+                    sentence.target,
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
                       color: AppColors.primary,
                     ),
                   ),
+                  if (sentence.reading != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      sentence.reading!,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 8),
                   Text(
                     sentence.tips,

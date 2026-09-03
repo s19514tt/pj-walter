@@ -10,7 +10,7 @@ import 'package:pj_walter/services/drill_question_selector.dart';
 Sentence _sentence(int i) => Sentence(
   id: 's700-${i.toString().padLeft(3, '0')}',
   ja: '日本語文$i',
-  en: 'English sentence $i',
+  target: 'English sentence $i',
   theme: 'daily',
   tips: 'tips $i',
   level: 700,

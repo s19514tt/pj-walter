@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../models/learning_language.dart';
 import '../services/settings_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_card.dart';
@@ -9,7 +10,7 @@ import '../widgets/primary_button.dart';
 import '../widgets/secondary_button.dart';
 import '../widgets/section_header.dart';
 
-/// 設定タブ。Gemini APIキー・モデル・音声認識方式・独り言デフォルト時間を管理する。
+/// 設定タブ。学習言語・Gemini APIキー・モデル・音声認識方式・独り言デフォルト時間を管理する。
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -57,6 +58,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          const SectionHeader(title: '学習する言語'),
+          const SizedBox(height: 12),
+          _LearningLanguageSection(settings: settings),
+          const SizedBox(height: 24),
           const SectionHeader(title: 'Gemini APIキー'),
           const SizedBox(height: 12),
           _ApiKeySection(
@@ -217,6 +222,36 @@ class _ModelSection extends StatelessWidget {
               if (trimmed.isNotEmpty) settings.setModelName(trimmed);
             },
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 学習言語の切り替え。教材・採点プロンプト・音声認識のロケールが一括で変わる。
+class _LearningLanguageSection extends StatelessWidget {
+  const _LearningLanguageSection({required this.settings});
+
+  final SettingsService settings;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      child: Column(
+        children: [
+          for (final profile in LanguageProfile.values) ...[
+            if (profile != LanguageProfile.values.first)
+              const SizedBox(height: 12),
+            _SttModeOption(
+              title: profile.label,
+              description:
+                  '${profile.levels.map((deck) => deck.label).join('・')}'
+                  'の教材で、${profile.compositionTitle}と'
+                  '${profile.monologueTitle}を行います。',
+              selected: settings.learningLanguage == profile.language,
+              onTap: () => settings.setLearningLanguage(profile.language),
+            ),
+          ],
         ],
       ),
     );

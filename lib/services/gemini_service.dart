@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../models/drill_result.dart';
+import '../models/learning_language.dart';
 import '../models/monologue_result.dart';
 import 'settings_service.dart';
 
@@ -35,17 +36,20 @@ class GeminiService {
   final SettingsService _settings;
   final http.Client _client;
 
-  /// 口頭英作文の発話をGeminiに添削させる。
+  /// 口頭作文の発話をGeminiに添削させる。
   Future<CompositionFeedback> correctComposition({
+    required LanguageProfile profile,
     required String ja,
     required String modelAnswer,
     required String spoken,
   }) async {
+    final language = profile.label;
     final prompt =
         '''
-あなたは日本人向けの英語スピーキング講師です。生徒が日本語文を見て英語で発話した内容を添削してください。
+あなたは日本人向けの$languageスピーキング講師です。生徒が日本語文を見て$languageで発話した内容を添削してください。
 発話内容は音声認識によって文字起こしされたものなので、大文字・小文字の違いや句読点の有無は減点しないでください。
-意味が通り文法的に正しい英文であれば、模範解答と表現が異なっていても許容し、正当に評価してください。
+意味が通り文法的に正しい$languageの文であれば、模範解答と表現が異なっていても許容し、正当に評価してください。
+発音・声調は評価対象に含めません（音声認識を経ているため判定できません）。文法・語彙・語順のみを見てください。
 
 日本語原文: $ja
 模範解答: $modelAnswer
@@ -61,7 +65,7 @@ class GeminiService {
   - 30-49: 部分的にしか伝わらない
   - 0-29: ほぼ伝わらない
 - is_acceptable: scoreが70以上なら合格(true)
-- corrected: 生徒の発話を最小限の編集で正しくした英文にすること。模範解答を丸写しするのではなく、
+- corrected: 生徒の発話を最小限の編集で正しくした$languageの文にすること。模範解答を丸写しするのではなく、
   生徒が選んだ語彙・構文をできる限りそのまま活かして修正する。
   例: 発話が "I was too tired so that I couldn't go out" なら、
   corrected は生徒のso that構文を活かして "I was so tired that I couldn't go out" とする。
@@ -78,20 +82,23 @@ class GeminiService {
     }
   }
 
-  /// 独り言英会話のトランスクリプトをGeminiにレビューさせる。
+  /// 独り言トレーニングのトランスクリプトをGeminiにレビューさせる。
   Future<MonologueFeedback> reviewMonologue({
+    required LanguageProfile profile,
     required String topicJa,
-    required String topicEn,
+    required String topicTarget,
     required int seconds,
     required String transcript,
   }) async {
+    final language = profile.label;
     final prompt =
         '''
-あなたは日本人向けの英語スピーキング講師です。生徒が下記のお題について英語で$seconds秒間話した内容を添削してください。
+あなたは日本人向けの$languageスピーキング講師です。生徒が下記のお題について$languageで$seconds秒間話した内容を添削してください。
 発話内容は音声認識によって文字起こしされたものなので、大文字・小文字の違いや句読点の有無は減点しないでください。
+発音・声調は評価対象に含めません（音声認識を経ているため判定できません）。文法・語彙・語順のみを見てください。
 
 お題（日本語）: $topicJa
-お題（英語）: $topicEn
+お題（$language）: $topicTarget
 発話の文字起こし: $transcript
 
 以下のJSONスキーマに従ってフィードバックを出力してください。
@@ -103,10 +110,10 @@ class GeminiService {
   - 50-69: 意味は伝わるが明確な文法ミスがある
   - 30-49: 部分的にしか伝わらない
   - 0-29: ほぼ伝わらない
-- corrected_transcript: 発話全文を、発話の流れ・語彙選択をできる限り保った最小限の修正で自然な英語に
+- corrected_transcript: 発話全文を、発話の流れ・語彙選択をできる限り保った最小限の修正で自然な$languageに
   直したもの（模範解答的な書き直しではなく、生徒自身の言い回しを活かすこと）
 - corrections: 個別の修正点（original: 元の表現, corrected: 修正後, reason_ja: 理由を日本語で）
-- useful_phrases: 次回使える表現を3〜5個（en: 英語表現, ja: 日本語訳）
+- useful_phrases: 次回使える表現を3〜5個（target: $languageの表現, ja: 日本語訳）
 - overall_feedback_ja: 良かった点と改善点を含む総評（日本語、3〜4文）
 ''';
 
@@ -120,6 +127,7 @@ class GeminiService {
 
   /// 録音済み音声をGeminiに文字起こしさせる（STT方式=geminiのとき使用）。
   Future<String> transcribe({
+    required LanguageProfile profile,
     required List<int> audioBytes,
     required String mimeType,
   }) async {
@@ -131,7 +139,8 @@ class GeminiService {
           'parts': [
             {
               'text':
-                  'Transcribe this English speech verbatim. Return only the transcript.',
+                  'Transcribe this ${profile.label} speech verbatim. '
+                  'Return only the transcript.',
             },
             {
               'inline_data': {
@@ -291,10 +300,10 @@ class GeminiService {
         'items': {
           'type': 'OBJECT',
           'properties': {
-            'en': {'type': 'STRING'},
+            'target': {'type': 'STRING'},
             'ja': {'type': 'STRING'},
           },
-          'required': ['en', 'ja'],
+          'required': ['target', 'ja'],
         },
       },
       'overall_feedback_ja': {'type': 'STRING'},

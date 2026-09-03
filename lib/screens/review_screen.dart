@@ -56,7 +56,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
     return phrases
         .where(
           (p) =>
-              p.en.toLowerCase().contains(query) ||
+              p.target.toLowerCase().contains(query) ||
               p.ja.toLowerCase().contains(query),
         )
         .toList();
@@ -235,7 +235,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        phrase.en,
+                        phrase.target,
                         style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,

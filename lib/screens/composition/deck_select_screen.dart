@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../services/drill_question_selector.dart';
+import '../../models/learning_language.dart';
 import '../../services/sentence_repository.dart';
+import '../../services/settings_service.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/app_route.dart';
 import '../../utils/theme_labels.dart';
@@ -25,29 +27,30 @@ class DeckSelectScreen extends StatefulWidget {
 }
 
 class _DeckSelectScreenState extends State<DeckSelectScreen> {
-  static const _levels = [700, 800];
   static const _themes = <String?>[null, 'daily', 'business', 'travel'];
 
-  int _level = _levels.first;
+  late LanguageProfile _profile;
+  late int _level;
   String? _theme;
   late Future<int> _countFuture;
 
   @override
   void initState() {
     super.initState();
+    _profile = context.read<SettingsService>().languageProfile;
+    _level = _profile.levels.first.value;
     _countFuture = _loadCount();
   }
 
   Future<int> _loadCount() async {
     final repository = context.read<SentenceRepository>();
     final sentences = await repository.sentencesFor(
+      profile: _profile,
       level: _level,
       theme: _theme,
     );
     return sentences.length;
   }
-
-  String _levelLabel(int level) => 'TOEIC $level点台';
 
   String _themeChipLabel(String? theme) =>
       theme == null ? 'すべて' : themeLabel(theme);
@@ -55,6 +58,7 @@ class _DeckSelectScreenState extends State<DeckSelectScreen> {
   Future<void> _startTraining() async {
     final repository = context.read<SentenceRepository>();
     final sentences = await repository.sentencesFor(
+      profile: _profile,
       level: _level,
       theme: _theme,
     );
@@ -79,7 +83,7 @@ class _DeckSelectScreenState extends State<DeckSelectScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('口頭英作文')),
+      appBar: AppBar(title: Text(_profile.compositionTitle)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -89,12 +93,12 @@ class _DeckSelectScreenState extends State<DeckSelectScreen> {
             spacing: 8,
             runSpacing: 8,
             children: [
-              for (final level in _levels)
+              for (final deck in _profile.levels)
                 PillChip(
-                  label: _levelLabel(level),
-                  selected: _level == level,
+                  label: deck.label,
+                  selected: _level == deck.value,
                   onTap: () => setState(() {
-                    _level = level;
+                    _level = deck.value;
                     _countFuture = _loadCount();
                   }),
                 ),
