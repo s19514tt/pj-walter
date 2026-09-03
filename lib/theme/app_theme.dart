@@ -91,7 +91,11 @@ abstract final class AppTheme {
       useMaterial3: true,
       colorScheme: colorScheme,
       fontFamily: GoogleFonts.notoSansJp().fontFamily,
-      fontFamilyFallback: const ['Hiragino Sans', 'Noto Sans CJK JP', 'sans-serif'],
+      fontFamilyFallback: const [
+        'Hiragino Sans',
+        'Noto Sans CJK JP',
+        'sans-serif',
+      ],
       scaffoldBackgroundColor: AppColors.pageBackground,
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.background,
@@ -152,7 +156,10 @@ abstract final class AppTheme {
       textTheme: baseTextTheme.copyWith(
         bodyLarge: const TextStyle(color: AppColors.textPrimary, fontSize: 16),
         bodyMedium: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
-        bodySmall: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+        bodySmall: const TextStyle(
+          color: AppColors.textSecondary,
+          fontSize: 12,
+        ),
         titleLarge: const TextStyle(
           color: AppColors.textPrimary,
           fontSize: 20,

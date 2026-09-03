@@ -46,9 +46,11 @@ class _HomeScreenState extends State<HomeScreen> {
   /// ドリル・独り言の履歴を新しい順に混ぜて上位3件を返す。
   List<_RecentEntry> _recentEntries(HistoryService history, DateTime now) {
     String when(DateTime t) {
-      final days = DateTime(now.year, now.month, now.day)
-          .difference(DateTime(t.year, t.month, t.day))
-          .inDays;
+      final days = DateTime(
+        now.year,
+        now.month,
+        now.day,
+      ).difference(DateTime(t.year, t.month, t.day)).inDays;
       if (days <= 0) return '今日';
       if (days == 1) return '昨日';
       return '$days日前';
@@ -95,15 +97,18 @@ class _HomeScreenState extends State<HomeScreen> {
     final now = DateTime.now();
     final todayStats = history.statsForDate(now);
     // 今週（月〜日）の各曜日に学習があったか。未来の曜日はfalse。
-    final monday = DateTime(now.year, now.month, now.day)
-        .subtract(Duration(days: now.weekday - 1));
+    final monday = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).subtract(Duration(days: now.weekday - 1));
     final weekStudied = [
       for (var i = 0; i < 7; i++)
         !monday.add(Duration(days: i)).isAfter(now) &&
             history
-                .statsForDate(monday.add(Duration(days: i)))
-                .values
-                .fold(0, (a, b) => a + b) >
+                    .statsForDate(monday.add(Duration(days: i)))
+                    .values
+                    .fold(0, (a, b) => a + b) >
                 0,
     ];
     final recent = _recentEntries(history, now);
@@ -218,10 +223,7 @@ class _RecentHistoryCard extends StatelessWidget {
         children: [
           for (var i = 0; i < entries.length; i++)
             Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 14,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
                 border: i == entries.length - 1
                     ? null

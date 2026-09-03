@@ -52,7 +52,11 @@ Int16List _downmixToMono(Uint8List pcmData, int channels) {
   return mono;
 }
 
-Int16List _resample(Int16List mono, int sourceSampleRate, int targetSampleRate) {
+Int16List _resample(
+  Int16List mono,
+  int sourceSampleRate,
+  int targetSampleRate,
+) {
   final ratio = sourceSampleRate / targetSampleRate;
   final outCount = (mono.length / ratio).floor();
   if (outCount == 0) return Int16List(0);

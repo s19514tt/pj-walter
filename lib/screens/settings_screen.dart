@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../services/gemini_service.dart';
 import '../services/settings_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_card.dart';
@@ -9,7 +10,10 @@ import '../widgets/primary_button.dart';
 import '../widgets/secondary_button.dart';
 import '../widgets/section_header.dart';
 
-/// 設定タブ。Gemini APIキー・モデル・音声認識方式・独り言デフォルト時間を管理する。
+/// 設定画面。Gemini APIキー・独り言デフォルト時間を管理する。
+///
+/// 使用モデルは[GeminiService.modelName]に固定、音声認識はGemini録音方式のみ
+/// のため、どちらも選択UIは持たず情報表示のみ行う。
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -18,12 +22,6 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  static const _modelCandidates = [
-    'gemini-2.5-flash',
-    'gemini-2.5-pro',
-    'gemini-2.0-flash',
-  ];
-
   static const _monologueSecondsCandidates = <int, String>{
     30: '30秒',
     60: '1分',
@@ -32,25 +30,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
   };
 
   final _apiKeyController = TextEditingController();
-  final _customModelController = TextEditingController();
   bool _obscureApiKey = true;
-  bool _modelFieldInitialized = false;
 
   @override
   void dispose() {
     _apiKeyController.dispose();
-    _customModelController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final settings = context.watch<SettingsService>();
-    // 再ビルドのたびに上書きすると編集中の入力が消えるため、初回のみ反映する
-    if (!_modelFieldInitialized) {
-      _customModelController.text = settings.modelName;
-      _modelFieldInitialized = true;
-    }
 
     return Scaffold(
       appBar: AppBar(title: const Text('設定')),
@@ -86,17 +76,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             },
           ),
           const SizedBox(height: 24),
-          const SectionHeader(title: 'モデル'),
+          const SectionHeader(title: 'モデル・音声認識'),
           const SizedBox(height: 12),
-          _ModelSection(
-            settings: settings,
-            candidates: _modelCandidates,
-            customController: _customModelController,
-          ),
-          const SizedBox(height: 24),
-          const SectionHeader(title: '音声認識方式'),
-          const SizedBox(height: 12),
-          _SttModeSection(settings: settings),
+          const _ModelInfoSection(),
           const SizedBox(height: 24),
           const SectionHeader(title: '独り言のデフォルト時間'),
           const SizedBox(height: 12),
@@ -173,49 +155,23 @@ class _ApiKeySection extends StatelessWidget {
   }
 }
 
-class _ModelSection extends StatelessWidget {
-  const _ModelSection({
-    required this.settings,
-    required this.candidates,
-    required this.customController,
-  });
-
-  final SettingsService settings;
-  final List<String> candidates;
-  final TextEditingController customController;
+/// 使用モデルと音声認識方式の固定値を表示する（変更不可）。
+class _ModelInfoSection extends StatelessWidget {
+  const _ModelInfoSection();
 
   @override
   Widget build(BuildContext context) {
-    return AppCard(
+    return const AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final model in candidates)
-                PillChip(
-                  label: model,
-                  selected: settings.modelName == model,
-                  onTap: () {
-                    settings.setModelName(model);
-                    customController.text = model;
-                  },
-                ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: customController,
-            decoration: const InputDecoration(
-              labelText: 'モデル名を直接入力',
-              border: OutlineInputBorder(),
-            ),
-            onSubmitted: (value) {
-              final trimmed = value.trim();
-              if (trimmed.isNotEmpty) settings.setModelName(trimmed);
-            },
+          _InfoRow(label: '使用モデル', value: GeminiService.modelName),
+          SizedBox(height: 8),
+          _InfoRow(label: '音声認識', value: '話した音声をGeminiに送信して文字起こし'),
+          SizedBox(height: 8),
+          Text(
+            '添削・文字起こしは全てこのモデルで行い、APIキーの利用量を消費します。',
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
           ),
         ],
       ),
@@ -223,96 +179,38 @@ class _ModelSection extends StatelessWidget {
   }
 }
 
-class _SttModeSection extends StatelessWidget {
-  const _SttModeSection({required this.settings});
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({required this.label, required this.value});
 
-  final SettingsService settings;
-
-  @override
-  Widget build(BuildContext context) {
-    return AppCard(
-      child: Column(
-        children: [
-          _SttModeOption(
-            title: '端末の音声認識',
-            description: '無料・高速。端末の標準音声認識機能を使用します。',
-            selected: settings.sttMode == SttMode.device,
-            onTap: () => settings.setSttMode(SttMode.device),
-          ),
-          const SizedBox(height: 12),
-          _SttModeOption(
-            title: 'Gemini音声認識',
-            description: '高精度。話した音声をGeminiに送信して文字起こしします（APIキーを消費）。',
-            selected: settings.sttMode == SttMode.gemini,
-            onTap: () => settings.setSttMode(SttMode.gemini),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SttModeOption extends StatelessWidget {
-  const _SttModeOption({
-    required this.title,
-    required this.description,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String title;
-  final String description;
-  final bool selected;
-  final VoidCallback onTap;
+  final String label;
+  final String value;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(AppTheme.cardRadius),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: selected ? AppColors.primarySurface : AppColors.background,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: selected ? AppColors.primary : AppColors.border,
-            width: 1,
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 80,
+          child: Text(
+            label,
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 13,
+            ),
           ),
         ),
-        child: Row(
-          children: [
-            Icon(
-              selected ? Icons.radio_button_checked : Icons.radio_button_off,
-              color: selected ? AppColors.primary : AppColors.textSecondary,
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    description,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 }
