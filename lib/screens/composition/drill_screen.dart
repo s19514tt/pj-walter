@@ -6,6 +6,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../models/drill_result.dart';
 import '../../models/sentence.dart';
+import '../../models/token_usage.dart';
 import '../../services/gemini_service.dart';
 import '../../services/history_service.dart';
 import '../../services/settings_service.dart';
@@ -36,7 +37,9 @@ const _timeoutExplanation = '時間切れで回答できませんでした。模
 /// ボタン1つだけで、録音停止＝採点：ボタン一押し（または時間切れ）で
 /// 聞き取り終了→文字起こし→Gemini添削まで一気に行う。編集用の入力欄は無い。
 /// 聞き取りに失敗した場合のみ「録り直す」導線を出す。
-/// 全問終了後は[DrillSummaryScreen]へ遷移する。
+/// 各問の文字起こし・添削で消費したトークン数を[DrillSummaryEntry.usage]に
+/// 積み（同じ問のやり直し分も加算）、全問終了後は[DrillSummaryScreen]へ
+/// 遷移して使用量とコストを表示する。
 class DrillScreen extends StatefulWidget {
   const DrillScreen({
     super.key,
@@ -97,6 +100,10 @@ class _DrillScreenState extends State<DrillScreen> {
 
   /// 入力音量（0.0〜1.0、なめらかに追従させた値）。リングの線幅に反映する。
   double _level = 0;
+
+  /// 現在の問で消費したトークン（「もう一度」でやり直した分も加算）
+  TokenUsage _transcriptionUsage = TokenUsage.zero;
+  TokenUsage _correctionUsage = TokenUsage.zero;
 
   Sentence get _current => widget.sentences[_index];
 
@@ -215,10 +222,11 @@ class _DrillScreenState extends State<DrillScreen> {
       _processingSpeech = true;
     });
     try {
-      final text = await _speechInput.stop();
+      final result = await _speechInput.stop();
       if (!mounted) return false;
       setState(() {
-        _stagedSpoken = text;
+        _stagedSpoken = result.text;
+        _transcriptionUsage = _transcriptionUsage + result.usage;
         _level = 0;
       });
       return true;
@@ -289,11 +297,12 @@ class _DrillScreenState extends State<DrillScreen> {
     final gemini = context.read<GeminiService>();
     final sentence = _current;
     try {
-      final feedback = await gemini.correctComposition(
+      final correction = await gemini.correctComposition(
         ja: sentence.ja,
         modelAnswer: sentence.en,
         spoken: spoken,
       );
+      final feedback = correction.feedback;
       final result = DrillResult(
         id: const Uuid().v4(),
         sentenceId: sentence.id,
@@ -319,6 +328,7 @@ class _DrillScreenState extends State<DrillScreen> {
       if (!mounted) return;
       setState(() {
         _feedback = feedback;
+        _correctionUsage = _correctionUsage + correction.usage;
         _grading = false;
       });
     } on GeminiException catch (e) {
@@ -372,7 +382,16 @@ class _DrillScreenState extends State<DrillScreen> {
   void _next() {
     final feedback = _feedback;
     if (feedback != null) {
-      _entries.add(DrillSummaryEntry(ja: _current.ja, score: feedback.score));
+      _entries.add(
+        DrillSummaryEntry(
+          ja: _current.ja,
+          score: feedback.score,
+          usage: DrillQuestionUsage(
+            transcription: _transcriptionUsage,
+            correction: _correctionUsage,
+          ),
+        ),
+      );
     }
 
     if (_index >= widget.sentences.length - 1) {
@@ -402,6 +421,8 @@ class _DrillScreenState extends State<DrillScreen> {
       _feedback = null;
       _recording = false;
       _level = 0;
+      _transcriptionUsage = TokenUsage.zero;
+      _correctionUsage = TokenUsage.zero;
     });
     // 次の問題もカウントダウンは表示と同時に開始する
     _startTimer();
