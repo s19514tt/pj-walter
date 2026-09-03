@@ -4,6 +4,8 @@
 // （test/composition/drill_screen_test.dartと同じパターン）。
 
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/test/test_flutter_secure_storage_platform.dart';
+import 'package:flutter_secure_storage_platform_interface/flutter_secure_storage_platform_interface.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:pj_walter/models/drill_result.dart';
@@ -11,6 +13,7 @@ import 'package:pj_walter/models/phrase.dart';
 import 'package:pj_walter/screens/review_screen.dart';
 import 'package:pj_walter/services/history_service.dart';
 import 'package:pj_walter/services/sentence_repository.dart';
+import 'package:pj_walter/services/settings_service.dart';
 import 'package:provider/provider.dart';
 
 import 'test_support/hive_test_support.dart';
@@ -23,15 +26,22 @@ Future<HistoryService> _buildHistoryService() async => HistoryService(
   dailyStatsBox: await Hive.openBox('daily_stats'),
 );
 
-Widget _buildApp(HistoryService historyService) {
-  return MaterialApp(
-    home: MultiProvider(
-      providers: [
-        ChangeNotifierProvider<HistoryService>.value(value: historyService),
-        Provider<SentenceRepository>(create: (_) => SentenceRepository()),
-      ],
-      child: const ReviewScreen(),
-    ),
+Future<SettingsService> _buildSettingsService() async {
+  final settings = SettingsService(settingsBox: await Hive.openBox('settings'));
+  await settings.init();
+  return settings;
+}
+
+// Providerはmain.dartと同じくMaterialAppの外側に置く。home:の内側に置くと
+// push先の画面（復習ドリルなど）からProviderが見えない。
+Widget _buildApp(HistoryService historyService, SettingsService settings) {
+  return MultiProvider(
+    providers: [
+      ChangeNotifierProvider<HistoryService>.value(value: historyService),
+      ChangeNotifierProvider<SettingsService>.value(value: settings),
+      Provider<SentenceRepository>(create: (_) => SentenceRepository()),
+    ],
+    child: const MaterialApp(home: ReviewScreen()),
   );
 }
 
@@ -40,6 +50,9 @@ void main() {
 
   setUp(() async {
     await initTestHive();
+    FlutterSecureStoragePlatform.instance = TestFlutterSecureStoragePlatform(
+      {},
+    );
   });
 
   tearDown(() async {
@@ -48,11 +61,13 @@ void main() {
 
   testWidgets('復習が0件のとき空状態メッセージが表示され開始ボタンは出ない', (tester) async {
     late HistoryService historyService;
+    late SettingsService settings;
     await tester.runAsync(() async {
       historyService = await _buildHistoryService();
+      settings = await _buildSettingsService();
     });
 
-    await tester.pumpWidget(_buildApp(historyService));
+    await tester.pumpWidget(_buildApp(historyService, settings));
     await tester.pump();
 
     expect(find.textContaining('今日の復習はありません'), findsOneWidget);
@@ -63,8 +78,10 @@ void main() {
 
   testWidgets('復習アイテムがある場合は件数と開始ボタンが表示される', (tester) async {
     late HistoryService historyService;
+    late SettingsService settings;
     await tester.runAsync(() async {
       historyService = await _buildHistoryService();
+      settings = await _buildSettingsService();
       await historyService.saveDrillResult(
         DrillResult(
           id: 'd-1',
@@ -94,7 +111,7 @@ void main() {
       );
     });
 
-    await tester.pumpWidget(_buildApp(historyService));
+    await tester.pumpWidget(_buildApp(historyService, settings));
     await tester.pump();
 
     expect(find.text('件の復習があります'), findsOneWidget);
@@ -104,8 +121,10 @@ void main() {
 
   testWidgets('フレーズ帳の一覧表示・検索・削除ができる', (tester) async {
     late HistoryService historyService;
+    late SettingsService settings;
     await tester.runAsync(() async {
       historyService = await _buildHistoryService();
+      settings = await _buildSettingsService();
       await historyService.addPhrase(
         Phrase(
           id: 'p-1',
@@ -126,7 +145,7 @@ void main() {
       );
     });
 
-    await tester.pumpWidget(_buildApp(historyService));
+    await tester.pumpWidget(_buildApp(historyService, settings));
     await tester.pump();
 
     // 新しい順（p-2が先）で両方表示されている

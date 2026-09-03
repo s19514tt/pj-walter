@@ -237,7 +237,7 @@ void main() {
         _drillResult(sentenceId: 's700-020', score: 50),
       );
       // dueDateは翌日なので、まだ「今日の復習」には含まれない
-      expect(historyService.dueSrsItems, isEmpty);
+      expect(historyService.dueSrsItems(), isEmpty);
 
       // dueDateを今日に書き換える（内部boxを直接操作してシミュレート）
       final today = _dateOnly(DateTime.now());
@@ -245,8 +245,8 @@ void main() {
       final adjusted = item.copyWith(dueDate: today);
       await Hive.box('srs_items').put(item.sentenceId, adjusted.toJson());
 
-      expect(historyService.dueSrsItems, hasLength(1));
-      expect(historyService.dueSrsItems.first.sentenceId, 's700-020');
+      expect(historyService.dueSrsItems(), hasLength(1));
+      expect(historyService.dueSrsItems().first.sentenceId, 's700-020');
     });
   });
 

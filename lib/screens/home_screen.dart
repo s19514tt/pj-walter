@@ -56,7 +56,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final history = context.watch<HistoryService>();
     final settings = context.watch<SettingsService>();
     final profile = settings.languageProfile;
-    final dueItems = history.dueSrsItems;
+    final dueItems = history.dueSrsItems(language: profile.code);
     final todayStats = history.statsForDate(DateTime.now());
 
     return Scaffold(

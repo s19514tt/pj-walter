@@ -9,6 +9,8 @@ import 'package:flutter_secure_storage_platform_interface/flutter_secure_storage
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:pj_walter/models/learning_language.dart';
+import 'package:pj_walter/models/srs_item.dart';
+import 'package:pj_walter/services/history_service.dart';
 import 'package:pj_walter/services/sentence_repository.dart';
 import 'package:pj_walter/services/settings_service.dart';
 
@@ -185,6 +187,63 @@ void main() {
       final reopened = SettingsService(settingsBox: box);
       await reopened.init();
       expect(reopened.learningLanguage, LearningLanguage.chinese);
+    });
+  });
+
+  group('復習キューの言語分離', () {
+    test('dueSrsItemsは指定した学習言語のアイテムだけを返す', () async {
+      final history = HistoryService(
+        drillResultsBox: await Hive.openBox('drill_results'),
+        monologueResultsBox: await Hive.openBox('monologue_results'),
+        srsItemsBox: await Hive.openBox('srs_items'),
+        phrasesBox: await Hive.openBox('phrases'),
+        dailyStatsBox: await Hive.openBox('daily_stats'),
+      );
+      final today = DateTime.now();
+      final due = DateTime(today.year, today.month, today.day);
+      for (final item in [
+        SrsItem(
+          sentenceId: 's700-001',
+          language: 'en',
+          level: 700,
+          stage: 0,
+          dueDate: due,
+          lapses: 0,
+          lastResult: false,
+        ),
+        SrsItem(
+          sentenceId: 'z3-001',
+          language: 'zh',
+          level: 3,
+          stage: 0,
+          dueDate: due,
+          lapses: 0,
+          lastResult: false,
+        ),
+      ]) {
+        await Hive.box('srs_items').put(item.sentenceId, item.toJson());
+      }
+
+      expect(history.dueSrsItems().length, 2);
+      expect(history.dueSrsItems(language: 'zh').map((i) => i.sentenceId), [
+        'z3-001',
+      ]);
+      expect(history.dueSrsItems(language: 'en').map((i) => i.sentenceId), [
+        's700-001',
+      ]);
+    });
+
+    test('languageが無い保存済みアイテムは英語として扱われる', () {
+      final restored = SrsItem.fromJson({
+        'sentenceId': 's700-001',
+        'level': 700,
+        'stage': 0,
+        'dueDate': DateTime(2026, 1, 1).toIso8601String(),
+        'lapses': 0,
+        'lastResult': false,
+      });
+
+      expect(restored.language, 'en');
     });
   });
 }

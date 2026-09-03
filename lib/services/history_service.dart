@@ -99,11 +99,16 @@ class HistoryService extends ChangeNotifier {
 
   /// 今日復習すべきアイテム（dueDate <= 今日、日単位比較）を、
   /// dueDateが早い順に返す。
-  List<SrsItem> get dueSrsItems {
+  ///
+  /// [language]を渡すとその学習言語のアイテムだけに絞る。復習セッションは
+  /// 現在の学習言語のプロンプトで採点するため、言語を混ぜると別言語の文が
+  /// 誤った言語で採点されてしまう。呼び出し側は必ず言語を指定すること。
+  List<SrsItem> dueSrsItems({String? language}) {
     final today = _dateOnly(DateTime.now());
     final list = _srsItemsBox.values
         .map((e) => SrsItem.fromJson(Map<String, dynamic>.from(e as Map)))
         .where((item) => !_dateOnly(item.dueDate).isAfter(today))
+        .where((item) => language == null || item.language == language)
         .toList();
     list.sort((a, b) => a.dueDate.compareTo(b.dueDate));
     return list;

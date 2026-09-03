@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../models/phrase.dart';
 import '../models/srs_item.dart';
 import '../services/history_service.dart';
+import '../services/settings_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/review_launcher.dart';
 import '../widgets/app_card.dart';
@@ -65,8 +66,13 @@ class _ReviewScreenState extends State<ReviewScreen> {
   @override
   Widget build(BuildContext context) {
     final history = context.watch<HistoryService>();
-    final dueItems = history.dueSrsItems;
-    final allItems = history.allSrsItems;
+    final profile = context.watch<SettingsService>().languageProfile;
+    // 復習は現在の学習言語だけを対象にする（別言語の文が現在の言語の
+    // プロンプトで採点されるのを防ぐ）。
+    final dueItems = history.dueSrsItems(language: profile.code);
+    final allItems = history.allSrsItems
+        .where((item) => item.language == profile.code)
+        .toList();
     final phrases = _filteredPhrases(history.phrases);
 
     return Scaffold(
