@@ -34,6 +34,7 @@ void main() {
           spoken: 'I eat toast this morning',
           feedback: feedback,
           onNext: () {},
+          onRetry: () {},
         ),
       ),
     );
@@ -64,6 +65,7 @@ void main() {
           spoken: 'I had toast this morning.',
           feedback: feedback,
           onNext: () {},
+          onRetry: () {},
         ),
       ),
     );
@@ -92,6 +94,7 @@ void main() {
           spoken: 'i had TOAST.',
           feedback: feedback,
           onNext: () {},
+          onRetry: () {},
         ),
       ),
     );
@@ -116,6 +119,7 @@ void main() {
           spoken: '',
           feedback: feedback,
           onNext: () {},
+          onRetry: () {},
         ),
       ),
     );

@@ -12,10 +12,9 @@ import '../../services/settings_service.dart';
 import '../../services/speech_input_service.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/app_route.dart';
-import '../../utils/theme_labels.dart';
+import '../../widgets/abort_session_dialog.dart';
 import '../../widgets/bottom_cta_bar.dart';
-import '../../widgets/recording_indicator.dart';
-import '../../widgets/pill_chip.dart';
+import '../../widgets/countdown_ring.dart';
 import '../../widgets/primary_button.dart';
 import '../settings_screen.dart';
 import 'drill_feedback_view.dart';
@@ -24,8 +23,8 @@ import 'drill_summary_screen.dart';
 /// 1問あたりの制限時間（秒）
 const _questionSeconds = 30;
 
-/// 残り時間がこの秒数以下になったらタイマー表示・進捗バーを警告色にする
-const _urgentSeconds = 10;
+/// 残り時間がこの秒数以下になったらリング・タイムバーを警告色にする
+const _urgentSeconds = 5;
 
 /// 時間切れで回答できなかった場合に保存する添削結果
 const _timeoutExplanation = '時間切れで回答できませんでした。模範解答を確認して復習しましょう。';
@@ -87,16 +86,17 @@ class _DrillScreenState extends State<DrillScreen> {
   bool _recording = false;
   bool _processingSpeech = false;
 
-  /// 録音停止時に確定した文字起こし。停止＝採点に直結するため編集UIは持たない。
-  String _spoken = '';
+  /// 結果画面（段階表示）に遷移済みかどうか。「採点する」押下と同時にtrueになり、
+  /// スケルトン→文字起こし→採点結果の順で埋まっていく。
+  bool _resultMode = false;
+
+  /// 録音停止時に確定した文字起こし。nullは音声認識の完了待ち（stage 0）。
+  String? _stagedSpoken;
   bool _grading = false;
   CompositionFeedback? _feedback;
-  String? _gradedSpoken;
 
-  /// 自動録音開始に失敗した（マイク権限なし等）ことを記録するフラグ。
-  /// 問題が切り替わるたびに同じエラーSnackBarを出さないため、これがtrueの間は
-  /// 自動開始をスキップする。「録り直す」で成功すれば解除される。
-  bool _speechUnavailable = false;
+  /// 入力音量（0.0〜1.0、なめらかに追従させた値）。リングの線幅に反映する。
+  double _level = 0;
 
   Sentence get _current => widget.sentences[_index];
 
@@ -109,10 +109,9 @@ class _DrillScreenState extends State<DrillScreen> {
           settingsService: context.read<SettingsService>(),
           geminiService: context.read<GeminiService>(),
         );
+    // カウントダウンは画面表示と同時に開始する（「読む時間」もカウントに
+    // 含まれる前提）。録音は「答える」ボタンが押されるまで始めない。
     _startTimer();
-    // 問題表示と同時に音声入力を自動開始する（ボタン操作を待たない）。
-    // SnackBar表示にScaffoldが必要なため初回フレーム後に行う。
-    WidgetsBinding.instance.addPostFrameCallback((_) => _autoStartRecording());
   }
 
   @override
@@ -137,17 +136,14 @@ class _DrillScreenState extends State<DrillScreen> {
   }
 
   Future<void> _handleTimeUp() async {
-    // 「答え合わせ」押下による文字起こし・採点が既に走っている場合は
-    // そちらに任せる（二重停止・二重採点を防ぐ）。
-    if (_processingSpeech || _grading || _feedback != null) return;
+    // 「採点する」押下による段階採点が既に走っている場合はそちらに任せる。
+    if (_resultMode || _processingSpeech || _grading) return;
     if (_recording) {
-      await _stopRecording();
-    }
-    if (!mounted || _grading || _feedback != null) return;
-    if (_spoken.trim().isNotEmpty) {
+      // 録音中の時間切れ＝「採点する」を押したのと同じ（段階表示で採点へ）
       await _submit();
       return;
     }
+    // pre（一度も話していない）まま時間切れ → 未回答として即結果表示
     await _submitTimeout();
   }
 
@@ -167,8 +163,9 @@ class _DrillScreenState extends State<DrillScreen> {
       comparisonJa: '',
     );
     setState(() {
+      _resultMode = true;
+      _stagedSpoken = '';
       _feedback = feedback;
-      _gradedSpoken = '';
     });
 
     final sentence = _current;
@@ -190,48 +187,66 @@ class _DrillScreenState extends State<DrillScreen> {
     }
   }
 
-  /// 問題表示時の自動録音開始。
-  ///
-  /// 一度失敗した（[_speechUnavailable]）場合は問題ごとにSnackBarを
-  /// 出し続けないようスキップする（「録り直す」から再試行できる）。
-  Future<void> _autoStartRecording() async {
-    if (!mounted || _speechUnavailable || _recording) return;
-    await _startRecording();
-  }
-
+  /// 「答える」: 録音を開始する。カウントダウンはすでに動いているので
+  /// 触らない（recに入った時点でリセットしてはいけない）。
   Future<void> _startRecording() async {
-    // 録り直し＝新しいテイクなので、前回の文字起こしはクリアする。
-    setState(() => _spoken = '');
+    if (_recording || _secondsLeft <= 0) return;
+    setState(() => _level = 0);
     try {
-      // 部分認識テキストは表示しない（画面は日本語文・残り時間・停止ボタンのみ）
-      await _speechInput.start(onPartial: (_) {});
-      setState(() {
-        _recording = true;
-        _speechUnavailable = false;
-      });
+      // 部分認識テキストは表示しない（画面は日本語文・残り時間・主ボタンのみ）
+      await _speechInput.start(
+        onPartial: (_) {},
+        // 音量はリング線幅（8〜14px）に反映。生値の揺れをならすため
+        // 前回値と半々でブレンドして追従させる。
+        onLevel: (level) {
+          if (!mounted || !_recording) return;
+          setState(() => _level = _level + (level - _level) * 0.5);
+        },
+      );
+      setState(() => _recording = true);
     } on SpeechInputException catch (e) {
-      _speechUnavailable = true;
       _showSnack(e.message);
     }
   }
 
-  Future<void> _stopRecording() async {
-    if (!_recording) return;
+  /// 録音を停止し文字起こしを確定する（stage 0 → stage 1）。
+  /// 失敗時は[_stagedSpoken]をnullのままにしてfalseを返す。
+  Future<bool> _stopRecording() async {
+    if (!_recording) return _stagedSpoken != null;
     setState(() {
       _recording = false;
       _processingSpeech = true;
     });
     try {
       final text = await _speechInput.stop();
-      if (!mounted) return;
-      setState(() => _spoken = text);
+      if (!mounted) return false;
+      setState(() {
+        _stagedSpoken = text;
+        _level = 0;
+      });
+      return true;
     } on SpeechInputException catch (e) {
       _showSnack(e.message);
+      return false;
     } on GeminiException catch (e) {
       _showSnack(e.message);
+      return false;
     } finally {
       if (mounted) setState(() => _processingSpeech = false);
     }
+  }
+
+  /// 段階採点を途中で断念し、pre（カウントダウン再スタート）に戻す。
+  void _resetToPre() {
+    if (!mounted) return;
+    setState(() {
+      _resultMode = false;
+      _stagedSpoken = null;
+      _feedback = null;
+      _recording = false;
+      _level = 0;
+    });
+    _startTimer();
   }
 
   void _showSnack(String message) {
@@ -252,19 +267,27 @@ class _DrillScreenState extends State<DrillScreen> {
       return;
     }
 
-    // 録音中なら「答え合わせ」一押しで聞き取り終了→文字起こしまで行い、
-    // そのまま採点に進む。
-    if (_recording) {
-      await _stopRecording();
+    // 「採点する」押下と同時に結果画面（stage 0: 全カードスケルトン）へ遷移し、
+    // 文字起こし完了でstage 1、採点完了でstage 2と段階的に埋める。
+    if (!_resultMode) {
+      if (!_recording) return; // preでは主ボタンは「答える」なのでここには来ない
+      _timer?.cancel();
+      setState(() => _resultMode = true);
+      final ok = await _stopRecording();
       if (!mounted) return;
+      if (!ok) {
+        // 文字起こし失敗 → preへ戻してやり直せるようにする
+        _resetToPre();
+        return;
+      }
+      if (_stagedSpoken!.trim().isEmpty) {
+        _showSnack('発話を聞き取れませんでした。もう一度話してください。');
+        _resetToPre();
+        return;
+      }
     }
 
-    final spoken = _spoken.trim();
-    if (spoken.isEmpty) {
-      _showSnack('発話を聞き取れませんでした。「録り直す」からもう一度話してください。');
-      return;
-    }
-
+    final spoken = _stagedSpoken!.trim();
     setState(() => _grading = true);
     final gemini = context.read<GeminiService>();
     final sentence = _current;
@@ -297,13 +320,12 @@ class _DrillScreenState extends State<DrillScreen> {
         await historyService.saveDrillResult(result);
       }
       if (!mounted) return;
-      _timer?.cancel();
       setState(() {
         _feedback = feedback;
-        _gradedSpoken = spoken;
         _grading = false;
       });
     } on GeminiException catch (e) {
+      // 採点失敗: stage 1（文字起こし表示）のまま留まり、再試行できるようにする
       if (!mounted) return;
       setState(() => _grading = false);
       _showRetrySnack(e.message);
@@ -344,6 +366,12 @@ class _DrillScreenState extends State<DrillScreen> {
     );
   }
 
+  /// 「もう一度」: 同じ問題のpre（カウントダウン再スタート）に戻す
+  /// （採点結果は破棄。履歴には残る）。
+  void _retryCurrent() {
+    _resetToPre();
+  }
+
   void _next() {
     final feedback = _feedback;
     if (feedback != null) {
@@ -372,137 +400,162 @@ class _DrillScreenState extends State<DrillScreen> {
 
     setState(() {
       _index++;
-      _spoken = '';
+      _resultMode = false;
+      _stagedSpoken = null;
       _feedback = null;
-      _gradedSpoken = null;
+      _recording = false;
+      _level = 0;
     });
+    // 次の問題もカウントダウンは表示と同時に開始する
     _startTimer();
-    // 次の問題でも表示と同時に音声入力を自動開始する
-    _autoStartRecording();
+  }
+
+  /// 戻る操作（AppBarの戻る・システムバック）の誤操作防止。
+  /// 確認ダイアログで「中断する」を選んだときだけ画面を閉じる。
+  Future<void> _onPopRequested() async {
+    final abort = await confirmAbortSession(context);
+    if (abort && mounted) Navigator.of(context).pop();
   }
 
   @override
   Widget build(BuildContext context) {
-    final feedback = _feedback;
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _onPopRequested();
+      },
+      child: _buildScaffold(context),
+    );
+  }
+
+  Widget _buildScaffold(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          '${widget.isReview ? '復習' : '口頭英作文'} '
-          '(${_index + 1}/${widget.sentences.length})',
-        ),
+        title: Text(widget.isReview ? '復習' : '口頭英作文'),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: Center(
+              child: Text(
+                '${_index + 1} / ${widget.sentences.length}',
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
       body: SafeArea(
-        child: feedback == null
-            ? _buildQuestion(context)
-            : DrillFeedbackView(
+        // 「採点する」押下と同時に段階表示の結果ビューへ切り替える
+        // （スケルトン→文字起こし→採点結果と埋まっていく）。
+        child: _resultMode
+            ? DrillFeedbackView(
                 sentence: _current,
-                spoken: _gradedSpoken ?? '',
-                feedback: feedback,
+                spoken: _stagedSpoken,
+                feedback: _feedback,
                 onNext: _next,
-              ),
+                onRetry: _retryCurrent,
+                isLast: _index >= widget.sentences.length - 1,
+              )
+            : _buildQuestion(context),
       ),
     );
   }
 
   Widget _buildQuestion(BuildContext context) {
-    final timeUp = _secondsLeft <= 0;
-    final urgent = _secondsLeft <= _urgentSeconds;
-    final timerColor = urgent ? AppColors.scoreLow : AppColors.primary;
+    // pre（録音前）かどうか。円環・ゲージだけ色を落とす（問題文カードは常時アクティブ）
+    final pre = !_recording;
+    final urgent = !pre && _secondsLeft <= _urgentSeconds;
     return Column(
       children: [
+        // 画面上端の残り時間ゲージ（6px）。pre=#C9CCD1 / rec=オレンジ、残り5秒以下で赤
+        TweenAnimationBuilder<double>(
+          tween: Tween<double>(
+            end: _secondsLeft / widget.questionSeconds,
+          ),
+          duration: const Duration(seconds: 1),
+          curve: Curves.linear,
+          builder: (context, value, child) => LinearProgressIndicator(
+            value: value.clamp(0, 1),
+            minHeight: 6,
+            backgroundColor: AppColors.border,
+            valueColor: AlwaysStoppedAnimation(
+              pre
+                  ? const Color(0xFFC9CCD1)
+                  : urgent
+                  ? AppColors.scoreLow
+                  : AppColors.primary,
+            ),
+          ),
+        ),
         Expanded(
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              TweenAnimationBuilder<double>(
-                tween: Tween<double>(
-                  begin: 1,
-                  end: _secondsLeft / widget.questionSeconds,
-                ),
-                duration: const Duration(milliseconds: 900),
-                curve: Curves.linear,
-                builder: (context, value, child) => ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: value.clamp(0, 1),
-                    minHeight: 6,
-                    backgroundColor: AppColors.border,
-                    valueColor: AlwaysStoppedAnimation(timerColor),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+            child: Column(
+              children: [
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 22,
+                    horizontal: 18,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.background,
+                    borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Column(
+                    children: [
+                      const Text(
+                        'この日本語を英語で',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.1,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      Text(
+                        _current.ja,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 21,
+                          height: 1.7,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '残り$_secondsLeft秒',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: timeUp ? AppColors.scoreLow : timerColor,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: AppColors.background,
-                  borderRadius: BorderRadius.circular(AppTheme.cardRadius),
-                  border: Border.all(color: AppColors.border),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    PillChip(
-                      label:
-                          'TOEIC ${_current.level}点台・'
-                          '${themeLabel(_current.theme)}',
-                      selected: true,
+                Expanded(
+                  child: Center(
+                    child: CountdownRing(
+                      progress: _secondsLeft / widget.questionSeconds,
+                      label: '$_secondsLeft',
+                      recording: _recording,
+                      idleLabel: '聞き取り前',
+                      level: _level,
+                      dimmed: pre,
+                      urgent: urgent,
                     ),
-                    const SizedBox(height: 16),
-                    Text(
-                      _current.ja,
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 24),
-              // 操作ボタンは下部の「答え合わせ」1つだけ（録音停止＝採点）。
-              // ここは録音状態の表示のみ：録音中はインジケーター、文字起こし中は
-              // スピナー、失敗して録音が止まっている時だけ録り直しの導線を出す。
-              Center(
-                child: _processingSpeech
-                    ? const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 12),
-                        child: SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(strokeWidth: 3),
-                        ),
-                      )
-                    : _recording
-                    ? const RecordingIndicator()
-                    : TextButton.icon(
-                        onPressed: _startRecording,
-                        icon: const Icon(Icons.mic),
-                        label: const Text('録り直す'),
-                      ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
         BottomCtaBar(
           child: PrimaryButton(
-            // 録音中は「停止＝採点」であることをラベルでも明示する
-            label: _recording ? '停止して答え合わせ' : '答え合わせ',
-            onPressed: _submit,
-            // 文字起こし（_processingSpeech）→採点（_grading）まで一続きの
-            // 処理として、ボタンはその間ずっとローディング表示にする。
-            loading: _grading || _processingSpeech,
+            // pre=答える（録音開始）/ rec=採点する（停止＝採点）。
+            // 「録音する」という語は使わない。
+            label: _recording ? '採点する' : '答える',
+            onPressed: _recording ? _submit : _startRecording,
           ),
         ),
       ],

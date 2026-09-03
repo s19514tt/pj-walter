@@ -37,11 +37,13 @@ class FakeSpeechInputService implements SpeechInputService {
   @override
   Future<void> start({
     required void Function(String text) onPartial,
+    void Function(double level)? onLevel,
     Duration? listenFor,
     Duration? pauseFor,
   }) async {
     startCalled = true;
     onPartial('partial text...');
+    onLevel?.call(0.5);
   }
 
   @override
@@ -175,24 +177,32 @@ void main() {
     // お題・残り時間が表示されている
     expect(find.text(_topic.ja), findsOneWidget);
     expect(find.text(_topic.en), findsOneWidget);
-    expect(find.text('00:30'), findsOneWidget);
+    expect(find.text('0:30'), findsOneWidget);
 
-    // ボタン操作なしで音声入力が自動開始されている。
-    // 操作ボタンは「停止して添削」1つだけ。編集用の入力欄・録り直し導線は無い
+    // pre: 録音は始まっておらず、主ボタンは「話しはじめる」だけ
+    expect(speechInputService.startCalled, isFalse);
+    expect(find.text('聞き取り前'), findsOneWidget);
+    expect(find.text('話しはじめる'), findsOneWidget);
+    expect(find.byType(TextField), findsNothing);
+
+    // 話しはじめる → 録音中表示・フィードバックを見るボタンに切り替わる
+    await tester.tap(find.text('話しはじめる'));
+    await tester.pump();
     expect(speechInputService.startCalled, isTrue);
     expect(find.text('聞き取り中'), findsOneWidget);
-    expect(find.text('停止して添削'), findsOneWidget);
-    expect(find.byType(TextField), findsNothing);
-    expect(find.text('録り直す'), findsNothing);
+    expect(find.text('フィードバックを見る'), findsOneWidget);
 
-    // 「停止して添削」1タップ＝聞き取り終了→文字起こし→添削→フィードバック画面へ
+    // 「フィードバックを見る」1タップ＝聞き取り終了→文字起こし→添削→フィードバック画面へ
     //
     // GeminiService呼び出しとHistoryServiceによる実際のHive書き込み
     // （ファイルI/O）を伴うため、tester.runAsync()で実の非同期ゾーンに切り替える
     // （drill_screen_testの答え合わせテストと同じ理由）。
     await tester.runAsync(() async {
-      await tester.tap(find.text('停止して添削'));
-      await Future<void>.delayed(const Duration(milliseconds: 150));
+      await tester.tap(find.text('フィードバックを見る'));
+      // 遷移フレームを描画し、フィードバック画面のpostFrameで始まる
+      // パイプライン（文字起こし→添削→Hive保存）を実ゾーンで走らせる
+      await tester.pump();
+      await Future<void>.delayed(const Duration(milliseconds: 200));
     });
     await tester.pump();
     // 画面遷移アニメーション・ScoreRingのアニメーション（いずれも有限）を
@@ -218,10 +228,10 @@ void main() {
       'this is my spoken monologue',
     );
 
-    // ＋追加 -> チェック・追加済み表示に変わる
+    // ＋保存 -> 保存済表示に変わる
     expect(historyService.phrases, isEmpty);
     await tester.runAsync(() async {
-      await tester.tap(find.text('＋追加'));
+      await tester.tap(find.text('＋保存'));
       await Future<void>.delayed(const Duration(milliseconds: 100));
     });
     await tester.pump();
@@ -229,9 +239,8 @@ void main() {
     expect(historyService.phrases, hasLength(1));
     expect(historyService.phrases.first.en, 'It slipped my mind.');
     expect(historyService.phrases.first.source, 't-001');
-    expect(find.byIcon(Icons.check_circle), findsOneWidget);
-    expect(find.text('追加済み'), findsOneWidget);
-    expect(find.text('＋追加'), findsNothing);
+    expect(find.text('保存済'), findsOneWidget);
+    expect(find.text('＋保存'), findsNothing);
   });
 
   testWidgets('録音中に添削してもらうを押すと聞き取り終了→文字起こし→添削まで一気に走る', (tester) async {
@@ -263,12 +272,16 @@ void main() {
     );
     await tester.pump();
 
-    // 自動開始された録音中のまま「停止して添削」を押す
+    // 話しはじめる（録音開始）→そのまま「フィードバックを見る」を押す
+    await tester.tap(find.text('話しはじめる'));
+    await tester.pump();
     expect(speechInputService.startCalled, isTrue);
     expect(speechInputService.stopCalled, isFalse);
     await tester.runAsync(() async {
-      await tester.tap(find.text('停止して添削'));
-      await Future<void>.delayed(const Duration(milliseconds: 150));
+      await tester.tap(find.text('フィードバックを見る'));
+      // 遷移フレーム＋パイプライン（実ゾーン）
+      await tester.pump();
+      await Future<void>.delayed(const Duration(milliseconds: 200));
     });
     await tester.pump();
     await tester.pumpAndSettle();
@@ -318,7 +331,14 @@ void main() {
         ),
       );
       await tester.pump();
-      await Future<void>.delayed(const Duration(milliseconds: 3000));
+      // カウントダウンは画面表示と同時に始まっている。録音を開始して時間切れを待つ
+      await tester.tap(find.text('話しはじめる'));
+      await tester.pump();
+      await Future<void>.delayed(const Duration(milliseconds: 2500));
+      // 時間切れ→フィードバック画面へ遷移。遷移フレームを描画して
+      // パイプライン（文字起こし→添削→Hive保存）を実ゾーンで走らせる
+      await tester.pump();
+      await Future<void>.delayed(const Duration(milliseconds: 500));
     });
     await tester.pump();
     await tester.pumpAndSettle();
@@ -355,9 +375,11 @@ void main() {
     );
     await tester.pump();
 
-    // 録音中に「停止して添削」を押してもキー未設定ならダイアログを出し、
+    // 録音中に「フィードバックを見る」を押してもキー未設定ならダイアログを出し、
     // 録音は止めない（キー設定後にそのまま続行できる）
-    await tester.tap(find.text('停止して添削'));
+    await tester.tap(find.text('話しはじめる'));
+    await tester.pump();
+    await tester.tap(find.text('フィードバックを見る'));
     await tester.pump();
 
     expect(find.text('APIキーが未設定です'), findsOneWidget);
@@ -385,14 +407,18 @@ void main() {
     );
     await tester.pump();
 
-    await tester.tap(find.text('停止して添削'));
+    await tester.tap(find.text('話しはじめる'));
+    await tester.pump();
+    await tester.tap(find.text('フィードバックを見る'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
+    // 画面遷移（旧ルートが残っている間はSnackBarが両Scaffoldに出る）を流し切る
+    await tester.pump(const Duration(milliseconds: 400));
 
     expect(find.byType(SnackBar), findsOneWidget);
     expect(find.text('再試行'), findsOneWidget);
-    // 録り直し導線が出ている
-    expect(find.text('録り直す'), findsOneWidget);
+    // 段階表示のstage 1（文字起こしは表示済み・添削はスケルトン）に留まる
+    expect(find.text('this is my spoken monologue'), findsOneWidget);
     expect(historyService.monologueHistory, isEmpty);
   });
 }

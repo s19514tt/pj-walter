@@ -34,12 +34,17 @@ abstract class SpeechInputService {
   /// （device方式はリアルタイムの部分認識結果、gemini方式は録音中である旨の
   /// 固定文言）。マイク権限拒否・STT利用不可の場合は[SpeechInputException]を投げる。
   ///
+  /// [onLevel]は録音中の入力音量（0.0〜1.0に正規化）が更新されるたびに
+  /// 呼ばれる。UI側で音量メーター表示に使う。プラットフォームが音量を
+  /// 提供しない場合は呼ばれないことがある。
+  ///
   /// [listenFor]・[pauseFor]はdevice方式（[DeviceSpeechInputService]）でのみ
   /// 使われるオプションで、独り言英会話のような長時間発話向けに
   /// 認識継続時間・無音許容時間を調整するためのもの。省略時（null）は
   /// 口頭英作文の短文発話に適した既存の挙動を維持する。gemini方式では無視される。
   Future<void> start({
     required void Function(String text) onPartial,
+    void Function(double level)? onLevel,
     Duration? listenFor,
     Duration? pauseFor,
   });
@@ -70,6 +75,19 @@ class DeviceSpeechInputService implements SpeechInputService {
   String _lastWords = '';
   Completer<void>? _finalResultCompleter;
 
+  // onSoundLevelChangeの生値レンジはOSごとに異なる（iOSはdB負値〜、Androidは
+  // 正値など）ため、セッション中の最小・最大を追跡して0〜1に正規化する。
+  double _minLevel = double.infinity;
+  double _maxLevel = double.negativeInfinity;
+
+  double _normalizeLevel(double raw) {
+    if (raw < _minLevel) _minLevel = raw;
+    if (raw > _maxLevel) _maxLevel = raw;
+    final range = _maxLevel - _minLevel;
+    if (range < 1e-6) return 0;
+    return ((raw - _minLevel) / range).clamp(0.0, 1.0);
+  }
+
   @override
   Future<bool> get isAvailable async {
     if (_initialized) return true;
@@ -84,6 +102,7 @@ class DeviceSpeechInputService implements SpeechInputService {
   @override
   Future<void> start({
     required void Function(String text) onPartial,
+    void Function(double level)? onLevel,
     Duration? listenFor,
     Duration? pauseFor,
   }) async {
@@ -108,6 +127,8 @@ class DeviceSpeechInputService implements SpeechInputService {
 
     _lastWords = '';
     _finalResultCompleter = Completer<void>();
+    _minLevel = double.infinity;
+    _maxLevel = double.negativeInfinity;
     // listenFor/pauseForが渡された場合（独り言英会話などの長時間発話）は
     // ListenMode.dictationにし、無音許容時間・最大継続時間を延長する。
     // 未指定時（口頭英作文の短文発話）は既存の挙動を変えないため
@@ -122,6 +143,9 @@ class DeviceSpeechInputService implements SpeechInputService {
           completer.complete();
         }
       },
+      onSoundLevelChange: onLevel == null
+          ? null
+          : (raw) => onLevel(_normalizeLevel(raw)),
       // localeIdはlistenOptions側に指定する（deprecatedな引数と併用すると
       // listenOptionsが優先されlocaleIdの旧引数は無視されるため）。
       listenOptions: stt.SpeechListenOptions(
@@ -179,6 +203,7 @@ class GeminiSpeechInputService implements SpeechInputService {
   final AudioRecorder _recorder;
   BytesBuilder? _bytesBuilder;
   StreamSubscription<Uint8List>? _subscription;
+  StreamSubscription<Amplitude>? _amplitudeSub;
   Completer<void>? _streamDone;
   // 実際に録音されたフォーマット。要求値と同じとは限らないため
   // `setOnConfigChanged`で通知された値で上書きする。
@@ -191,6 +216,7 @@ class GeminiSpeechInputService implements SpeechInputService {
   @override
   Future<void> start({
     required void Function(String text) onPartial,
+    void Function(double level)? onLevel,
     Duration? listenFor,
     Duration? pauseFor,
   }) async {
@@ -234,11 +260,22 @@ class GeminiSpeechInputService implements SpeechInputService {
         if (!streamDone.isCompleted) streamDone.complete();
       },
     );
-    onPartial('録音中…');
+    if (onLevel != null) {
+      // 現在音量（dBFS: -160〜0）を0〜1へ正規化して通知する。
+      // 発話時のマイク入力はおおむね-45〜-10dBFSに収まるためこの範囲で線形化。
+      _amplitudeSub = _recorder
+          .onAmplitudeChanged(const Duration(milliseconds: 120))
+          .listen(
+            (amp) => onLevel(((amp.current + 45) / 35).clamp(0.0, 1.0)),
+          );
+    }
+    onPartial('聞き取り中…');
   }
 
   @override
   Future<String> stop() async {
+    await _amplitudeSub?.cancel();
+    _amplitudeSub = null;
     await _recorder.stop();
     // stop()完了後にストリームのonDoneイベントが届くまで短時間待つ
     // （マイクロタスクのスケジューリング差によるチャンク取りこぼしを防ぐ）。
@@ -253,7 +290,7 @@ class GeminiSpeechInputService implements SpeechInputService {
     final pcmData = _bytesBuilder?.takeBytes();
     _bytesBuilder = null;
     if (pcmData == null || pcmData.isEmpty) {
-      throw SpeechInputException('録音データを取得できませんでした。もう一度お試しください。');
+      throw SpeechInputException('音声を聞き取れませんでした。もう一度お試しください。');
     }
 
     // 実際の録音フォーマットを16kHzモノラルに揃えてからWAVヘッダーを付ける。
@@ -265,7 +302,7 @@ class GeminiSpeechInputService implements SpeechInputService {
       targetSampleRate: _sampleRate,
     );
     if (normalized.isEmpty) {
-      throw SpeechInputException('録音データを取得できませんでした。もう一度お試しください。');
+      throw SpeechInputException('音声を聞き取れませんでした。もう一度お試しください。');
     }
 
     final wavBytes = buildWavBytes(
@@ -281,6 +318,7 @@ class GeminiSpeechInputService implements SpeechInputService {
 
   @override
   void dispose() {
+    unawaited(_amplitudeSub?.cancel());
     unawaited(_subscription?.cancel());
     unawaited(_recorder.dispose());
   }

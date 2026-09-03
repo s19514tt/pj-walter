@@ -8,17 +8,21 @@ import '../../utils/word_diff.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/bottom_cta_bar.dart';
 import '../../widgets/primary_button.dart';
+import '../../widgets/secondary_button.dart';
+import '../../widgets/skeleton.dart';
 import '../../widgets/score_ring.dart';
 import '../../widgets/stat_badge.dart';
 
-/// 口頭英作文1問分のGemini添削結果表示。
+/// 口頭英作文1問分のGemini添削結果の段階表示。
 ///
-/// スコアリング・合否バッジ・修正版（最重要）・発話内容・模範解答（tips込み）・
-/// 解説・模範解答との比較を表示し、「次へ」で次問または結果まとめへ進む。
+/// 「採点する」押下と同時にこのビューへ遷移し、3段階でコンテンツを埋める：
+/// - stage 0（[spoken]=null・[feedback]=null）: 全カードがスケルトン
+/// - stage 1（[spoken]あり・[feedback]=null）: 文字起こしカードだけ素の
+///   認識テキスト（差分ハイライト・凡例は出さない）。他はスケルトン＋バッジ
+/// - stage 2（[feedback]あり）: 全部実データ。フッターの次アクションが出現
 ///
-/// [feedback.corrected]が空文字（時間切れで回答できなかった場合）は
-/// 「あなたの発話」「修正版」セクションを非表示にし、模範解答＋tipsを
-/// 主役として表示する。
+/// feedbackの`corrected`が空文字（時間切れで回答できなかった場合）は
+/// 「あなたの発話」差分カードを非表示にし、模範解答＋tipsを主役として表示する。
 class DrillFeedbackView extends StatelessWidget {
   const DrillFeedbackView({
     super.key,
@@ -26,25 +30,33 @@ class DrillFeedbackView extends StatelessWidget {
     required this.spoken,
     required this.feedback,
     required this.onNext,
+    required this.onRetry,
+    this.isLast = false,
   });
 
   /// 出題されたSentence
   final Sentence sentence;
 
-  /// ユーザーが回答として提出した発話（音声認識結果 or 手入力）
-  final String spoken;
+  /// ユーザーの発話の文字起こし。nullは音声認識の完了待ち（stage 0）。
+  final String? spoken;
 
-  /// Geminiによる添削結果
-  final CompositionFeedback feedback;
+  /// Geminiによる添削結果。nullは採点待ち（stage 0〜1）。
+  final CompositionFeedback? feedback;
 
-  /// 「次へ」タップ時のコールバック
+  /// 「次の問題へ」（最終問題では「結果を見る」）タップ時のコールバック
   final VoidCallback onNext;
 
-  bool get _timedOut => feedback.corrected.isEmpty;
+  /// 「もう一度」タップ時のコールバック（同じ問題を録り直す）
+  final VoidCallback onRetry;
+
+  /// 最終問題かどうか（プライマリボタンのラベルに反映）
+  final bool isLast;
 
   @override
   Widget build(BuildContext context) {
-    final color = scoreColor(feedback.score);
+    final feedback = this.feedback;
+    final spoken = this.spoken;
+    final timedOut = feedback != null && feedback.corrected.isEmpty;
     var delayStep = 0;
     Widget staggered(Widget child) {
       final delay = Duration(milliseconds: 60 * delayStep);
@@ -58,62 +70,208 @@ class DrillFeedbackView extends StatelessWidget {
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              Center(
-                child: Column(
-                  children: [
-                    ScoreRing(score: feedback.score),
-                    const SizedBox(height: 12),
-                    StatBadge(
-                      label: feedback.isAcceptable ? '合格 🎉' : '要復習',
-                      surfaceColor: feedback.isAcceptable
-                          ? AppColors.scoreGoodSurface
-                          : AppColors.scoreMediumSurface,
-                      textColor: color,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-              if (!_timedOut) ...[
-                staggered(
-                  _DiffCard(spoken: spoken, corrected: feedback.corrected),
-                ),
+              // スコアカード: 採点完了（stage 2）まではスケルトン
+              if (feedback == null)
+                const _ScoreSkeletonCard()
+              else
+                _ScoreCard(feedback: feedback),
+              const SizedBox(height: 14),
+              // 文字起こしカード:
+              //   stage 0 = スケルトン＋認識中バッジ
+              //   stage 1 = 素の認識テキストのみ（差分・凡例なし）
+              //   stage 2 = 差分ハイライト＋凡例
+              if (!timedOut) ...[
+                if (spoken == null)
+                  const SkeletonSectionCard(
+                    title: 'あなたの発話（文字起こし）',
+                    badge: '認識中',
+                  )
+                else if (feedback == null)
+                  _PlainTranscriptCard(spoken: spoken)
+                else
+                  staggered(
+                    _DiffCard(spoken: spoken, corrected: feedback.corrected),
+                  ),
                 const SizedBox(height: 12),
               ],
-              staggered(
-                _Section(
-                  icon: Icons.menu_book_outlined,
-                  title: '模範解答',
-                  content: sentence.en,
-                  tips: sentence.tips,
-                  highlight: _timedOut,
+              // 模範解答・添削コメント: 採点完了までスケルトン＋AI採点中バッジ
+              if (feedback == null)
+                const SkeletonSectionCard(
+                  title: '模範解答・添削コメント',
+                  badge: 'AI採点中',
+                )
+              else ...[
+                staggered(
+                  _Section(
+                    icon: Icons.menu_book_outlined,
+                    title: '模範解答',
+                    content: sentence.en,
+                    tips: sentence.tips,
+                    highlight: timedOut,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              staggered(
-                _Section(
-                  icon: Icons.lightbulb_outline,
-                  title: '解説',
-                  content: feedback.explanationJa,
-                ),
-              ),
-              if (feedback.comparisonJa.isNotEmpty) ...[
                 const SizedBox(height: 12),
                 staggered(
                   _Section(
-                    icon: Icons.compare_arrows,
-                    title: '模範解答との比較',
-                    content: feedback.comparisonJa,
+                    icon: Icons.lightbulb_outline,
+                    title: '解説',
+                    content: feedback.explanationJa,
                   ),
                 ),
+                if (feedback.comparisonJa.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  staggered(
+                    _Section(
+                      icon: Icons.compare_arrows,
+                      title: '模範解答との比較',
+                      content: feedback.comparisonJa,
+                    ),
+                  ),
+                ],
               ],
             ],
           ),
         ),
-        BottomCtaBar(
-          child: PrimaryButton(label: '次へ', onPressed: onNext),
-        ),
+        // フッターの次アクションは採点完了（stage 2）で出現する。
+        // カードの段階表示とフッターのゲートは必ずセット（片方だけ隠さない）。
+        if (feedback != null)
+          BottomCtaBar(
+            child: Row(
+              children: [
+                Expanded(
+                  child: SecondaryButton(label: 'もう一度', onPressed: onRetry),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  flex: 2,
+                  child: PrimaryButton(
+                    label: isLast ? '結果を見る' : '次の問題へ',
+                    onPressed: onNext,
+                  ),
+                ),
+              ],
+            ),
+          ),
       ],
+    );
+  }
+}
+
+/// スコアリング＋判定＋総評のカード（stage 2）。
+class _ScoreCard extends StatelessWidget {
+  const _ScoreCard({required this.feedback});
+
+  final CompositionFeedback feedback;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = scoreColor(feedback.score);
+    // デザインの3段階判定。合否ライン（70点・SRS登録条件）はisAcceptableに従う
+    final (verdict, verdictSurface, headline) = feedback.isAcceptable
+        ? ('合格', AppColors.scoreGoodSurface, 'よくできました。この調子で次へ進みましょう。')
+        : feedback.score >= 50
+        ? ('あと少し', AppColors.scoreMediumSurface, '惜しい！解説を確認して仕上げましょう。')
+        : ('要復習', AppColors.scoreLowSurface, '復習キューに登録されます。模範解答を確認しましょう。');
+    return AppCard(
+      padding: const EdgeInsets.all(20),
+      child: Row(
+        children: [
+          ScoreRing(score: feedback.score, size: 116),
+          const SizedBox(width: 18),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                StatBadge(
+                  label: verdict,
+                  surfaceColor: verdictSurface,
+                  textColor: color,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  headline,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    height: 1.7,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// スコアカードのスケルトン（リング位置に円プレースホルダー）。
+class _ScoreSkeletonCard extends StatelessWidget {
+  const _ScoreSkeletonCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      padding: const EdgeInsets.all(20),
+      child: Row(
+        children: [
+          Container(
+            width: 116,
+            height: 116,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: Color(0xFFEDEEF1),
+            ),
+          ),
+          const SizedBox(width: 18),
+          const Expanded(
+            child: SkeletonParagraph(widths: [0.45, 1, 0.7]),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// stage 1の文字起こしカード。素の認識テキストのみ（差分・凡例は出さない）。
+class _PlainTranscriptCard extends StatelessWidget {
+  const _PlainTranscriptCard({required this.spoken});
+
+  final String spoken;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  'あなたの発話（文字起こし）',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
+              const ProgressBadge(label: 'AI採点中'),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            spoken,
+            style: const TextStyle(
+              fontSize: 15,
+              height: 1.8,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textPrimary,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -209,7 +367,8 @@ class _DiffCard extends StatelessWidget {
           const SizedBox(height: 8),
           _DiffText(
             segments: diff.where((s) => s.type != DiffSegmentType.added),
-            changedColor: AppColors.textSecondary,
+            changedColor: AppColors.scoreLow,
+            changedBackground: AppColors.scoreLowSurface,
             changedDecoration: TextDecoration.lineThrough,
           ),
           const SizedBox(height: 16),
@@ -230,7 +389,8 @@ class _DiffCard extends StatelessWidget {
                     segments: diff.where(
                       (s) => s.type != DiffSegmentType.removed,
                     ),
-                    changedColor: AppColors.primary,
+                    changedColor: AppColors.scoreGood,
+                    changedBackground: AppColors.scoreGoodSurface,
                     changedWeight: FontWeight.bold,
                   ),
                 ],
@@ -258,8 +418,63 @@ class _DiffCard extends StatelessWidget {
                 ),
               ],
             ),
+          const SizedBox(height: 12),
+          const Row(
+            children: [
+              _LegendSwatch(
+                fill: AppColors.scoreLowSurface,
+                border: Color(0xFFF3B4B4),
+                label: '削除・誤り',
+              ),
+              SizedBox(width: 14),
+              _LegendSwatch(
+                fill: AppColors.scoreGoodSurface,
+                border: Color(0xFF9AD9BC),
+                label: '修正版の表現',
+              ),
+            ],
+          ),
         ],
       ),
+    );
+  }
+}
+
+/// 差分表示の凡例（色見本＋ラベル）。
+class _LegendSwatch extends StatelessWidget {
+  const _LegendSwatch({
+    required this.fill,
+    required this.border,
+    required this.label,
+  });
+
+  final Color fill;
+  final Color border;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 9,
+          height: 9,
+          decoration: BoxDecoration(
+            color: fill,
+            border: Border.all(color: border),
+            borderRadius: BorderRadius.circular(3),
+          ),
+        ),
+        const SizedBox(width: 5),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            color: AppColors.textSecondary,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -271,12 +486,14 @@ class _DiffText extends StatelessWidget {
   const _DiffText({
     required this.segments,
     required this.changedColor,
+    this.changedBackground,
     this.changedWeight = FontWeight.normal,
     this.changedDecoration,
   });
 
   final Iterable<DiffSegment> segments;
   final Color changedColor;
+  final Color? changedBackground;
   final FontWeight changedWeight;
   final TextDecoration? changedDecoration;
 
@@ -292,6 +509,7 @@ class _DiffText extends StatelessWidget {
           text: segment.text,
           style: TextStyle(
             color: changed ? changedColor : AppColors.textPrimary,
+            backgroundColor: changed ? changedBackground : null,
             fontWeight: changed ? changedWeight : FontWeight.normal,
             decoration: changed ? changedDecoration : null,
             decorationColor: changedColor,
