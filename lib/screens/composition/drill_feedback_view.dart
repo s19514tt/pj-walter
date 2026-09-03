@@ -96,10 +96,7 @@ class DrillFeedbackView extends StatelessWidget {
               ],
               // 模範解答・添削コメント: 採点完了までスケルトン＋AI採点中バッジ
               if (feedback == null)
-                const SkeletonSectionCard(
-                  title: '模範解答・添削コメント',
-                  badge: 'AI採点中',
-                )
+                const SkeletonSectionCard(title: '模範解答・添削コメント', badge: 'AI採点中')
               else ...[
                 staggered(
                   _Section(
@@ -224,9 +221,7 @@ class _ScoreSkeletonCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 18),
-          const Expanded(
-            child: SkeletonParagraph(widths: [0.45, 1, 0.7]),
-          ),
+          const Expanded(child: SkeletonParagraph(widths: [0.45, 1, 0.7])),
         ],
       ),
     );
@@ -469,10 +464,7 @@ class _LegendSwatch extends StatelessWidget {
         const SizedBox(width: 5),
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 11,
-            color: AppColors.textSecondary,
-          ),
+          style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
         ),
       ],
     );

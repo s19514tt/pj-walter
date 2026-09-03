@@ -63,11 +63,7 @@ class _SkeletonLineState extends State<SkeletonLine>
               gradient: LinearGradient(
                 begin: Alignment(t - 1, 0),
                 end: Alignment(t + 1, 0),
-                colors: const [
-                  _skeletonBase,
-                  _skeletonShimmer,
-                  _skeletonBase,
-                ],
+                colors: const [_skeletonBase, _skeletonShimmer, _skeletonBase],
               ),
             ),
           );

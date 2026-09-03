@@ -17,7 +17,8 @@ Uint8List pcm(List<int> samples) {
 List<int> samplesOf(Uint8List bytes) {
   final view = ByteData.sublistView(bytes);
   return [
-    for (var i = 0; i < bytes.length ~/ 2; i++) view.getInt16(i * 2, Endian.little),
+    for (var i = 0; i < bytes.length ~/ 2; i++)
+      view.getInt16(i * 2, Endian.little),
   ];
 }
 

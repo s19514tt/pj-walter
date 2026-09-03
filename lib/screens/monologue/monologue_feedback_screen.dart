@@ -345,10 +345,7 @@ class _MonologueFeedbackScreenState extends State<MonologueFeedbackScreen> {
                                             CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            result
-                                                .feedback
-                                                .usefulPhrases[i]
-                                                .en,
+                                            result.feedback.usefulPhrases[i].en,
                                             style: const TextStyle(
                                               fontSize: 13,
                                               height: 1.5,
@@ -357,10 +354,7 @@ class _MonologueFeedbackScreenState extends State<MonologueFeedbackScreen> {
                                             ),
                                           ),
                                           Text(
-                                            result
-                                                .feedback
-                                                .usefulPhrases[i]
-                                                .ja,
+                                            result.feedback.usefulPhrases[i].ja,
                                             style: const TextStyle(
                                               fontSize: 11,
                                               height: 1.5,
@@ -378,8 +372,7 @@ class _MonologueFeedbackScreenState extends State<MonologueFeedbackScreen> {
                                   ],
                                 ),
                               ),
-                              if (i <
-                                  result.feedback.usefulPhrases.length - 1)
+                              if (i < result.feedback.usefulPhrases.length - 1)
                                 const SizedBox(height: 8),
                             ],
                           ],
@@ -489,9 +482,7 @@ class _ScoreSkeletonCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 16),
-          const Expanded(
-            child: SkeletonParagraph(widths: [1, 0.8, 0.9]),
-          ),
+          const Expanded(child: SkeletonParagraph(widths: [1, 0.8, 0.9])),
         ],
       ),
     );
