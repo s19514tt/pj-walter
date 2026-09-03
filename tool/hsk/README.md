@@ -53,14 +53,31 @@ done
 python3 verify_vocabulary.py ../../assets/data/zh/sentences_3.json 3
 python3 verify_vocabulary.py ../../assets/data/zh/sentences_4.json 4
 
-# ピンイン生成（reading フィールドを上書き）
+# ピンイン生成（reading フィールドを上書き）。引数は「ファイル 級」の組。
+# topics.json は級をまたいで使うので、狭いほうの3を指定する。
 pip install pypinyin
-python3 generate_reading.py ../../assets/data/zh/sentences_3.json \
-                            ../../assets/data/zh/sentences_4.json \
-                            ../../assets/data/zh/topics.json
+python3 generate_reading.py ../../assets/data/zh/sentences_3.json 3 \
+                            ../../assets/data/zh/sentences_4.json 4 \
+                            ../../assets/data/zh/topics.json 3
 ```
 
-`generate_reading.py` は pypinyin の語句単位の多音字解決を使ったうえで、
-構造助詞の「得」（軽声 de）、離合詞の分離形、可能補語の `睡不着`（zháo）、
-儿化を文脈規則で補正する。教材に新しい多音字パターンが出たら
-`CONTEXT_FIXES` に追加すること。
+`generate_reading.py` は pypinyin の素の出力をそのまま使わない。pypinyin は
+「一」「不」の変調をほぼ行わず、頻出語の軽声も反映しないため、そのままでは
+音読教材として成立しないからである。以下を規則で補正している。
+
+| 補正 | 例 |
+|---|---|
+| 軽声 | 事情 shìqing / 时候 shíhou / 谢谢 xièxie / 对不起 duìbuqǐ |
+| 「一」の変調 | 一下 yíxià（第4声の前）/ 一天 yìtiān（第1〜3声の前）/ 说一说 shuō yi shuō（動詞重ね型は軽声） |
+| 「不」の変調 | 不太 bútài（第4声の前）/ 能不能 néng bu néng（反復疑問は軽声） |
+| 構造助詞 | 说得很快 shuō de（様態補語の得は軽声。ただし 值得 は zhídé） |
+| 多音字 | 请两天假 jià / 看行李 kān / 电話の喂 wéi / 睡了…的觉 jiào |
+| 儿化 | 一点儿 yìdiǎnr |
+| 語単位の結合 | Wǒ xiǎng wèn nǐ yí jiàn shìqing（漢語拼音正詞法にならう） |
+
+分かち書きは `verify_vocabulary.py` の分かち書き器を流用している。HSK公式リストに
+基づく最長一致なので、学習者が知っているべき語の単位で切れ、ピンインのまとまりが
+そのまま語彙の手掛かりになる。
+
+教材に新しい多音字・軽声語のパターンが出たら `CONTEXT_FIXES` / `NEUTRAL_TONE` に
+追加すること。**ピンインを手で直さないこと**（また揺れる）。

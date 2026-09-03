@@ -92,7 +92,9 @@ def tokenize(text, allowed, primary=frozenset()):
                 score = best[i] - 100  # 未知字は強く減点しつつ経路は残す
             else:
                 continue
-            if score > best[i + ln]:
+            # 同点は「先に来るトークンが長い」側を採る（前方最長一致の慣習）。
+            # >(厳密) にすると「路上/车」が「路/上车」に負ける。
+            if score >= best[i + ln]:
                 best[i + ln] = score
                 back[i + ln] = (i, cand)
     tokens, pos = [], n

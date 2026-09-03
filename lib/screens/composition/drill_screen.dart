@@ -376,6 +376,7 @@ class _DrillScreenState extends State<DrillScreen> {
   }
 
   Widget _buildQuestion(BuildContext context) {
+    final profile = context.watch<SettingsService>().languageProfile;
     final timeUp = _secondsLeft <= 0;
     final urgent = _secondsLeft <= _urgentSeconds;
     final timerColor = urgent ? AppColors.scoreLow : AppColors.primary;
@@ -425,7 +426,7 @@ class _DrillScreenState extends State<DrillScreen> {
                   children: [
                     PillChip(
                       label:
-                          'TOEIC ${_current.level}点台・'
+                          '${profile.levelLabel(_current.level)}・'
                           '${themeLabel(_current.theme)}',
                       selected: true,
                     ),
@@ -475,10 +476,10 @@ class _DrillScreenState extends State<DrillScreen> {
               TextField(
                 controller: _answerController,
                 maxLines: 3,
-                decoration: const InputDecoration(
-                  labelText: '英語で回答',
+                decoration: InputDecoration(
+                  labelText: '${profile.label}で回答',
                   hintText: 'マイクで話すか、直接入力してください',
-                  border: OutlineInputBorder(),
+                  border: const OutlineInputBorder(),
                 ),
               ),
             ],

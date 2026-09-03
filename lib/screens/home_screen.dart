@@ -73,7 +73,7 @@ class _HomeScreenState extends State<HomeScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _GreetingHeader(greeting: _greeting),
+          _GreetingHeader(greeting: _greeting, language: profile.label),
           const SizedBox(height: 16),
           if (!settings.hasApiKey) ...[
             _ApiKeyBanner(onTap: _openSettings),
@@ -119,9 +119,12 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class _GreetingHeader extends StatelessWidget {
-  const _GreetingHeader({required this.greeting});
+  const _GreetingHeader({required this.greeting, required this.language});
 
   final String greeting;
+
+  /// 学習中の言語名（「今日も◯◯を話そう」に差し込む）
+  final String language;
 
   @override
   Widget build(BuildContext context) {
@@ -137,9 +140,9 @@ class _GreetingHeader extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 2),
-        const Text(
-          '今日も英語を話そう',
-          style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+        Text(
+          '今日も$languageを話そう',
+          style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
         ),
       ],
     );

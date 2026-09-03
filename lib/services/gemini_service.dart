@@ -66,10 +66,8 @@ class GeminiService {
   - 0-29: ほぼ伝わらない
 - is_acceptable: scoreが70以上なら合格(true)
 - corrected: 生徒の発話を最小限の編集で正しくした$languageの文にすること。模範解答を丸写しするのではなく、
-  生徒が選んだ語彙・構文をできる限りそのまま活かして修正する。
-  例: 発話が "I was too tired so that I couldn't go out" なら、
-  corrected は生徒のso that構文を活かして "I was so tired that I couldn't go out" とする。
-  模範解答が "too tired to go out" のような表現でも、それに書き換えるのはNG（生徒の構文を壊すため）。
+  生徒が選んだ語彙・構文をできる限りそのまま活かして修正する。生徒が模範解答と違う構文を選んでいても、
+  その構文のまま正しい形に直すこと（模範解答の構文に置き換えるのはNG。生徒の言い回しを壊すため）。
 - explanation_ja: 誤りの解説を「誤り→なぜ誤りか→どう覚えるか」の順で簡潔に（日本語、2〜3文）
 - comparison_ja: 模範解答との違いや、どちらでも良い点の解説（日本語）
 ''';

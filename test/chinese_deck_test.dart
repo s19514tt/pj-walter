@@ -181,7 +181,7 @@ void main() {
       expect(settings.languageProfile.code, 'en');
 
       await settings.setLearningLanguage(LearningLanguage.chinese);
-      expect(settings.languageProfile.compositionTitle, '口頭中作文');
+      expect(settings.languageProfile.compositionTitle, '口頭中国語作文');
 
       // 別インスタンスで読み直しても保持されている
       final reopened = SettingsService(settingsBox: box);

@@ -17,7 +17,7 @@ class DeckLevel {
   /// [Sentence.level]と対応する数値（英語なら700/800、中国語なら3/4）
   final int value;
 
-  /// 画面に出す表記（例: `TOEIC 700点台` / `HSK3級`）
+  /// 画面に出す表記（例: `TOEIC700点台` / `HSK3級`）
   final String label;
 }
 
@@ -65,6 +65,14 @@ class LanguageProfile {
   /// デッキ選択に出すレベル一覧
   final List<DeckLevel> levels;
 
+  /// [level]に対応する表示ラベル。未知のレベルはレベル値をそのまま返す。
+  String levelLabel(int level) => levels
+      .firstWhere(
+        (deck) => deck.value == level,
+        orElse: () => DeckLevel(value: level, label: '$level'),
+      )
+      .label;
+
   /// 読み仮名・発音表記のラベル（英語のように不要なら null）
   final String? readingLabel;
 
@@ -82,8 +90,8 @@ class LanguageProfile {
     sttLocaleId: 'en_US',
     assetDirectory: 'assets/data/en',
     levels: [
-      DeckLevel(value: 700, label: 'TOEIC 700点台'),
-      DeckLevel(value: 800, label: 'TOEIC 800点台'),
+      DeckLevel(value: 700, label: 'TOEIC700点台'),
+      DeckLevel(value: 800, label: 'TOEIC800点台'),
     ],
     readingLabel: null,
     wordSeparated: true,
@@ -93,13 +101,13 @@ class LanguageProfile {
     language: LearningLanguage.chinese,
     code: 'zh',
     label: '中国語',
-    compositionTitle: '口頭中作文',
-    monologueTitle: '独り言中国語会話',
+    compositionTitle: '口頭中国語作文',
+    monologueTitle: '独り言中国語',
     sttLocaleId: 'zh_CN',
     assetDirectory: 'assets/data/zh',
     levels: [
-      DeckLevel(value: 3, label: 'HSK 3級'),
-      DeckLevel(value: 4, label: 'HSK 4級'),
+      DeckLevel(value: 3, label: 'HSK3級'),
+      DeckLevel(value: 4, label: 'HSK4級'),
     ],
     readingLabel: 'ピンイン',
     wordSeparated: false,
@@ -110,6 +118,15 @@ class LanguageProfile {
   /// [LearningLanguage]に対応する設定を返す。
   static LanguageProfile of(LearningLanguage language) =>
       values.firstWhere((profile) => profile.language == language);
+
+  /// 保存済みデータの言語コードから設定を引く。
+  ///
+  /// 未知のコード（教材構成が変わった場合など）は英語にフォールバックし、
+  /// 履歴や復習キューの表示が壊れないようにする。
+  static LanguageProfile ofCode(String code) => values.firstWhere(
+    (profile) => profile.code == code,
+    orElse: () => english,
+  );
 
   /// 教材アセットのパスを組み立てる。
   String sentencesAssetPath(int level) =>

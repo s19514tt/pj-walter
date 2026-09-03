@@ -205,7 +205,7 @@ class _DrillDetailSheet extends StatelessWidget {
       children: [
         FutureBuilder<List<Sentence>>(
           future: repository.sentencesFor(
-            profile: _profileFor(result.language),
+            profile: LanguageProfile.ofCode(result.language),
             level: result.level,
           ),
           builder: (context, snapshot) {
@@ -250,7 +250,9 @@ class _MonologueDetailSheet extends StatelessWidget {
       score: result.feedback.fluencyScore,
       children: [
         FutureBuilder<List<Topic>>(
-          future: repository.topics(profile: _profileFor(result.language)),
+          future: repository.topics(
+            profile: LanguageProfile.ofCode(result.language),
+          ),
           builder: (context, snapshot) {
             final match = snapshot.data?.where((t) => t.id == result.topicId);
             final ja = (match != null && match.isNotEmpty)
@@ -367,12 +369,3 @@ class _DetailField extends StatelessWidget {
     );
   }
 }
-
-/// 履歴に記録された言語コードから[LanguageProfile]を引く。
-///
-/// 未知のコード（教材構成が変わった場合など）は英語にフォールバックし、
-/// 履歴画面が開けなくなることを避ける。
-LanguageProfile _profileFor(String code) => LanguageProfile.values.firstWhere(
-  (profile) => profile.code == code,
-  orElse: () => LanguageProfile.english,
-);

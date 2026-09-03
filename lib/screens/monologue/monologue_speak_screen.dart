@@ -281,6 +281,14 @@ class _MonologueSpeakScreenState extends State<MonologueSpeakScreen> {
                       color: AppColors.textSecondary,
                     ),
                   ),
+                  if (widget.topic.reading != null)
+                    Text(
+                      widget.topic.reading!,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
                 ],
               ),
             ),

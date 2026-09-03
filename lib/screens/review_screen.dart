@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../models/phrase.dart';
 import '../models/srs_item.dart';
+import '../models/learning_language.dart';
 import '../services/history_service.dart';
 import '../services/settings_service.dart';
 import '../theme/app_theme.dart';
@@ -90,7 +91,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
           const SizedBox(height: 24),
           const SectionHeader(title: 'フレーズ帳'),
           const SizedBox(height: 12),
-          _buildSearchField(),
+          _buildSearchField(profile.label),
           const SizedBox(height: 12),
           _buildPhrases(history, phrases),
         ],
@@ -177,7 +178,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                 children: [
                   Expanded(
                     child: Text(
-                      'TOEIC ${item.level}点台の文',
+                      '${LanguageProfile.ofCode(item.language).levelLabel(item.level)}の文',
                       style: const TextStyle(color: AppColors.textPrimary),
                     ),
                   ),
@@ -207,14 +208,14 @@ class _ReviewScreenState extends State<ReviewScreen> {
     );
   }
 
-  Widget _buildSearchField() {
+  Widget _buildSearchField(String language) {
     return TextField(
       controller: _searchController,
       onChanged: (value) => setState(() => _query = value),
-      decoration: const InputDecoration(
-        hintText: '英語・日本語で検索',
-        prefixIcon: Icon(Icons.search),
-        border: OutlineInputBorder(),
+      decoration: InputDecoration(
+        hintText: '$language・日本語で検索',
+        prefixIcon: const Icon(Icons.search),
+        border: const OutlineInputBorder(),
       ),
     );
   }

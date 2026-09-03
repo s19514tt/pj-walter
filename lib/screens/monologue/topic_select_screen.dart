@@ -172,7 +172,10 @@ class _TopicSelectScreenState extends State<TopicSelectScreen> {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            topic.target,
+                            [
+                              topic.target,
+                              if (topic.reading != null) topic.reading!,
+                            ].join('\n'),
                             style: const TextStyle(
                               fontSize: 13,
                               color: AppColors.textSecondary,
