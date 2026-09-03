@@ -66,6 +66,53 @@ void main() {
       }
     });
 
+    test('各デッキが300文ある', () async {
+      for (final level in [3, 4]) {
+        final sentences = await repository.sentencesFor(
+          profile: LanguageProfile.chinese,
+          level: level,
+        );
+        expect(sentences, hasLength(300), reason: 'HSK$level');
+      }
+    });
+
+    test('日本語文・中国語文がデッキ内で重複しない', () async {
+      for (final level in [3, 4]) {
+        final sentences = await repository.sentencesFor(
+          profile: LanguageProfile.chinese,
+          level: level,
+        );
+        // 出題文が重複すると、同じ問題が別IDで二度出てしまう
+        expect(
+          sentences.map((s) => s.ja).toSet(),
+          hasLength(sentences.length),
+          reason: 'HSK$level の ja',
+        );
+        expect(
+          sentences.map((s) => s.target).toSet(),
+          hasLength(sentences.length),
+          reason: 'HSK$level の target',
+        );
+      }
+    });
+
+    test('どのテーマでも1セッション分（10問）以上そろっている', () async {
+      for (final level in [3, 4]) {
+        for (final theme in ['daily', 'business', 'travel']) {
+          final sentences = await repository.sentencesFor(
+            profile: LanguageProfile.chinese,
+            level: level,
+            theme: theme,
+          );
+          expect(
+            sentences.length,
+            greaterThanOrEqualTo(10),
+            reason: 'HSK$level / $theme',
+          );
+        }
+      }
+    });
+
     test('IDが教材全体で一意である', () async {
       final ids = <String>[];
       for (final level in [3, 4]) {

@@ -198,31 +198,34 @@ def reading_for(text: str) -> str:
             syllables[idx + offset] = correct
             start = idx + 1
 
-    # 儿化: 直前の音節に r を付けて 1 音節にまとめる
-    merged_chars, merged = [], []
-    for ch, syl in zip(chars, syllables):
-        if ch == "儿" and merged and syl in ("ér", "er"):
-            merged[-1] += "r"
-            merged_chars[-1] += ch
-        else:
-            merged.append(syl)
-            merged_chars.append(ch)
-    return merged_chars, merged
+    return chars, syllables
 
 
-def group_by_word(merged_chars, merged, allowed, primary):
-    """漢語拼音正詞法にならい、語単位で音節を繋ぐ。"""
+def group_by_word(chars, syllables, allowed, primary):
+    """漢語拼音正詞法にならい、語単位で音節を繋ぐ。
+
+    儿化はここでまとめる。分かち書き器は文字単位で「早/点/儿」と切ることがあり、
+    先に音節をまとめると文字数と音節数がずれて対応が崩れるため、
+    語のまとまりを決めてから 儿 を直前の音節に吸収させる。
+    """
     grouped, index = [], 0
-    for token, _ in tokenize("".join(merged_chars), allowed, primary):
-        # 儿化でまとめた分だけ文字数と音節数がずれるので、文字を数えながら進む
-        taken, consumed = [], 0
-        while index < len(merged) and consumed < len(token):
-            consumed += len(merged_chars[index])
-            taken.append(merged[index])
-            index += 1
-        if taken:
-            grouped.append("".join(taken))
-    grouped.extend(merged[index:])
+    for token, _ in tokenize("".join(chars), allowed, primary):
+        taken = syllables[index:index + len(token)]
+        index += len(token)
+        if not taken:
+            continue
+        if token == "儿" and grouped and taken[0] in ("ér", "er"):
+            # 「早/点/儿」のように 儿 が単独トークンになった場合
+            grouped[-1] += "r"
+            continue
+        merged = []
+        for ch, syl in zip(token, taken):
+            if ch == "儿" and merged and syl in ("ér", "er"):
+                merged[-1] += "r"
+            else:
+                merged.append(syl)
+        grouped.append("".join(merged))
+    grouped.extend(syllables[index:])
     text = " ".join(grouped)
     return text[:1].upper() + text[1:] if text else text
 
