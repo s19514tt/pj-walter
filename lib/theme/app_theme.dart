@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 /// pj-walter のデザインシステム（Klook風: 白基調＋オレンジ）で使う色定数。
 ///
@@ -83,9 +84,14 @@ abstract final class AppTheme {
       error: AppColors.error,
     );
 
+    // デザイン指定のNoto Sans JP（未取得環境ではシステムフォントにフォールバック）
+    final baseTextTheme = GoogleFonts.notoSansJpTextTheme();
+
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
+      fontFamily: GoogleFonts.notoSansJp().fontFamily,
+      fontFamilyFallback: const ['Hiragino Sans', 'Noto Sans CJK JP', 'sans-serif'],
       scaffoldBackgroundColor: AppColors.pageBackground,
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.background,
@@ -94,7 +100,7 @@ abstract final class AppTheme {
         centerTitle: false,
         titleTextStyle: TextStyle(
           color: AppColors.textPrimary,
-          fontSize: 20,
+          fontSize: 17,
           fontWeight: FontWeight.bold,
         ),
         iconTheme: IconThemeData(color: AppColors.textPrimary),
@@ -143,16 +149,16 @@ abstract final class AppTheme {
           textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
       ),
-      textTheme: const TextTheme(
-        bodyLarge: TextStyle(color: AppColors.textPrimary, fontSize: 16),
-        bodyMedium: TextStyle(color: AppColors.textPrimary, fontSize: 14),
-        bodySmall: TextStyle(color: AppColors.textSecondary, fontSize: 12),
-        titleLarge: TextStyle(
+      textTheme: baseTextTheme.copyWith(
+        bodyLarge: const TextStyle(color: AppColors.textPrimary, fontSize: 16),
+        bodyMedium: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+        bodySmall: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+        titleLarge: const TextStyle(
           color: AppColors.textPrimary,
           fontSize: 20,
           fontWeight: FontWeight.bold,
         ),
-        titleMedium: TextStyle(
+        titleMedium: const TextStyle(
           color: AppColors.textPrimary,
           fontSize: 18,
           fontWeight: FontWeight.bold,

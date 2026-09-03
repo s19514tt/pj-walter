@@ -20,103 +20,55 @@ class StreakSummary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final totalMinutes = (totalStats['studySeconds'] ?? 0) ~/ 60;
-    return Column(
+    return Row(
       children: [
-        AppCard(
-          child: Row(
-            children: [
-              const Text('🔥', style: TextStyle(fontSize: 40)),
-              const SizedBox(width: 16),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '$streak日連続',
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    streak > 0 ? '学習を継続しています' : '今日から始めましょう',
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
-              ),
-            ],
+        Expanded(
+          child: _StatTile(value: '$streak', label: '連続日数'),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _StatTile(
+            value: '${totalStats['drillCount'] ?? 0}',
+            label: '総ドリル数',
           ),
         ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _StatMiniCard(
-                icon: Icons.edit_note,
-                label: '総ドリル数',
-                value: '${totalStats['drillCount'] ?? 0}',
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _StatMiniCard(
-                icon: Icons.mic,
-                label: '総独り言',
-                value: '${totalStats['monologueCount'] ?? 0}',
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _StatMiniCard(
-                icon: Icons.schedule,
-                label: '総学習時間',
-                value: '$totalMinutes分',
-              ),
-            ),
-          ],
+        const SizedBox(width: 10),
+        Expanded(
+          child: _StatTile(value: '$totalMinutes', label: '総学習分'),
         ),
       ],
     );
   }
 }
 
-class _StatMiniCard extends StatelessWidget {
-  const _StatMiniCard({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
+/// 記録タブ上部の統計タイル（900ウェイトのオレンジ数値＋ラベル）。
+class _StatTile extends StatelessWidget {
+  const _StatTile({required this.value, required this.label});
 
-  final IconData icon;
-  final String label;
   final String value;
+  final String label;
 
   @override
   Widget build(BuildContext context) {
     return AppCard(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
       child: Column(
         children: [
-          Icon(icon, color: AppColors.primary, size: 20),
-          const SizedBox(height: 6),
           Text(
             value,
             style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+              fontSize: 24,
+              height: 1,
+              fontWeight: FontWeight.w900,
+              color: AppColors.primary,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 5),
           Text(
             label,
-            textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 11,
+              fontWeight: FontWeight.w500,
               color: AppColors.textSecondary,
             ),
           ),

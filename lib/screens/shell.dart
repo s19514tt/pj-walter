@@ -39,14 +39,14 @@ class _ShellState extends State<Shell> {
             label: 'ホーム',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.school_outlined),
-            activeIcon: Icon(Icons.school),
+            icon: Icon(Icons.edit_note_outlined),
+            activeIcon: Icon(Icons.edit_note),
             label: '学習',
           ),
           BottomNavigationBarItem(icon: Icon(Icons.refresh), label: '復習'),
           BottomNavigationBarItem(
-            icon: Icon(Icons.bar_chart_outlined),
-            activeIcon: Icon(Icons.bar_chart),
+            icon: Icon(Icons.insights_outlined),
+            activeIcon: Icon(Icons.insights),
             label: '記録',
           ),
         ],

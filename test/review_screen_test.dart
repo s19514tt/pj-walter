@@ -56,7 +56,7 @@ void main() {
     await tester.pump();
 
     expect(find.textContaining('今日の復習はありません'), findsOneWidget);
-    expect(find.text('復習を始める'), findsNothing);
+    expect(find.text('今日の復習はありません🎉'), findsOneWidget);
     expect(find.text('復習予定の文はまだありません'), findsOneWidget);
     expect(find.text('フレーズはまだ登録されていません'), findsOneWidget);
   });
@@ -96,8 +96,7 @@ void main() {
     await tester.pumpWidget(_buildApp(historyService));
     await tester.pump();
 
-    expect(find.text('件の復習があります'), findsOneWidget);
-    expect(find.text('復習を始める'), findsOneWidget);
+    expect(find.text('1件を一括で開始'), findsOneWidget);
     expect(find.text('合計1件'), findsOneWidget);
   });
 

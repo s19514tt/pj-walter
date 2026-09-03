@@ -38,11 +38,13 @@ class FakeSpeechInputService implements SpeechInputService {
   @override
   Future<void> start({
     required void Function(String text) onPartial,
+    void Function(double level)? onLevel,
     Duration? listenFor,
     Duration? pauseFor,
   }) async {
     startCalled = true;
     onPartial('partial text...');
+    onLevel?.call(0.5);
   }
 
   @override
@@ -172,11 +174,18 @@ void main() {
     );
     await tester.pump();
 
-    // 1問目: 日本語文が表示されている
+    // 1問目: 日本語文が表示され、録音はまだ始まっていない（待機状態）
     expect(find.text('日本語の例文1'), findsOneWidget);
-    expect(find.text('口頭英作文 (1/2)'), findsOneWidget);
+    expect(find.text('口頭英作文'), findsOneWidget);
+    expect(find.text('1 / 2'), findsOneWidget);
+    expect(speechInputService.startCalled, isFalse);
 
-    // 手入力で回答を入力し、答え合わせ
+    // 答える（録音開始）→「採点する」1タップで段階表示の結果画面に遷移し、
+    // 文字起こし→採点と埋まっていく
+    await tester.tap(find.text('答える'));
+    await tester.pump();
+    expect(speechInputService.startCalled, isTrue);
+
     //
     // 答え合わせは(1)MockClient経由のGemini応答と(2)HistoryServiceによる実際の
     // Hive書き込み（ファイルI/O）を伴う。ファイルI/Oは通常のtestWidgetsの
@@ -185,9 +194,8 @@ void main() {
     // また、ローディング中インジケーター（回転し続けるアニメーション）を表示するため
     // pumpAndSettle()は永久に収束しない。固定回数のpump()で応答を処理してから、
     // ScoreRing・カード出現アニメーション（いずれも有限）をpumpAndSettle()で流し切る。
-    await tester.enterText(find.byType(TextField), 'my first answer');
     await tester.runAsync(() async {
-      await tester.tap(find.text('答え合わせ'));
+      await tester.tap(find.text('採点する'));
       await Future<void>.delayed(const Duration(milliseconds: 150));
     });
     // runAsync()の外（通常のFakeAsyncゾーン）でpumpし、状態変化をフレームに反映する。
@@ -196,24 +204,31 @@ void main() {
 
     // 添削結果が表示される
     expect(find.text('85'), findsOneWidget);
-    expect(find.text('合格 🎉'), findsOneWidget);
+    expect(find.text('合格'), findsOneWidget);
     expect(find.text('Corrected answer 1'), findsOneWidget);
-    expect(find.text('my first answer'), findsOneWidget);
+    expect(find.text('this is my spoken answer'), findsOneWidget);
 
     // 履歴に保存されている
     expect(historyService.drillHistory, hasLength(1));
     expect(historyService.drillHistory.first.sentenceId, 's700-001');
 
-    // 次へ -> 2問目
-    await tester.tap(find.text('次へ'));
-    await tester.pumpAndSettle();
+    // 次の問題へ -> 2問目
+    //
+    // 2問目では録音が自動開始され、カウントダウンリングのアニメーションが
+    // 録音中ずっと繰り返されるため、pumpAndSettle()は収束しない。
+    // 固定回数のpump()で2問目の表示を反映する。
+    await tester.tap(find.text('次の問題へ'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.text('日本語の例文2'), findsOneWidget);
-    expect(find.text('口頭英作文 (2/2)'), findsOneWidget);
+    expect(find.text('2 / 2'), findsOneWidget);
 
-    await tester.enterText(find.byType(TextField), 'my second answer');
+    // 2問目もpreから。答える（録音開始）→採点する
+    await tester.tap(find.text('答える'));
+    await tester.pump();
     await tester.runAsync(() async {
-      await tester.tap(find.text('答え合わせ'));
+      await tester.tap(find.text('採点する'));
       await Future<void>.delayed(const Duration(milliseconds: 150));
     });
     await tester.pump();
@@ -221,12 +236,12 @@ void main() {
 
     expect(find.text('Corrected answer 2'), findsOneWidget);
 
-    // 次へ -> まとめ画面
-    await tester.tap(find.text('次へ'));
+    // 結果を見る -> まとめ画面
+    await tester.tap(find.text('結果を見る'));
     await tester.pumpAndSettle();
 
     expect(find.text('結果まとめ'), findsOneWidget);
-    expect(find.text('平均スコア'), findsOneWidget);
+    expect(find.textContaining('平均スコア'), findsOneWidget);
     // 平均スコア表示＋各問のスコア表示（Q1・Q2とも85点）で計3箇所
     expect(find.text('85'), findsNWidgets(3));
     expect(find.textContaining('日本語の例文1'), findsOneWidget);
@@ -234,7 +249,7 @@ void main() {
     expect(historyService.drillHistory, hasLength(2));
   });
 
-  testWidgets('マイクボタンで音声入力を開始・停止しTextFieldに反映される', (tester) async {
+  testWidgets('録音はボタンを押すまで始まらず、カウントダウンは表示と同時に始まる', (tester) async {
     final sentences = [_sentence(1)];
     final client = MockClient((request) async {
       fail('この検証では通信しない');
@@ -243,8 +258,7 @@ void main() {
       settingsService: settings,
       client: client,
     );
-    final speechInputService = FakeSpeechInputService()
-      ..stopResult = 'recognized by mic';
+    final speechInputService = FakeSpeechInputService();
 
     await tester.pumpWidget(
       buildApp(
@@ -255,23 +269,78 @@ void main() {
     );
     await tester.pump();
 
-    // マイクタップで録音開始
-    await tester.tap(find.byIcon(Icons.mic));
+    // pre: 録音は始まっておらず、主ボタンは「答える」だけ
+    expect(speechInputService.startCalled, isFalse);
+    expect(find.text('聞き取り前'), findsOneWidget);
+    expect(find.text('答える'), findsOneWidget);
+    expect(find.text('採点する'), findsNothing);
+    expect(find.byType(TextField), findsNothing);
+
+    // 答える → 録音中表示になり、主ボタンが採点するに切り替わる
+    await tester.tap(find.text('答える'));
     await tester.pump();
     expect(speechInputService.startCalled, isTrue);
-    expect(find.byIcon(Icons.stop), findsOneWidget);
-    expect(find.text('partial text...'), findsOneWidget);
+    expect(find.text('聞き取り中'), findsOneWidget);
+    expect(find.text('採点する'), findsOneWidget);
+    expect(find.text('答える'), findsNothing);
+  });
 
-    // もう一度タップで停止（停止中は回転インジケーターが出るためpumpAndSettleは使わない）
-    await tester.tap(find.byIcon(Icons.stop));
+  testWidgets('録音中に答え合わせを押すと聞き取り終了→文字起こし→採点まで一気に走る', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(400, 1600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final sentences = [_sentence(1)];
+    final client = MockClient((request) async {
+      return _jsonResponse(
+        _geminiEnvelope({
+          'score': 90,
+          'is_acceptable': true,
+          'corrected': 'One-press corrected answer',
+          'explanation_ja': '解説',
+          'comparison_ja': '比較',
+        }),
+        200,
+      );
+    });
+    final geminiService = GeminiService(
+      settingsService: settings,
+      client: client,
+    );
+    final speechInputService = FakeSpeechInputService();
+
+    await tester.pumpWidget(
+      buildApp(
+        sentences: sentences,
+        geminiService: geminiService,
+        speechInputService: speechInputService,
+      ),
+    );
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
 
+    // 答える（録音開始）→そのまま「採点する」を押す
+    await tester.tap(find.text('答える'));
+    await tester.pump();
+    expect(speechInputService.startCalled, isTrue);
+    expect(speechInputService.stopCalled, isFalse);
+    await tester.runAsync(() async {
+      await tester.tap(find.text('採点する'));
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+    });
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    // 停止（文字起こし）→採点まで1タップで完了し、文字起こしが回答として使われる
     expect(speechInputService.stopCalled, isTrue);
-    expect(find.text('recognized by mic'), findsOneWidget);
+    expect(find.text('One-press corrected answer'), findsOneWidget);
+    expect(find.text('this is my spoken answer'), findsOneWidget);
+    expect(historyService.drillHistory, hasLength(1));
+    expect(historyService.drillHistory.first.spoken, 'this is my spoken answer');
   });
 
   testWidgets('GeminiExceptionが発生するとSnackBarとリトライボタンが表示される', (tester) async {
+    // 録音自動開始でpartial表示の行が加わり、デフォルトのビューポートでは
+    // TextFieldがListViewの構築範囲外になるため、縦に広げる。
+    await tester.binding.setSurfaceSize(const Size(400, 1600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     final sentences = [_sentence(1)];
     final client = MockClient((request) async {
       return http.Response('server error', 500);
@@ -291,15 +360,17 @@ void main() {
     );
     await tester.pump();
 
-    await tester.enterText(find.byType(TextField), 'an answer');
-    await tester.tap(find.text('答え合わせ'));
+    await tester.tap(find.text('答える'));
+    await tester.pump();
+    await tester.tap(find.text('採点する'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.byType(SnackBar), findsOneWidget);
     expect(find.text('再試行'), findsOneWidget);
-    // 添削結果はまだ表示されず、履歴も保存されていない
-    expect(find.byIcon(Icons.mic), findsOneWidget);
+    // 段階表示のstage 1（文字起こしは表示済み・採点はスケルトン）に留まる
+    expect(find.text('this is my spoken answer'), findsOneWidget);
+    expect(find.text('AI採点中'), findsWidgets);
     expect(historyService.drillHistory, isEmpty);
   });
 
@@ -312,7 +383,9 @@ void main() {
       settingsService: settings,
       client: client,
     );
-    final speechInputService = FakeSpeechInputService();
+    // 録音は自動開始されるため、時間切れ時の自動停止で文字起こしが空
+    // （何も話さなかった）ケースを再現する。
+    final speechInputService = FakeSpeechInputService()..stopResult = '';
 
     // pumpWidgetから制限時間経過までをtester.runAsync()内（実のZone）で行う。
     // DrillScreenの内部タイマーは初期化時のZoneに束縛されるため、ここで
@@ -332,6 +405,7 @@ void main() {
         ),
       );
       await tester.pump();
+      // カウントダウンは画面表示と同時に始まる。何もせず時間切れを待つ
       await Future<void>.delayed(const Duration(milliseconds: 2200));
     });
     await tester.pump();
@@ -351,5 +425,75 @@ void main() {
     expect(historyService.drillHistory.first.feedback.score, 0);
     expect(historyService.drillHistory.first.spoken, isEmpty);
     expect(historyService.allSrsItems, hasLength(1));
+  });
+
+  testWidgets('セッション中に戻ると中断確認ダイアログが出る', (tester) async {
+    final sentences = [_sentence(1)];
+    final client = MockClient((request) async {
+      fail('この検証では通信しない');
+    });
+    final geminiService = GeminiService(
+      settingsService: settings,
+      client: client,
+    );
+    final speechInputService = FakeSpeechInputService();
+
+    // 戻るボタンを出すため、1枚下に画面がある状態でDrillScreenをpushする。
+    // pushした先からproviderを参照できるよう、MultiProviderはMaterialAppの外側に置く。
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<SettingsService>.value(value: settings),
+          ChangeNotifierProvider<HistoryService>.value(value: historyService),
+          Provider<GeminiService>.value(value: geminiService),
+        ],
+        child: MaterialApp(
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: Center(
+                child: ElevatedButton(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => DrillScreen(
+                        sentences: sentences,
+                        level: 700,
+                        theme: 'daily',
+                        speechInputService: speechInputService,
+                      ),
+                    ),
+                  ),
+                  child: const Text('開く'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('開く'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('答える'), findsOneWidget);
+
+    // 戻る → 確認ダイアログが出て、「続ける」なら画面に留まる
+    await tester.tap(find.byType(BackButton));
+    await tester.pump();
+    expect(find.text('トレーニングを中断しますか？'), findsOneWidget);
+    await tester.tap(find.text('続ける'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('答える'), findsOneWidget);
+
+    // もう一度戻る → 「中断する」で前の画面へ戻る
+    await tester.tap(find.byType(BackButton));
+    await tester.pump();
+    await tester.tap(find.text('中断する'));
+    await tester.pump();
+    // ダイアログクローズ＋ルートのポップ遷移を流し切る
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('答える'), findsNothing);
+    expect(find.text('開く'), findsOneWidget);
   });
 }

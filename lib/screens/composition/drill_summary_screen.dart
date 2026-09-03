@@ -5,12 +5,10 @@ import '../../services/drill_question_selector.dart';
 import '../../services/sentence_repository.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/app_route.dart';
-import '../../utils/score_colors.dart';
-import '../../widgets/app_card.dart';
 import '../../widgets/bottom_cta_bar.dart';
 import '../../widgets/primary_button.dart';
-import '../../widgets/score_ring.dart';
-import '../../widgets/stat_badge.dart';
+import '../../widgets/score_square_badge.dart';
+import '../../widgets/secondary_button.dart';
 import 'drill_screen.dart';
 
 /// 合格とみなすスコアのしきい値
@@ -74,6 +72,7 @@ class DrillSummaryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final average = _averageScore.round();
+    final srsCount = entries.where((e) => e.score < _passingScore).length;
     return Scaffold(
       appBar: AppBar(title: const Text('結果まとめ')),
       body: SafeArea(
@@ -83,90 +82,149 @@ class DrillSummaryScreen extends StatelessWidget {
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
-                  Center(
+                  // セッション完了ヒーロー（平均スコア・正答数）
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(22),
+                    decoration: BoxDecoration(
+                      gradient: AppColors.primaryGradient,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
                     child: Column(
                       children: [
                         const Text(
-                          '平均スコア',
-                          style: TextStyle(color: AppColors.textSecondary),
+                          'セッション完了',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
-                        const SizedBox(height: 8),
-                        ScoreRing(score: average),
-                        const SizedBox(height: 12),
-                        StatBadge(
-                          label: '合格$_passingCount問/全${entries.length}問',
-                          surfaceColor: _passingCount == entries.length
-                              ? AppColors.scoreGoodSurface
-                              : AppColors.scoreMediumSurface,
-                          textColor: _passingCount == entries.length
-                              ? AppColors.scoreGood
-                              : AppColors.scoreMedium,
+                        const SizedBox(height: 6),
+                        Text(
+                          '$average',
+                          style: const TextStyle(
+                            fontSize: 46,
+                            height: 1.2,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                          ),
+                        ),
+                        Text(
+                          '平均スコア · 正答 $_passingCount/${entries.length}',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 24),
-                  for (var i = 0; i < entries.length; i++) ...[
-                    AppCard(
+                  const SizedBox(height: 14),
+                  // 問題ごとの結果一覧（1枚のカードに区切り線で連結）
+                  Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.background,
+                      borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: Column(
+                      children: [
+                        for (var i = 0; i < entries.length; i++)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
+                            decoration: BoxDecoration(
+                              border: i == entries.length - 1
+                                  ? null
+                                  : const Border(
+                                      bottom: BorderSide(
+                                        color: Color(0xFFF3F4F6),
+                                      ),
+                                    ),
+                            ),
+                            child: Row(
+                              children: [
+                                ScoreSquareBadge(score: entries[i].score),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    entries[i].ja,
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      height: 1.6,
+                                      fontWeight: FontWeight.w500,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  if (srsCount > 0) ...[
+                    const SizedBox(height: 14),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppColors.primarySurface,
+                        borderRadius: BorderRadius.circular(
+                          AppTheme.cardRadius,
+                        ),
+                      ),
                       child: Row(
                         children: [
+                          const Icon(
+                            Icons.refresh,
+                            size: 22,
+                            color: AppColors.primary,
+                          ),
+                          const SizedBox(width: 12),
                           Expanded(
                             child: Text(
-                              '${i + 1}. ${entries[i].ja}',
+                              'スコア$_passingScore未満の$srsCount問を復習キューに登録しました。明日再出題されます。',
                               style: const TextStyle(
-                                color: AppColors.textPrimary,
+                                fontSize: 12,
+                                height: 1.7,
+                                color: Color(0xFFB34000),
                               ),
                             ),
                           ),
-                          const SizedBox(width: 12),
-                          _ScoreBadge(score: entries[i].score),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 8),
                   ],
                 ],
               ),
             ),
             BottomCtaBar(
-              secondary: TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('終了'),
-              ),
-              child: PrimaryButton(
-                label: 'もう一度',
-                onPressed: () => _retry(context),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: SecondaryButton(
+                      label: 'もう一度',
+                      onPressed: () => _retry(context),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    flex: 2,
+                    child: PrimaryButton(
+                      label: 'ホームに戻る',
+                      onPressed: () =>
+                          Navigator.of(context).popUntil((r) => r.isFirst),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-/// スコアを丸バッジ（36px円、白数字）で表示する。
-class _ScoreBadge extends StatelessWidget {
-  const _ScoreBadge({required this.score});
-
-  final int score;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 36,
-      height: 36,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: scoreColor(score),
-        shape: BoxShape.circle,
-      ),
-      child: Text(
-        '$score',
-        style: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.bold,
-          fontSize: 13,
         ),
       ),
     );

@@ -71,11 +71,11 @@ void main() {
     await tester.pump();
 
     expect(find.text('APIキーを設定してください'), findsOneWidget);
-    expect(find.text('0日連続'), findsOneWidget);
-    expect(find.text('ドリル 0問'), findsOneWidget);
-    expect(find.text('独り言 0回'), findsOneWidget);
+    expect(find.text('0'), findsOneWidget);
+    expect(find.text('日連続'), findsOneWidget);
+    expect(find.text('今週 0/7日'), findsOneWidget);
+    expect(find.text('今日はまだ練習していません。3分だけ話してみましょう。'), findsOneWidget);
     expect(find.text('今日の復習はありません🎉'), findsOneWidget);
-    expect(find.text('復習を始める'), findsNothing);
     expect(find.text('口頭英作文'), findsOneWidget);
     expect(find.text('独り言英会話'), findsOneWidget);
   });
@@ -132,15 +132,18 @@ void main() {
     await tester.pumpWidget(_buildApp(historyService, settings));
     await tester.pump();
 
-    expect(find.text('件の復習があります'), findsOneWidget);
-    expect(find.text('復習を始める'), findsOneWidget);
-    // 今日の学習量に今回のドリルが反映されている
-    expect(find.text('ドリル 1問'), findsOneWidget);
-    expect(find.text('独り言 0回'), findsOneWidget);
-    expect(find.text('1日連続'), findsOneWidget);
+    expect(find.text('今日の復習'), findsOneWidget);
+    expect(find.textContaining('間隔反復キューに'), findsOneWidget);
+    // 今日の学習量がストリークカードの本文に反映されている
+    expect(find.textContaining('今日はドリル1問・独り言0回'), findsOneWidget);
+    expect(find.text('日連続'), findsOneWidget);
   });
 
   testWidgets('トレーニングショートカットをタップすると各選択画面へ遷移する', (tester) async {
+    // リデザインでカードが縦に増え、デフォルトのビューポートでは
+    // トレーニンググリッドがスクロール範囲外になるため縦に広げる。
+    await tester.binding.setSurfaceSize(const Size(400, 1600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     late HistoryService historyService;
     late SettingsService settings;
     await tester.runAsync(() async {

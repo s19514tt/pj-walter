@@ -242,7 +242,7 @@ class _SttModeSection extends StatelessWidget {
           const SizedBox(height: 12),
           _SttModeOption(
             title: 'Gemini音声認識',
-            description: '高精度。録音をGeminiに送信して文字起こしします（APIキーを消費）。',
+            description: '高精度。話した音声をGeminiに送信して文字起こしします（APIキーを消費）。',
             selected: settings.sttMode == SttMode.gemini,
             onTap: () => settings.setSttMode(SttMode.gemini),
           ),
