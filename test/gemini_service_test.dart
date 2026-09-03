@@ -219,5 +219,47 @@ void main() {
 
       expect(text, 'This is the transcript.');
     });
+
+    test('空の応答は聞き取れなかった旨のGeminiExceptionになる', () async {
+      final client = MockClient((request) async {
+        return _jsonResponse(_geminiEnvelope('   '), 200);
+      });
+      final service = GeminiService(settingsService: settings, client: client);
+
+      await expectLater(
+        service.transcribe(audioBytes: [1, 2, 3], mimeType: 'audio/wav'),
+        throwsA(
+          isA<GeminiException>().having(
+            (e) => e.message,
+            'message',
+            contains('聞き取れませんでした'),
+          ),
+        ),
+      );
+    });
+
+    test('partsが省略された応答でも解析エラーにせず聞き取れなかった扱いにする', () async {
+      final client = MockClient((request) async {
+        return _jsonResponse({
+          'candidates': [
+            {
+              'content': {'role': 'model'},
+            },
+          ],
+        }, 200);
+      });
+      final service = GeminiService(settingsService: settings, client: client);
+
+      await expectLater(
+        service.transcribe(audioBytes: [1, 2, 3], mimeType: 'audio/wav'),
+        throwsA(
+          isA<GeminiException>().having(
+            (e) => e.message,
+            'message',
+            contains('聞き取れませんでした'),
+          ),
+        ),
+      );
+    });
   });
 }

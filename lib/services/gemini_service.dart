@@ -130,8 +130,12 @@ class GeminiService {
         {
           'parts': [
             {
+              // 「聞き取れなければ空文字」の指示が無いと、無音や壊れた音声を
+              // 渡されたときにモデルがそれらしい英文を捏造して返してしまう。
               'text':
-                  'Transcribe this English speech verbatim. Return only the transcript.',
+                  'Transcribe this English speech verbatim. Return only the transcript. '
+                  'If the audio contains no intelligible English speech, return an empty string. '
+                  'Never guess or invent words that are not clearly audible.',
             },
             {
               'inline_data': {
@@ -151,13 +155,20 @@ class GeminiService {
 
     final response = await _post(uri: uri, apiKey: apiKey, body: body);
     _checkStatus(response);
+    final String text;
     try {
       final decoded =
           jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
-      return _extractText(decoded).trim();
+      text = _extractText(decoded).trim();
     } catch (_) {
       throw GeminiException('Geminiからの応答を解析できませんでした。時間を置いて再度お試しください。');
     }
+    // 聞き取れなかった場合は空文字が返る（プロンプトでそう指示している）。
+    // 空のまま入力欄に反映すると理由が分からないため、明示的に案内する。
+    if (text.isEmpty) {
+      throw GeminiException('音声を聞き取れませんでした。もう一度話すか、手入力してください。');
+    }
+    return text;
   }
 
   Future<Map<String, dynamic>> _generate({
@@ -198,7 +209,10 @@ class GeminiService {
   String _extractText(Map<String, dynamic> decoded) {
     final candidates = decoded['candidates'] as List;
     final content = candidates.first['content'] as Map<String, dynamic>;
-    final parts = content['parts'] as List;
+    // 出力が空の場合、partsごと省略された応答が返ることがある（文字起こしで
+    // 「聞き取れない＝空文字」となるケース）。解析エラーではなく空文字として扱う。
+    final parts = content['parts'] as List?;
+    if (parts == null || parts.isEmpty) return '';
     return parts.first['text'] as String;
   }
 

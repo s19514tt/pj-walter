@@ -43,7 +43,7 @@ flutter run
 ### プラットフォームごとの注意点
 
 - **Android / iOS**: マイク権限が必要です（Android: `RECORD_AUDIO`、iOS: `NSMicrophoneUsageDescription`。マニフェストには設定済みですが、初回起動時にOSの権限ダイアログが表示されるので許可してください）。権限を拒否した場合や音声認識が使えない端末でも、テキスト入力欄への手入力でトレーニングを続行できます。
-- **Web**: `flutter run -d chrome` で動作しますが、設定画面の音声認識方式を **「Gemini音声認識」にすると録音データの一時ファイルI/O（`dart:io` の `File` / `path_provider`）がブラウザ環境で正しく動作しない可能性があります**。Webで試す場合は「端末の音声認識」（ブラウザのWeb Speech API相当）を選んでください。ビルド確認は `flutter build web` で通ることを確認しています。
+- **Web**: `flutter run -d chrome` で動作します。「端末の音声認識」（ブラウザのWeb Speech API相当）と「Gemini音声認識」の両方が使えます。Gemini音声認識はファイルI/Oを使わずメモリ上で録音データを扱うため、ブラウザでもそのまま動きます（ブラウザが実際に採用したサンプルレート・チャンネル数は録音開始時に受け取り、送信前に16kHzモノラルへ変換しています）。マイク使用にはHTTPSまたはlocalhostが必要です。ビルド確認は `flutter build web` で通ることを確認しています。
 
 ## Gemini APIキーの取得・設定
 

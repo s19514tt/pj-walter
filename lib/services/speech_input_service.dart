@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:record/record.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
+import '../utils/pcm_converter.dart';
 import '../utils/wav_builder.dart';
 import 'gemini_service.dart';
 import 'settings_service.dart';
@@ -154,11 +155,12 @@ class DeviceSpeechInputService implements SpeechInputService {
 
 /// 録音してGeminiに文字起こしさせる実装。
 ///
-/// `record`パッケージの`startStream`でPCM16(16kHz mono)チャンクをメモリ上の
-/// [BytesBuilder]に蓄積し、[stop]でWAVヘッダー（[buildWavBytes]）を付けて
-/// [GeminiService.transcribe]に送信する。ファイルI/Oを一切使わないため
-/// Web/Android/iOS全てで同じコードパスが動く（`startStream`は全対応）。
-/// 高精度だがAPIキーを消費し、[stop]の完了までタイムラグがある。
+/// `record`パッケージの`startStream`でPCM16チャンクをメモリ上の
+/// [BytesBuilder]に蓄積し、[stop]で16kHzモノラルに揃えて（[convertPcm16]）
+/// WAVヘッダー（[buildWavBytes]）を付けて[GeminiService.transcribe]に送信する。
+/// ファイルI/Oを一切使わないためWeb/Android/iOS全てで同じコードパスが動く
+/// （`startStream`は全対応）。高精度だがAPIキーを消費し、[stop]の完了まで
+/// タイムラグがある。
 class GeminiSpeechInputService implements SpeechInputService {
   // コンストラクタの公開パラメータ名（geminiService）と内部フィールド名
   // （_geminiService）をあえて分けているため、initializing formalは使わない
@@ -178,6 +180,10 @@ class GeminiSpeechInputService implements SpeechInputService {
   BytesBuilder? _bytesBuilder;
   StreamSubscription<Uint8List>? _subscription;
   Completer<void>? _streamDone;
+  // 実際に録音されたフォーマット。要求値と同じとは限らないため
+  // `setOnConfigChanged`で通知された値で上書きする。
+  int _recordedSampleRate = _sampleRate;
+  int _recordedChannels = _channels;
 
   @override
   Future<bool> get isAvailable => _recorder.hasPermission();
@@ -198,6 +204,19 @@ class GeminiSpeechInputService implements SpeechInputService {
     _bytesBuilder = bytesBuilder;
     final streamDone = Completer<void>();
     _streamDone = streamDone;
+
+    // 16kHz/monoを要求してもハードウェア・ブラウザ都合で書き換えられることがある
+    // （Chromeは`AudioContext`の実サンプルレート48kHzが採用され、Androidは入力
+    // デバイスに合わせてステレオになりうる）。PCMの生バイト列からは実フォーマットを
+    // 判別できず、そのまま16kHz/monoのWAVヘッダーを付けると再生速度・音程がずれて
+    // Geminiが意味不明な文字起こしを返すため、実フォーマットを受け取って[stop]で
+    // 変換する。書き換えが無ければこのコールバックは呼ばれない。
+    _recordedSampleRate = _sampleRate;
+    _recordedChannels = _channels;
+    await _recorder.setOnConfigChanged((config) {
+      _recordedSampleRate = config.sampleRate;
+      _recordedChannels = config.numChannels;
+    });
 
     final stream = await _recorder.startStream(
       const RecordConfig(
@@ -237,8 +256,20 @@ class GeminiSpeechInputService implements SpeechInputService {
       throw SpeechInputException('録音データを取得できませんでした。手入力してください。');
     }
 
-    final wavBytes = buildWavBytes(
+    // 実際の録音フォーマットを16kHzモノラルに揃えてからWAVヘッダーを付ける。
+    // 併せてデータ量も削減され、長い独り言でもリクエストサイズ上限に収まりやすくなる。
+    final normalized = convertPcm16(
       pcmData,
+      sourceSampleRate: _recordedSampleRate,
+      sourceChannels: _recordedChannels,
+      targetSampleRate: _sampleRate,
+    );
+    if (normalized.isEmpty) {
+      throw SpeechInputException('録音データを取得できませんでした。手入力してください。');
+    }
+
+    final wavBytes = buildWavBytes(
+      normalized,
       sampleRate: _sampleRate,
       channels: _channels,
     );
