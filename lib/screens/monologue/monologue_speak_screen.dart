@@ -17,14 +17,6 @@ import '../../widgets/primary_button.dart';
 import '../settings_screen.dart';
 import 'monologue_feedback_screen.dart';
 
-/// 発話終了後の文字起こし待ち時間も見込んで、選択時間より長めに設定する
-/// 音声認識の最大継続時間バッファ（device方式の[SpeechInputService.start]に渡す）。
-const _listenBuffer = Duration(seconds: 30);
-
-/// 長時間発話中に許容する無音の最大長（device方式）。短いと発話の合間で
-/// 認識が打ち切られてしまうため、口頭英作文より長めに設定する。
-const _pauseFor = Duration(seconds: 15);
-
 /// カウントダウンリングの直径
 const _ringSize = 180.0;
 
@@ -52,7 +44,7 @@ class MonologueSpeakScreen extends StatefulWidget {
   /// 選択された発話時間（秒）
   final int seconds;
 
-  /// テスト注入用。省略時は設定に応じたインスタンスを自動生成する。
+  /// テスト注入用。省略時は本番用のインスタンスを自動生成する。
   final SpeechInputService? speechInputService;
 
   @override
@@ -76,10 +68,7 @@ class _MonologueSpeakScreenState extends State<MonologueSpeakScreen> {
     _secondsLeft = widget.seconds;
     _speechInput =
         widget.speechInputService ??
-        createSpeechInputService(
-          settingsService: context.read<SettingsService>(),
-          geminiService: context.read<GeminiService>(),
-        );
+        createSpeechInputService(geminiService: context.read<GeminiService>());
   }
 
   @override
@@ -95,8 +84,6 @@ class _MonologueSpeakScreenState extends State<MonologueSpeakScreen> {
     try {
       await _speechInput.start(
         onPartial: (text) => setState(() => _partialText = text),
-        listenFor: Duration(seconds: widget.seconds) + _listenBuffer,
-        pauseFor: _pauseFor,
       );
       setState(() {
         _recording = true;

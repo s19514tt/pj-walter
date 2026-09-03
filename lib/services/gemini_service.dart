@@ -21,8 +21,8 @@ class GeminiException implements Exception {
 
 /// Gemini REST APIクライアント（DESIGN.md「Gemini API契約」参照）。
 ///
-/// APIキー・モデル名は[SettingsService]から取得する。テスト容易性のため
-/// [http.Client]はコンストラクタ注入できる。
+/// APIキーは[SettingsService]から取得し、モデルは[modelName]に固定する。
+/// テスト容易性のため[http.Client]はコンストラクタ注入できる。
 class GeminiService {
   GeminiService({required SettingsService settingsService, http.Client? client})
     : _settings = settingsService,
@@ -31,6 +31,15 @@ class GeminiService {
   static const _baseUrl =
       'https://generativelanguage.googleapis.com/v1beta/models';
   static const _timeout = Duration(seconds: 30);
+
+  /// 使用するGeminiモデル。最新のFlash系1本に固定し、設定画面からは変更できない
+  /// （料金計算・動作検証の対象を1モデルに絞るため）。
+  static const modelName = 'gemini-3.8-flash';
+
+  /// 思考（thinking）の強さ。Gemini 3系は`thinkingBudget`ではなく
+  /// `thinkingLevel`で制御し、完全にオフにはできない。文字起こし・添削は
+  /// 深い推論を必要としないため最小の`low`にして応答時間とコストを抑える。
+  static const _thinkingLevel = 'low';
 
   final SettingsService _settings;
   final http.Client _client;
@@ -124,7 +133,7 @@ class GeminiService {
     required String mimeType,
   }) async {
     final apiKey = _requireApiKey();
-    final uri = Uri.parse('$_baseUrl/${_settings.modelName}:generateContent');
+    final uri = Uri.parse('$_baseUrl/$modelName:generateContent');
     final body = jsonEncode({
       'contents': [
         {
@@ -142,10 +151,8 @@ class GeminiService {
           ],
         },
       ],
-      // gemini-2.5系Flashはデフォルトで思考モードが有効になり応答が数秒遅くなる
-      // （実測で通常6秒→thinkingBudget:0で0.9秒程度）。文字起こしは思考不要のため無効化する。
       'generationConfig': {
-        'thinkingConfig': {'thinkingBudget': 0},
+        'thinkingConfig': {'thinkingLevel': _thinkingLevel},
       },
     });
 
@@ -165,7 +172,7 @@ class GeminiService {
     required Map<String, dynamic> schema,
   }) async {
     final apiKey = _requireApiKey();
-    final uri = Uri.parse('$_baseUrl/${_settings.modelName}:generateContent');
+    final uri = Uri.parse('$_baseUrl/$modelName:generateContent');
     final body = jsonEncode({
       'contents': [
         {
@@ -177,9 +184,7 @@ class GeminiService {
       'generationConfig': {
         'responseMimeType': 'application/json',
         'responseSchema': schema,
-        // gemini-2.5系Flashはデフォルトで思考モードが有効になり応答が数秒遅くなる
-        // （実測で通常6秒→thinkingBudget:0で0.9秒程度）。採点は思考不要のため無効化する。
-        'thinkingConfig': {'thinkingBudget': 0},
+        'thinkingConfig': {'thinkingLevel': _thinkingLevel},
       },
     });
 

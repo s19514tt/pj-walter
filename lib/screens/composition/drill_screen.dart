@@ -66,7 +66,7 @@ class DrillScreen extends StatefulWidget {
   /// へは遷移せず、呼び出し元（[ReviewScreen]）に戻る。
   final bool isReview;
 
-  /// テスト注入用。省略時は設定に応じたインスタンスを自動生成する。
+  /// テスト注入用。省略時は本番用のインスタンスを自動生成する。
   final SpeechInputService? speechInputService;
 
   /// 1問あたりの制限時間（秒）。テスト注入用で、省略時は[_questionSeconds]（30秒）。
@@ -98,10 +98,7 @@ class _DrillScreenState extends State<DrillScreen> {
     super.initState();
     _speechInput =
         widget.speechInputService ??
-        createSpeechInputService(
-          settingsService: context.read<SettingsService>(),
-          geminiService: context.read<GeminiService>(),
-        );
+        createSpeechInputService(geminiService: context.read<GeminiService>());
     _startTimer();
   }
 

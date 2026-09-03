@@ -86,7 +86,7 @@ void main() {
       expect(capturedRequest?.headers['x-goog-api-key'], 'test-api-key');
       expect(
         capturedRequest?.url.toString(),
-        contains('${SettingsService.defaultModelName}:generateContent'),
+        contains('${GeminiService.modelName}:generateContent'),
       );
     });
 

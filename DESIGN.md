@@ -19,7 +19,7 @@
 - ルーティング: 素の `Navigator`（go_router は使わない）
 - ローカルDB: `hive` / `hive_flutter`（コード生成なし、`Box<Map>` 相当で Map を格納）
 - APIキー保存: `flutter_secure_storage`
-- 音声認識: `speech_to_text`（端末STT） / `record`（録音→Gemini音声認識）
+- 音声認識: `record`（録音→Gemini音声認識）のみ。端末STT（speech_to_text）はPR11で廃止
 - HTTP: `http`
 - グラフ: `fl_chart`
 - その他: `intl`, `uuid`
@@ -66,7 +66,7 @@ lib/
       weekly_chart.dart
       study_calendar.dart
       history_section.dart
-    settings_screen.dart    # APIキー/モデル/音声認識方式/独り言デフォルト時間
+    settings_screen.dart    # APIキー/独り言デフォルト時間（モデル・音声認識方式は固定表示）
   widgets/                  # 共通ウィジェット（PrimaryButton, SecondaryButton, SectionHeader, AppCard, PillChip 等）
   utils/                    # 画面をまたいで使う小さなヘルパー
     review_launcher.dart    # 「今日の復習」開始処理の共通ロジック（ホーム/復習タブ両方から利用）
@@ -132,7 +132,7 @@ assets/data/
 
 | box名 | キー | 内容 |
 |---|---|---|
-| `settings` | 固定キー | モデル名、STT方式(`device`/`gemini`)、独り言デフォルト秒数など非秘匿設定 |
+| `settings` | 固定キー | 独り言デフォルト秒数など非秘匿設定（旧`modelName`/`sttMode`キーは起動時に削除） |
 | `drill_results` | uuid | DrillResult（sentenceId, spoken, feedback一式, timestamp） |
 | `monologue_results` | uuid | MonologueResult（topicId, seconds, transcript, feedback一式, timestamp） |
 | `srs_items` | sentenceId | SrsItem（stage, dueDate, lapses, lastResult） |
@@ -152,7 +152,8 @@ APIキーだけは `flutter_secure_storage`（キー名 `gemini_api_key`）。
 
 - エンドポイント: `POST https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent`
 - 認証: HTTPヘッダー `x-goog-api-key: {apiKey}`（URLクエリに入れない）
-- デフォルトモデル `gemini-2.5-flash`。設定画面で任意文字列に変更可（候補チップ: gemini-2.5-flash / gemini-2.5-pro / gemini-2.0-flash）
+- モデルは `gemini-3.8-flash`（最新のFlash系）1本に固定（`GeminiService.modelName`）。設定画面からは変更不可
+- 思考制御: Gemini 3系は `generationConfig.thinkingConfig.thinkingLevel` で制御（`thinkingBudget` は使わない）。文字起こし・添削は `low`
 - 構造化出力: `generationConfig.responseMimeType = "application/json"` ＋ `responseSchema` を必ず指定し、返答をモデルの fromJson でパース
 - エラー処理: 非200・パース失敗・タイムアウト(30s)は `GeminiException(message日本語)` を投げ、UI側でスナックバー＋リトライボタン表示。APIキー未設定なら添削ボタン押下時に設定画面へ誘導するダイアログ
 
@@ -182,16 +183,17 @@ APIキーだけは `flutter_secure_storage`（キー名 `gemini_api_key`）。
   "overall_feedback_ja": "良かった点＋改善点（日本語、3-4文）" }
 ```
 
-### 音声文字起こし（STT方式=gemini のとき）
+### 音声文字起こし
 
 `inline_data`（base64、mimeType は録音フォーマットに一致: wav推奨）＋指示「Transcribe this English speech verbatim. Return only the transcript.」。プレーンテキスト応答。録音は `record` パッケージで wav (16kHz mono)。
 
 ## 音声入力の抽象化
 
-`SpeechInputService` が2モードを隠蔽:
-- `device`: speech_to_text。リアルタイムに認識テキストを流す（partial表示）
-- `gemini`: record で録音 → 停止後に GeminiService.transcribe() → テキスト
-- 権限拒否・STT利用不可時は日本語エラーメッセージを返し、**手入力フォールバック**（TextFieldで回答入力）を必ず用意
+`SpeechInputService`（抽象）の実装は `GeminiSpeechInputService` のみ:
+- record の `startStream` でPCM16(16kHz mono)をメモリに蓄積 → 停止後にWAV化して GeminiService.transcribe() → テキスト
+- 録音中は `onPartial` に「録音中…」の固定文言を流す
+- 権限拒否・録音失敗時は日本語エラーメッセージを返し、**手入力フォールバック**（TextFieldで回答入力）を必ず用意
+- 端末STT（speech_to_text）はPR11で廃止。iOS/Androidで録音と端末STTを同時に動かすとオーディオセッションが競合するため、音声データを必要とする発音評価と両立できない
 
 ## コーディング規約
 
