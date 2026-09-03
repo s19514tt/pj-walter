@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import 'pronunciation_feedback.dart';
+
 /// 口頭英作文1問分のGemini添削結果。
 ///
 /// JSONキーはGemini APIのレスポンススキーマ（DESIGN.md参照）に合わせて
@@ -62,7 +64,7 @@ class CompositionFeedback {
       Object.hash(score, isAcceptable, corrected, explanationJa, comparisonJa);
 }
 
-/// 口頭英作文1問分の受験結果（発話内容＋Gemini添削結果）。
+/// 口頭英作文1問分の受験結果（発話内容＋Gemini添削結果＋発音評価）。
 @immutable
 class DrillResult {
   const DrillResult({
@@ -72,6 +74,7 @@ class DrillResult {
     required this.spoken,
     required this.timestamp,
     required this.feedback,
+    this.pronunciation,
   });
 
   /// 結果のuuid
@@ -92,6 +95,10 @@ class DrillResult {
   /// Geminiによる添削結果
   final CompositionFeedback feedback;
 
+  /// 発音評価。手入力回答・時間切れ・評価失敗時はnull
+  /// （PR12より前の履歴にも存在しない）
+  final PronunciationFeedback? pronunciation;
+
   factory DrillResult.fromJson(Map<String, dynamic> json) => DrillResult(
     id: json['id'] as String,
     sentenceId: json['sentenceId'] as String,
@@ -101,6 +108,11 @@ class DrillResult {
     feedback: CompositionFeedback.fromJson(
       Map<String, dynamic>.from(json['feedback'] as Map),
     ),
+    pronunciation: json['pronunciation'] == null
+        ? null
+        : PronunciationFeedback.fromJson(
+            Map<String, dynamic>.from(json['pronunciation'] as Map),
+          ),
   );
 
   Map<String, dynamic> toJson() => {
@@ -110,6 +122,7 @@ class DrillResult {
     'spoken': spoken,
     'timestamp': timestamp.toIso8601String(),
     'feedback': feedback.toJson(),
+    if (pronunciation != null) 'pronunciation': pronunciation!.toJson(),
   };
 
   @override
@@ -122,9 +135,17 @@ class DrillResult {
           level == other.level &&
           spoken == other.spoken &&
           timestamp == other.timestamp &&
-          feedback == other.feedback;
+          feedback == other.feedback &&
+          pronunciation == other.pronunciation;
 
   @override
-  int get hashCode =>
-      Object.hash(id, sentenceId, level, spoken, timestamp, feedback);
+  int get hashCode => Object.hash(
+    id,
+    sentenceId,
+    level,
+    spoken,
+    timestamp,
+    feedback,
+    pronunciation,
+  );
 }

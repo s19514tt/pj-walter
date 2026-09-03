@@ -1,13 +1,16 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../models/drill_result.dart';
+import '../../models/pronunciation_feedback.dart';
 import '../../models/sentence.dart';
 import '../../services/gemini_service.dart';
 import '../../services/history_service.dart';
+import '../../services/pronunciation_assessor.dart';
 import '../../services/settings_service.dart';
 import '../../services/speech_input_service.dart';
 import '../../theme/app_theme.dart';
@@ -34,7 +37,9 @@ const _timeoutExplanation = '時間切れで回答できませんでした。模
 ///
 /// [sentences]を1問ずつ出題する。マイクボタンで[SpeechInputService]による
 /// 音声入力を行い（利用不可時は手入力にフォールバック）、「答え合わせ」で
-/// Geminiに添削させる。制限時間内に回答できなかった場合は自動的に採点処理
+/// Geminiに添削させる。音声入力で回答した場合は録音データを保持し、添削と
+/// 並列で[PronunciationAssessor]による発音評価も行う（失敗しても添削は表示する）。
+/// 制限時間内に回答できなかった場合は自動的に採点処理
 /// （回答があれば自動答え合わせ、無ければ時間切れ扱い）を行う。
 /// 全問終了後は[DrillSummaryScreen]へ遷移する。
 class DrillScreen extends StatefulWidget {
@@ -45,6 +50,7 @@ class DrillScreen extends StatefulWidget {
     required this.theme,
     this.isReview = false,
     this.speechInputService,
+    this.pronunciationAssessor,
     this.questionSeconds = _questionSeconds,
   });
 
@@ -69,6 +75,9 @@ class DrillScreen extends StatefulWidget {
   /// テスト注入用。省略時は本番用のインスタンスを自動生成する。
   final SpeechInputService? speechInputService;
 
+  /// テスト注入用。省略時は[GeminiPronunciationAssessor]を自動生成する。
+  final PronunciationAssessor? pronunciationAssessor;
+
   /// 1問あたりの制限時間（秒）。テスト注入用で、省略時は[_questionSeconds]（30秒）。
   final int questionSeconds;
 
@@ -78,8 +87,13 @@ class DrillScreen extends StatefulWidget {
 
 class _DrillScreenState extends State<DrillScreen> {
   late final SpeechInputService _speechInput;
+  late final PronunciationAssessor _assessor;
   final _answerController = TextEditingController();
   final _entries = <DrillSummaryEntry>[];
+
+  /// 直近の音声入力の録音データ（発音評価用）。手入力のみの場合はnull
+  Uint8List? _audioBytes;
+  String? _audioMimeType;
 
   int _index = 0;
   Timer? _timer;
@@ -89,6 +103,7 @@ class _DrillScreenState extends State<DrillScreen> {
   String _partialText = '';
   bool _grading = false;
   CompositionFeedback? _feedback;
+  PronunciationFeedback? _pronunciation;
   String? _gradedSpoken;
 
   Sentence get _current => widget.sentences[_index];
@@ -99,6 +114,11 @@ class _DrillScreenState extends State<DrillScreen> {
     _speechInput =
         widget.speechInputService ??
         createSpeechInputService(geminiService: context.read<GeminiService>());
+    _assessor =
+        widget.pronunciationAssessor ??
+        GeminiPronunciationAssessor(
+          geminiService: context.read<GeminiService>(),
+        );
     _startTimer();
   }
 
@@ -179,7 +199,11 @@ class _DrillScreenState extends State<DrillScreen> {
       _recording ? _stopRecording() : _startRecording();
 
   Future<void> _startRecording() async {
-    setState(() => _partialText = '');
+    setState(() {
+      _partialText = '';
+      _audioBytes = null;
+      _audioMimeType = null;
+    });
     try {
       await _speechInput.start(
         onPartial: (text) => setState(() => _partialText = text),
@@ -196,10 +220,12 @@ class _DrillScreenState extends State<DrillScreen> {
       _processingSpeech = true;
     });
     try {
-      final text = await _speechInput.stop();
+      final result = await _speechInput.stop();
       if (!mounted) return;
       setState(() {
-        _answerController.text = text;
+        _answerController.text = result.text;
+        _audioBytes = result.audioBytes;
+        _audioMimeType = result.mimeType;
         _partialText = '';
       });
     } on SpeechInputException catch (e) {
@@ -234,11 +260,19 @@ class _DrillScreenState extends State<DrillScreen> {
     final gemini = context.read<GeminiService>();
     final sentence = _current;
     try {
-      final feedback = await gemini.correctComposition(
+      // 添削と発音評価は独立なので並列に投げ、添削の完了を待ってから
+      // 発音評価の結果を回収する。発音評価の失敗は添削の失敗にしない。
+      final feedbackFuture = gemini.correctComposition(
         ja: sentence.ja,
         modelAnswer: sentence.en,
         spoken: spoken,
       );
+      final pronunciationFuture = _assessPronunciation(
+        spoken: spoken,
+        modelAnswer: sentence.en,
+      );
+      final feedback = await feedbackFuture;
+      final (pronunciation, pronunciationError) = await pronunciationFuture;
       final result = DrillResult(
         id: const Uuid().v4(),
         sentenceId: sentence.id,
@@ -246,6 +280,7 @@ class _DrillScreenState extends State<DrillScreen> {
         spoken: spoken,
         timestamp: DateTime.now(),
         feedback: feedback,
+        pronunciation: pronunciation,
       );
       if (!mounted) return;
       final historyService = context.read<HistoryService>();
@@ -265,13 +300,44 @@ class _DrillScreenState extends State<DrillScreen> {
       _timer?.cancel();
       setState(() {
         _feedback = feedback;
+        _pronunciation = pronunciation;
         _gradedSpoken = spoken;
         _grading = false;
       });
+      if (pronunciationError != null) {
+        _showSnack('発音評価を取得できませんでした（$pronunciationError）');
+      }
     } on GeminiException catch (e) {
       if (!mounted) return;
       setState(() => _grading = false);
       _showRetrySnack(e.message);
+    }
+  }
+
+  /// 録音データがあれば発音評価を行う。
+  ///
+  /// 戻り値は（評価結果, エラーメッセージ）のペア。録音が無い（手入力回答）
+  /// 場合は(null, null)、評価に失敗した場合は(null, 日本語メッセージ)を返し、
+  /// 例外は外へ投げない。
+  Future<(PronunciationFeedback?, String?)> _assessPronunciation({
+    required String spoken,
+    required String modelAnswer,
+  }) async {
+    final audioBytes = _audioBytes;
+    final mimeType = _audioMimeType;
+    if (audioBytes == null || mimeType == null) return (null, null);
+    try {
+      final feedback = await _assessor.assess(
+        audioBytes: audioBytes,
+        mimeType: mimeType,
+        spokenText: spoken,
+        modelAnswer: modelAnswer,
+      );
+      return (feedback, null);
+    } on GeminiException catch (e) {
+      return (null, e.message);
+    } catch (_) {
+      return (null, '不明なエラー');
     }
   }
 
@@ -312,7 +378,13 @@ class _DrillScreenState extends State<DrillScreen> {
   void _next() {
     final feedback = _feedback;
     if (feedback != null) {
-      _entries.add(DrillSummaryEntry(ja: _current.ja, score: feedback.score));
+      _entries.add(
+        DrillSummaryEntry(
+          ja: _current.ja,
+          score: feedback.score,
+          pronunciationScore: _pronunciation?.score,
+        ),
+      );
     }
 
     if (_index >= widget.sentences.length - 1) {
@@ -339,8 +411,11 @@ class _DrillScreenState extends State<DrillScreen> {
       _index++;
       _answerController.clear();
       _feedback = null;
+      _pronunciation = null;
       _gradedSpoken = null;
       _partialText = '';
+      _audioBytes = null;
+      _audioMimeType = null;
     });
     _startTimer();
   }
@@ -362,6 +437,7 @@ class _DrillScreenState extends State<DrillScreen> {
                 sentence: _current,
                 spoken: _gradedSpoken ?? '',
                 feedback: feedback,
+                pronunciation: _pronunciation,
                 onNext: _next,
               ),
       ),

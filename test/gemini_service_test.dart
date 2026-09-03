@@ -205,6 +205,65 @@ void main() {
     });
   });
 
+  group('assessPronunciation', () {
+    test('音声をinline_dataで送り、応答をPronunciationFeedbackに変換する', () async {
+      http.Request? capturedRequest;
+      final client = MockClient((request) async {
+        capturedRequest = request;
+        return _jsonResponse(
+          _geminiEnvelope({
+            'score': 78,
+            'words': [
+              {'word': 'right', 'score': 55, 'issue_ja': 'r が l に聞こえます'},
+              {'word': 'now', 'score': 95, 'issue_ja': ''},
+            ],
+            'advice_ja': 'r を意識しましょう。',
+          }),
+          200,
+        );
+      });
+      final service = GeminiService(settingsService: settings, client: client);
+
+      final feedback = await service.assessPronunciation(
+        audioBytes: [1, 2, 3],
+        mimeType: 'audio/wav',
+        spokenText: 'right now',
+        modelAnswer: 'Right now.',
+      );
+
+      expect(feedback.score, 78);
+      expect(feedback.words, hasLength(2));
+      expect(feedback.problemWords.single.word, 'right');
+
+      final body = jsonDecode(capturedRequest!.body) as Map<String, dynamic>;
+      final parts = (body['contents'] as List).first['parts'] as List;
+      expect(parts, hasLength(2));
+      expect(parts.first['text'], contains('right now'));
+      expect(parts.last['inline_data']['mime_type'], 'audio/wav');
+      expect(parts.last['inline_data']['data'], base64Encode([1, 2, 3]));
+      final config = body['generationConfig'] as Map<String, dynamic>;
+      expect(config['responseMimeType'], 'application/json');
+      expect(config['thinkingConfig']['thinkingLevel'], 'medium');
+    });
+
+    test('不正なJSON応答はGeminiExceptionを投げる', () async {
+      final client = MockClient((request) async {
+        return _jsonResponse(_geminiEnvelope('not json'), 200);
+      });
+      final service = GeminiService(settingsService: settings, client: client);
+
+      expect(
+        () => service.assessPronunciation(
+          audioBytes: [1],
+          mimeType: 'audio/wav',
+          spokenText: 'x',
+          modelAnswer: 'x',
+        ),
+        throwsA(isA<GeminiException>()),
+      );
+    });
+  });
+
   group('transcribe', () {
     test('プレーンテキスト応答をそのまま返す', () async {
       final client = MockClient((request) async {

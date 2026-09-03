@@ -18,19 +18,26 @@ const _passingScore = 70;
 
 /// ドリル1問分の結果概要（まとめ画面表示用）。
 class DrillSummaryEntry {
-  const DrillSummaryEntry({required this.ja, required this.score});
+  const DrillSummaryEntry({
+    required this.ja,
+    required this.score,
+    this.pronunciationScore,
+  });
 
   /// 出題された日本語文
   final String ja;
 
   /// その問のスコア
   final int score;
+
+  /// その問の発音スコア。音声入力で回答し評価に成功した場合のみ
+  final int? pronunciationScore;
 }
 
 /// 口頭英作文ドリルのセッション終了後のまとめ画面。
 ///
-/// 平均スコアと問題ごとの結果一覧を表示し、「もう一度」で同条件の
-/// 新しい10問へ、「終了」でデッキ選択画面へ戻る。
+/// 平均スコア（発音スコアがあればその平均も）と問題ごとの結果一覧を表示し、
+/// 「もう一度」で同条件の新しい10問へ、「終了」でデッキ選択画面へ戻る。
 class DrillSummaryScreen extends StatelessWidget {
   const DrillSummaryScreen({
     super.key,
@@ -57,6 +64,16 @@ class DrillSummaryScreen extends StatelessWidget {
   int get _passingCount =>
       entries.where((e) => e.score >= _passingScore).length;
 
+  /// 発音スコアの平均（評価があった問だけで算出）。1問も無ければnull
+  int? get _averagePronunciation {
+    final scores = [
+      for (final e in entries)
+        if (e.pronunciationScore != null) e.pronunciationScore!,
+    ];
+    if (scores.isEmpty) return null;
+    return (scores.reduce((a, b) => a + b) / scores.length).round();
+  }
+
   Future<void> _retry(BuildContext context) async {
     final repository = context.read<SentenceRepository>();
     final sentences = await repository.sentencesFor(level: level, theme: theme);
@@ -74,6 +91,7 @@ class DrillSummaryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final average = _averageScore.round();
+    final averagePronunciation = _averagePronunciation;
     return Scaffold(
       appBar: AppBar(title: const Text('結果まとめ')),
       body: SafeArea(
@@ -102,6 +120,16 @@ class DrillSummaryScreen extends StatelessWidget {
                               ? AppColors.scoreGood
                               : AppColors.scoreMedium,
                         ),
+                        if (averagePronunciation != null) ...[
+                          const SizedBox(height: 8),
+                          StatBadge(
+                            label: '発音 平均$averagePronunciation点',
+                            surfaceColor: scoreSurfaceColor(
+                              averagePronunciation,
+                            ),
+                            textColor: scoreColor(averagePronunciation),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -119,6 +147,12 @@ class DrillSummaryScreen extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 12),
+                          if (entries[i].pronunciationScore != null) ...[
+                            _PronunciationBadge(
+                              score: entries[i].pronunciationScore!,
+                            ),
+                            const SizedBox(width: 8),
+                          ],
                           _ScoreBadge(score: entries[i].score),
                         ],
                       ),
@@ -140,6 +174,40 @@ class DrillSummaryScreen extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// 発音スコアをマイクアイコン付きの小さなピルで表示する。
+class _PronunciationBadge extends StatelessWidget {
+  const _PronunciationBadge({required this.score});
+
+  final int score;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = scoreColor(score);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: scoreSurfaceColor(score),
+        borderRadius: BorderRadius.circular(AppTheme.pillRadius),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.graphic_eq, size: 14, color: color),
+          const SizedBox(width: 4),
+          Text(
+            '$score',
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+            ),
+          ),
+        ],
       ),
     );
   }

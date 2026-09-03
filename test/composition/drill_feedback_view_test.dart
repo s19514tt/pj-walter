@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pj_walter/models/drill_result.dart';
+import 'package:pj_walter/models/pronunciation_feedback.dart';
 import 'package:pj_walter/models/sentence.dart';
 import 'package:pj_walter/screens/composition/drill_feedback_view.dart';
 
@@ -125,5 +126,70 @@ void main() {
     expect(find.text('修正版'), findsNothing);
     expect(find.textContaining('修正なし'), findsNothing);
     expect(find.text('English sentence'), findsOneWidget);
+  });
+
+  testWidgets('発音評価が渡された場合、発音カードに単語・指摘・アドバイスが表示される', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(400, 2000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    const feedback = CompositionFeedback(
+      score: 85,
+      isAcceptable: true,
+      corrected: 'Right now.',
+      explanationJa: '解説',
+      comparisonJa: '',
+    );
+    const pronunciation = PronunciationFeedback(
+      score: 72,
+      words: [
+        WordPronunciation(word: 'right', score: 55, issueJa: 'r が l に聞こえます'),
+        WordPronunciation(word: 'now', score: 95, issueJa: ''),
+      ],
+      adviceJa: 'r を意識しましょう。',
+    );
+
+    await tester.pumpWidget(
+      _wrap(
+        DrillFeedbackView(
+          sentence: _sentence(),
+          spoken: 'right now',
+          feedback: feedback,
+          pronunciation: pronunciation,
+          onNext: () {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('発音'), findsOneWidget);
+    expect(find.text('72'), findsOneWidget);
+    // 単語チップ＋指摘一覧で "right" は2箇所、"now" はチップのみ
+    expect(find.text('right'), findsNWidgets(2));
+    expect(find.text('now'), findsOneWidget);
+    expect(find.text('r が l に聞こえます'), findsOneWidget);
+    expect(find.text('r を意識しましょう。'), findsOneWidget);
+  });
+
+  testWidgets('発音評価がnullなら発音カードは表示されない', (tester) async {
+    const feedback = CompositionFeedback(
+      score: 85,
+      isAcceptable: true,
+      corrected: 'Right now.',
+      explanationJa: '解説',
+      comparisonJa: '',
+    );
+
+    await tester.pumpWidget(
+      _wrap(
+        DrillFeedbackView(
+          sentence: _sentence(),
+          spoken: 'right now',
+          feedback: feedback,
+          onNext: () {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('発音'), findsNothing);
   });
 }

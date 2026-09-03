@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../models/drill_result.dart';
+import '../../models/pronunciation_feedback.dart';
 import '../../models/sentence.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/score_colors.dart';
@@ -10,11 +11,13 @@ import '../../widgets/bottom_cta_bar.dart';
 import '../../widgets/primary_button.dart';
 import '../../widgets/score_ring.dart';
 import '../../widgets/stat_badge.dart';
+import 'pronunciation_card.dart';
 
 /// 口頭英作文1問分のGemini添削結果表示。
 ///
-/// スコアリング・合否バッジ・修正版（最重要）・発話内容・模範解答（tips込み）・
-/// 解説・模範解答との比較を表示し、「次へ」で次問または結果まとめへ進む。
+/// スコアリング・合否バッジ・修正版（最重要）・発話内容・発音評価（音声入力時のみ）・
+/// 模範解答（tips込み）・解説・模範解答との比較を表示し、「次へ」で次問または
+/// 結果まとめへ進む。
 ///
 /// [feedback.corrected]が空文字（時間切れで回答できなかった場合）は
 /// 「あなたの発話」「修正版」セクションを非表示にし、模範解答＋tipsを
@@ -26,6 +29,7 @@ class DrillFeedbackView extends StatelessWidget {
     required this.spoken,
     required this.feedback,
     required this.onNext,
+    this.pronunciation,
   });
 
   /// 出題されたSentence
@@ -39,6 +43,9 @@ class DrillFeedbackView extends StatelessWidget {
 
   /// 「次へ」タップ時のコールバック
   final VoidCallback onNext;
+
+  /// 発音評価。手入力回答・時間切れ・評価失敗時はnullでカードを出さない
+  final PronunciationFeedback? pronunciation;
 
   bool get _timedOut => feedback.corrected.isEmpty;
 
@@ -78,6 +85,10 @@ class DrillFeedbackView extends StatelessWidget {
                 staggered(
                   _DiffCard(spoken: spoken, corrected: feedback.corrected),
                 ),
+                const SizedBox(height: 12),
+              ],
+              if (pronunciation != null) ...[
+                staggered(PronunciationCard(feedback: pronunciation)),
                 const SizedBox(height: 12),
               ],
               staggered(

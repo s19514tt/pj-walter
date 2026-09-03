@@ -2,8 +2,11 @@
 //
 // SpeechInputServiceはフェイクに差し替え、GeminiServiceはhttp.testing.MockClient
 // を注入した実インスタンスを使う（実際の通信は行わない）。
+// 発音評価はGeminiPronunciationAssessor（実装）経由で同じMockClientに届くため、
+// リクエストボディに音声（inline_data）が含まれるかどうかで応答を振り分ける。
 
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/test/test_flutter_secure_storage_platform.dart';
@@ -25,12 +28,13 @@ import '../test_support/hive_test_support.dart';
 /// テスト用のフェイク音声入力サービス。
 ///
 /// [start]は常に固定のpartialテキストを1回流し、[stop]は
-/// あらかじめ設定した[stopResult]（またはエラー）を返す。
+/// あらかじめ設定した[stopResult]（またはエラー）をダミー録音データ付きで返す。
 class FakeSpeechInputService implements SpeechInputService {
   String stopResult = 'this is my spoken answer';
   Object? stopError;
   bool startCalled = false;
   bool stopCalled = false;
+  static final dummyAudio = Uint8List.fromList([1, 2, 3, 4]);
 
   @override
   Future<bool> get isAvailable async => true;
@@ -42,11 +46,15 @@ class FakeSpeechInputService implements SpeechInputService {
   }
 
   @override
-  Future<String> stop() async {
+  Future<SpeechInputResult> stop() async {
     stopCalled = true;
     final error = stopError;
     if (error != null) throw error;
-    return stopResult;
+    return SpeechInputResult(
+      text: stopResult,
+      audioBytes: dummyAudio,
+      mimeType: 'audio/wav',
+    );
   }
 
   @override
@@ -70,6 +78,20 @@ http.Response _jsonResponse(Object payload, int statusCode) => http.Response(
   statusCode,
   headers: {'content-type': 'application/json; charset=utf-8'},
 );
+
+/// 発音評価のリクエスト（音声inline_data付き）かどうか。
+bool _isPronunciationRequest(http.Request request) =>
+    request.body.contains('inline_data');
+
+Map<String, dynamic> _pronunciationPayload() => {
+  'score': 78,
+  'words': [
+    {'word': 'recognized', 'score': 60, 'issue_ja': 'r が l に聞こえます'},
+    {'word': 'by', 'score': 95, 'issue_ja': ''},
+    {'word': 'mic', 'score': 90, 'issue_ja': ''},
+  ],
+  'advice_ja': 'r の発音を意識しましょう。リズムは良好です。',
+};
 
 Sentence _sentence(int i) => Sentence(
   id: 's700-${i.toString().padLeft(3, '0')}',
@@ -347,5 +369,180 @@ void main() {
     expect(historyService.drillHistory.first.feedback.score, 0);
     expect(historyService.drillHistory.first.spoken, isEmpty);
     expect(historyService.allSrsItems, hasLength(1));
+  });
+
+  testWidgets('音声入力で回答すると添削と並列で発音評価が行われ、カードと履歴に反映される', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(400, 2400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final sentences = [_sentence(1)];
+    var pronunciationCalls = 0;
+    var correctionCalls = 0;
+    final client = MockClient((request) async {
+      if (_isPronunciationRequest(request)) {
+        pronunciationCalls++;
+        expect(request.body, contains('audio/wav'));
+        expect(request.body, contains('"thinkingLevel":"medium"'));
+        return _jsonResponse(_geminiEnvelope(_pronunciationPayload()), 200);
+      }
+      correctionCalls++;
+      return _jsonResponse(
+        _geminiEnvelope({
+          'score': 85,
+          'is_acceptable': true,
+          'corrected': 'Recognized by mic.',
+          'explanation_ja': '解説',
+          'comparison_ja': '比較',
+        }),
+        200,
+      );
+    });
+    final geminiService = GeminiService(
+      settingsService: settings,
+      client: client,
+    );
+    final speechInputService = FakeSpeechInputService()
+      ..stopResult = 'recognized by mic';
+
+    await tester.pumpWidget(
+      buildApp(
+        sentences: sentences,
+        geminiService: geminiService,
+        speechInputService: speechInputService,
+      ),
+    );
+    await tester.pump();
+
+    // マイクで回答（フェイクは録音データ付きで文字起こしを返す）
+    await tester.tap(find.byIcon(Icons.mic));
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.stop));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('recognized by mic'), findsOneWidget);
+
+    await tester.runAsync(() async {
+      await tester.tap(find.text('答え合わせ'));
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+    });
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(correctionCalls, 1);
+    expect(pronunciationCalls, 1);
+
+    // 発音カード: 見出し・総合スコア・指摘のある単語・アドバイス
+    expect(find.text('発音'), findsOneWidget);
+    expect(find.text('78'), findsOneWidget);
+    expect(find.text('r が l に聞こえます'), findsOneWidget);
+    expect(find.text('r の発音を意識しましょう。リズムは良好です。'), findsOneWidget);
+
+    // 履歴に発音評価が保存されている
+    final saved = historyService.drillHistory.single;
+    expect(saved.pronunciation?.score, 78);
+    expect(saved.pronunciation?.words, hasLength(3));
+  });
+
+  testWidgets('発音評価が失敗しても添削結果は表示され、発音カードは出ない', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(400, 2000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final sentences = [_sentence(1)];
+    final client = MockClient((request) async {
+      if (_isPronunciationRequest(request)) {
+        return http.Response('server error', 500);
+      }
+      return _jsonResponse(
+        _geminiEnvelope({
+          'score': 85,
+          'is_acceptable': true,
+          'corrected': 'Recognized by mic.',
+          'explanation_ja': '解説',
+          'comparison_ja': '比較',
+        }),
+        200,
+      );
+    });
+    final geminiService = GeminiService(
+      settingsService: settings,
+      client: client,
+    );
+    final speechInputService = FakeSpeechInputService()
+      ..stopResult = 'recognized by mic';
+
+    await tester.pumpWidget(
+      buildApp(
+        sentences: sentences,
+        geminiService: geminiService,
+        speechInputService: speechInputService,
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.byIcon(Icons.mic));
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.stop));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    await tester.runAsync(() async {
+      await tester.tap(find.text('答え合わせ'));
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+    });
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('85'), findsOneWidget);
+    expect(find.text('合格 🎉'), findsOneWidget);
+    expect(find.text('発音'), findsNothing);
+    expect(find.textContaining('発音評価を取得できませんでした'), findsOneWidget);
+    expect(historyService.drillHistory.single.pronunciation, isNull);
+  });
+
+  testWidgets('手入力で回答した場合は発音評価を呼ばない', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(400, 2000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final sentences = [_sentence(1)];
+    final client = MockClient((request) async {
+      if (_isPronunciationRequest(request)) {
+        fail('手入力回答では発音評価を呼んではいけない');
+      }
+      return _jsonResponse(
+        _geminiEnvelope({
+          'score': 85,
+          'is_acceptable': true,
+          'corrected': 'Typed answer.',
+          'explanation_ja': '解説',
+          'comparison_ja': '比較',
+        }),
+        200,
+      );
+    });
+    final geminiService = GeminiService(
+      settingsService: settings,
+      client: client,
+    );
+
+    await tester.pumpWidget(
+      buildApp(
+        sentences: sentences,
+        geminiService: geminiService,
+        speechInputService: FakeSpeechInputService(),
+      ),
+    );
+    await tester.pump();
+
+    await tester.enterText(find.byType(TextField), 'typed answer');
+    await tester.runAsync(() async {
+      await tester.tap(find.text('答え合わせ'));
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+    });
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('85'), findsOneWidget);
+    expect(find.text('発音'), findsNothing);
+    expect(historyService.drillHistory.single.pronunciation, isNull);
   });
 }

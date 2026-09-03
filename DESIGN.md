@@ -7,7 +7,7 @@
 英語スピーキング特化の学習アプリ。ユーザーは TOEIC 750 前後の日本人。UIは全て日本語。
 
 2つのトレーニング:
-1. **口頭英作文**: 日本語文を見て制限時間内に英語で発話 → 音声認識で文字化 → Gemini が添削
+1. **口頭英作文**: 日本語文を見て制限時間内に英語で発話 → 音声認識で文字化 → Gemini が添削＋発音評価（音声入力時）
 2. **独り言英会話**: お題について 30秒/1分/2分/3分 スピーキング → 文字起こし → Gemini がフィードバック
 
 補助機能: SRS復習、フレーズ帳、学習記録（ストリーク・カレンダー・グラフ）、設定（Gemini APIキー等）。
@@ -33,14 +33,16 @@ lib/
   models/                   # 純Dartモデル（fromJson/toJson を持つ）
     sentence.dart           # 教材文
     topic.dart              # 独り言のお題
-    drill_result.dart       # 口頭英作文の1問の結果＋添削
+    drill_result.dart       # 口頭英作文の1問の結果＋添削＋発音評価(任意)
+    pronunciation_feedback.dart # 発音評価（総合スコア・単語別・アドバイス）
     monologue_result.dart   # 独り言1回の結果＋添削
     srs_item.dart           # SRS復習アイテム
     phrase.dart             # フレーズ帳エントリ
   services/
     settings_service.dart   # 設定の読み書き（ChangeNotifier）
     gemini_service.dart     # Gemini REST クライアント
-    speech_input_service.dart # STT/録音の抽象化
+    speech_input_service.dart # 録音→文字起こしの抽象化（stopは文字起こし＋録音WAVを返す）
+    pronunciation_assessor.dart # 発音評価の抽象化＋Gemini実装
     sentence_repository.dart  # 教材JSONのロード・フィルタ
     history_service.dart    # 履歴・SRS・フレーズ帳・日次統計の永続化（ChangeNotifier）
     drill_question_selector.dart  # 口頭英作文の出題選定ロジック
@@ -54,6 +56,7 @@ lib/
       sentence_list_screen.dart
       drill_screen.dart
       drill_feedback_view.dart
+      pronunciation_card.dart # 発音評価カード（単語チップ・指摘・アドバイス）
       drill_summary_screen.dart
     monologue/              # 独り言英会話（お題選択→スピーキング→フィードバック）
       topic_select_screen.dart
@@ -133,7 +136,7 @@ assets/data/
 | box名 | キー | 内容 |
 |---|---|---|
 | `settings` | 固定キー | 独り言デフォルト秒数など非秘匿設定（旧`modelName`/`sttMode`キーは起動時に削除） |
-| `drill_results` | uuid | DrillResult（sentenceId, spoken, feedback一式, timestamp） |
+| `drill_results` | uuid | DrillResult（sentenceId, spoken, feedback一式, timestamp, pronunciation?） |
 | `monologue_results` | uuid | MonologueResult（topicId, seconds, transcript, feedback一式, timestamp） |
 | `srs_items` | sentenceId | SrsItem（stage, dueDate, lapses, lastResult） |
 | `phrases` | uuid | Phrase（en, ja, source, createdAt） |
@@ -171,6 +174,22 @@ APIキーだけは `flutter_secure_storage`（キー名 `gemini_api_key`）。
 
 プロンプト方針: 「あなたは日本人向け英語講師。発話は音声認識由来なので大文字小文字・句読点は減点しない。意味が通り文法的に正しければ模範解答と違っても許容」。
 
+### 発音評価（音声）
+
+口頭英作文で音声入力した場合のみ、添削（テキスト）と**並列**に呼ぶ。入力: 録音WAV（`inline_data`）、文字起こし（ユーザー編集後）、模範解答（参考）。`thinkingLevel` は `medium`。出力スキーマ:
+
+```json
+{ "score": 78,                       // 0-100 発音の総合（個々の音・強勢・リズム・明瞭さ）
+  "words": [ { "word": "right", "score": 55, "issue_ja": "r が l に聞こえます" } ],  // 文字起こしの語順どおり。問題なければ issue_ja は空
+  "advice_ja": "次に意識すべきポイント（日本語、2-3文）" }
+```
+
+方針:
+- 発音評価の失敗は添削の失敗として扱わない（添削は表示し、スナックバーで通知、`DrillResult.pronunciation` は null）
+- 手入力回答・時間切れでは呼ばない
+- 画面側は `PronunciationAssessor`（抽象）だけに依存し、`GeminiPronunciationAssessor` が `GeminiService.assessPronunciation` に委譲。専用API（Azure Pronunciation Assessment等）へ差し替える場合はこの層で行う
+- まとめ画面では発音スコアの平均と問ごとのバッジを表示（評価があった問のみ）
+
 ### 独り言英会話のフィードバック
 
 入力: お題、発話時間、トランスクリプト。出力スキーマ:
@@ -192,6 +211,7 @@ APIキーだけは `flutter_secure_storage`（キー名 `gemini_api_key`）。
 `SpeechInputService`（抽象）の実装は `GeminiSpeechInputService` のみ:
 - record の `startStream` でPCM16(16kHz mono)をメモリに蓄積 → 停止後にWAV化して GeminiService.transcribe() → テキスト
 - 録音中は `onPartial` に「録音中…」の固定文言を流す
+- `stop()` は `SpeechInputResult`（text, audioBytes(WAV), mimeType）を返し、画面側は発音評価用に audioBytes を保持する（次の問に進む・録音し直すと破棄）
 - 権限拒否・録音失敗時は日本語エラーメッセージを返し、**手入力フォールバック**（TextFieldで回答入力）を必ず用意
 - 端末STT（speech_to_text）はPR11で廃止。iOS/Androidで録音と端末STTを同時に動かすとオーディオセッションが競合するため、音声データを必要とする発音評価と両立できない
 

@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 
 import '../models/drill_result.dart';
 import '../models/monologue_result.dart';
+import '../models/pronunciation_feedback.dart';
 import 'settings_service.dart';
 
 /// Gemini API呼び出し失敗時に投げられる例外。
@@ -40,6 +41,10 @@ class GeminiService {
   /// `thinkingLevel`で制御し、完全にオフにはできない。文字起こし・添削は
   /// 深い推論を必要としないため最小の`low`にして応答時間とコストを抑える。
   static const _thinkingLevel = 'low';
+
+  /// 発音評価に使う思考の強さ。音声を聞いて単語ごとに判定する必要があり、
+  /// `low`では評価が粗くなりやすいため一段上げる（コストは出力トークンとして加算）。
+  static const _pronunciationThinkingLevel = 'medium';
 
   final SettingsService _settings;
   final http.Client _client;
@@ -79,7 +84,10 @@ class GeminiService {
 - comparison_ja: 模範解答との違いや、どちらでも良い点の解説（日本語）
 ''';
 
-    final json = await _generate(prompt: prompt, schema: _compositionSchema);
+    final json = await _generate(
+      parts: [_textPart(prompt)],
+      schema: _compositionSchema,
+    );
     try {
       return CompositionFeedback.fromJson(json);
     } catch (_) {
@@ -119,11 +127,73 @@ class GeminiService {
 - overall_feedback_ja: 良かった点と改善点を含む総評（日本語、3〜4文）
 ''';
 
-    final json = await _generate(prompt: prompt, schema: _monologueSchema);
+    final json = await _generate(
+      parts: [_textPart(prompt)],
+      schema: _monologueSchema,
+    );
     try {
       return MonologueFeedback.fromJson(json);
     } catch (_) {
       throw GeminiException('Geminiからの応答を解析できませんでした。時間を置いて再度お試しください。');
+    }
+  }
+
+  /// 録音音声の発音をGeminiに評価させる（口頭英作文の添削と並列で呼ぶ）。
+  ///
+  /// 音声を`inline_data`で送り、[spokenText]（文字起こし）の単語ごとの
+  /// 発音スコアと総合スコア・アドバイスをJSONで受け取る。
+  Future<PronunciationFeedback> assessPronunciation({
+    required List<int> audioBytes,
+    required String mimeType,
+    required String spokenText,
+    required String modelAnswer,
+  }) async {
+    final prompt =
+        '''
+あなたは日本人向けの英語発音コーチです。添付の音声は、生徒が下記の英文を声に出して言ったものです。
+音声を聞いて、発音の観点だけで評価してください（文法・語彙の誤りは評価対象外です）。
+
+生徒が言おうとした英文（文字起こし）: $spokenText
+参考（模範解答）: $modelAnswer
+
+評価の観点:
+- 個々の音（日本人が苦手な r/l、th、v/b、f/h、母音の区別など）
+- 語の強勢（アクセント位置）と文のリズム・イントネーション
+- 音のつながり（リンキング）と不要な母音の挿入（例: "and" を「アンド」と言う）
+- 音声認識が読み取れる程度に明瞭か
+
+以下のJSONスキーマに従って出力してください。
+
+- score: 発音の総合スコアを0〜100で採点する
+  - 90-100: ネイティブに近く、ほぼ違和感がない
+  - 75-89: 明瞭で問題なく伝わるが、日本語訛りが少し残る
+  - 60-74: 伝わるが、いくつかの音や強勢に明確な癖がある
+  - 40-59: 聞き返される可能性がある音が複数ある
+  - 0-39: 大部分が聞き取りにくい
+- words: 文字起こしの単語を語順どおりに1つずつ評価する（分割・結合・省略をしない）
+  - word: 単語（文字起こしと同じ表記）
+  - score: その単語の発音スコア（0〜100）
+  - issue_ja: 問題があれば具体的な指摘を日本語で1文（例: "th が s に聞こえます"）。問題なければ空文字
+- advice_ja: 次に意識すべき最重要ポイントを日本語で2〜3文。良かった点も1つ含める
+''';
+
+    final json = await _generate(
+      parts: [
+        _textPart(prompt),
+        {
+          'inline_data': {
+            'mime_type': mimeType,
+            'data': base64Encode(audioBytes),
+          },
+        },
+      ],
+      schema: _pronunciationSchema,
+      thinkingLevel: _pronunciationThinkingLevel,
+    );
+    try {
+      return PronunciationFeedback.fromJson(json);
+    } catch (_) {
+      throw GeminiException('発音評価の応答を解析できませんでした。時間を置いて再度お試しください。');
     }
   }
 
@@ -167,24 +237,26 @@ class GeminiService {
     }
   }
 
+  static Map<String, dynamic> _textPart(String text) => {'text': text};
+
+  /// 構造化出力（JSON）でGeminiを呼び出し、パース済みのMapを返す。
+  ///
+  /// [parts]はテキストや`inline_data`（音声）を含むリクエストのparts配列。
   Future<Map<String, dynamic>> _generate({
-    required String prompt,
+    required List<Map<String, dynamic>> parts,
     required Map<String, dynamic> schema,
+    String thinkingLevel = _thinkingLevel,
   }) async {
     final apiKey = _requireApiKey();
     final uri = Uri.parse('$_baseUrl/$modelName:generateContent');
     final body = jsonEncode({
       'contents': [
-        {
-          'parts': [
-            {'text': prompt},
-          ],
-        },
+        {'parts': parts},
       ],
       'generationConfig': {
         'responseMimeType': 'application/json',
         'responseSchema': schema,
-        'thinkingConfig': {'thinkingLevel': _thinkingLevel},
+        'thinkingConfig': {'thinkingLevel': thinkingLevel},
       },
     });
 
@@ -272,6 +344,27 @@ class GeminiService {
       'explanation_ja',
       'comparison_ja',
     ],
+  };
+
+  static const _pronunciationSchema = {
+    'type': 'OBJECT',
+    'properties': {
+      'score': {'type': 'INTEGER'},
+      'words': {
+        'type': 'ARRAY',
+        'items': {
+          'type': 'OBJECT',
+          'properties': {
+            'word': {'type': 'STRING'},
+            'score': {'type': 'INTEGER'},
+            'issue_ja': {'type': 'STRING'},
+          },
+          'required': ['word', 'score', 'issue_ja'],
+        },
+      },
+      'advice_ja': {'type': 'STRING'},
+    },
+    'required': ['score', 'words', 'advice_ja'],
   };
 
   static const _monologueSchema = {

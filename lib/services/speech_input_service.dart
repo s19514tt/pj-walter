@@ -1,10 +1,31 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:record/record.dart';
 
 import '../utils/wav_builder.dart';
 import 'gemini_service.dart';
+
+/// [SpeechInputService.stop]の結果。文字起こしテキストに加え、発音評価に
+/// 使うための録音データ（WAV）も返す。
+@immutable
+class SpeechInputResult {
+  const SpeechInputResult({
+    required this.text,
+    required this.audioBytes,
+    required this.mimeType,
+  });
+
+  /// 文字起こしテキスト
+  final String text;
+
+  /// 録音データ（[mimeType]形式）
+  final Uint8List audioBytes;
+
+  /// [audioBytes]のMIMEタイプ（例: `audio/wav`）
+  final String mimeType;
+}
 
 /// 音声入力（マイク権限・録音）に失敗した際に投げられる例外。
 ///
@@ -31,11 +52,11 @@ abstract class SpeechInputService {
   /// 固定文言）。マイク権限拒否の場合は[SpeechInputException]を投げる。
   Future<void> start({required void Function(String text) onPartial});
 
-  /// 音声入力を終了し、確定したテキストを返す。
+  /// 音声入力を終了し、文字起こしテキストと録音データを返す。
   ///
   /// ここで録音データをGeminiに送信して文字起こしする
   /// （[GeminiException]が投げられる場合がある）。
-  Future<String> stop();
+  Future<SpeechInputResult> stop();
 
   /// このデバイスで音声入力が利用可能かどうか。
   Future<bool> get isAvailable;
@@ -105,7 +126,7 @@ class GeminiSpeechInputService implements SpeechInputService {
   }
 
   @override
-  Future<String> stop() async {
+  Future<SpeechInputResult> stop() async {
     await _recorder.stop();
     // stop()完了後にストリームのonDoneイベントが届くまで短時間待つ
     // （マイクロタスクのスケジューリング差によるチャンク取りこぼしを防ぐ）。
@@ -128,9 +149,15 @@ class GeminiSpeechInputService implements SpeechInputService {
       sampleRate: _sampleRate,
       channels: _channels,
     );
-    return await _geminiService.transcribe(
+    const mimeType = 'audio/wav';
+    final text = await _geminiService.transcribe(
       audioBytes: wavBytes,
-      mimeType: 'audio/wav',
+      mimeType: mimeType,
+    );
+    return SpeechInputResult(
+      text: text,
+      audioBytes: wavBytes,
+      mimeType: mimeType,
     );
   }
 

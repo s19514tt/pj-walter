@@ -4,6 +4,7 @@
 // を注入した実インスタンスを使う（実際の通信は行わない）。
 
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/test/test_flutter_secure_storage_platform.dart';
@@ -41,9 +42,13 @@ class FakeSpeechInputService implements SpeechInputService {
   }
 
   @override
-  Future<String> stop() async {
+  Future<SpeechInputResult> stop() async {
     stopCalled = true;
-    return stopResult;
+    return SpeechInputResult(
+      text: stopResult,
+      audioBytes: Uint8List.fromList([1, 2, 3, 4]),
+      mimeType: 'audio/wav',
+    );
   }
 
   @override

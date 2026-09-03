@@ -225,6 +225,13 @@ class _DrillDetailSheet extends StatelessWidget {
         _DetailField(label: '修正版', value: result.feedback.corrected),
         const SizedBox(height: 12),
         _DetailField(label: '解説', value: result.feedback.explanationJa),
+        if (result.pronunciation != null) ...[
+          const SizedBox(height: 12),
+          _DetailField(
+            label: '発音（${result.pronunciation!.score}点）',
+            value: result.pronunciation!.adviceJa,
+          ),
+        ],
       ],
     );
   }

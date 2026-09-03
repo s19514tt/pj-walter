@@ -116,10 +116,10 @@ class _MonologueSpeakScreenState extends State<MonologueSpeakScreen> {
       _processingSpeech = true;
     });
     try {
-      final text = await _speechInput.stop();
+      final result = await _speechInput.stop();
       if (!mounted) return;
       setState(() {
-        _transcriptController.text = text;
+        _transcriptController.text = result.text;
         _partialText = '';
       });
     } on SpeechInputException catch (e) {

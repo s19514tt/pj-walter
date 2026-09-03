@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pj_walter/models/drill_result.dart';
 import 'package:pj_walter/models/monologue_result.dart';
 import 'package:pj_walter/models/phrase.dart';
+import 'package:pj_walter/models/pronunciation_feedback.dart';
 import 'package:pj_walter/models/sentence.dart';
 import 'package:pj_walter/models/srs_item.dart';
 import 'package:pj_walter/models/topic.dart';
@@ -61,6 +62,62 @@ void main() {
       final roundTripped = DrillResult.fromJson(drillResult.toJson());
 
       expect(roundTripped, drillResult);
+    });
+  });
+
+  group('PronunciationFeedback', () {
+    test('fromJson/toJson roundtrip', () {
+      const feedback = PronunciationFeedback(
+        score: 78,
+        words: [
+          WordPronunciation(word: 'right', score: 55, issueJa: 'r が l に聞こえます'),
+          WordPronunciation(word: 'now', score: 95, issueJa: ''),
+        ],
+        adviceJa: 'r を意識しましょう。',
+      );
+
+      final roundTripped = PronunciationFeedback.fromJson(feedback.toJson());
+
+      expect(roundTripped, feedback);
+      expect(roundTripped.problemWords.single.word, 'right');
+    });
+
+    test('issue_ja が無い単語は空文字として読む', () {
+      final word = WordPronunciation.fromJson({'word': 'now', 'score': 90});
+      expect(word.issueJa, '');
+      expect(word.hasIssue, isFalse);
+    });
+  });
+
+  group('DrillResult（発音評価付き）', () {
+    test('pronunciation を含めてラウンドトリップし、無い場合はnullになる', () {
+      final withPronunciation = DrillResult(
+        id: 'd-2',
+        sentenceId: 's700-002',
+        level: 700,
+        spoken: 'Right now',
+        timestamp: DateTime.utc(2026, 9, 3, 12),
+        feedback: const CompositionFeedback(
+          score: 90,
+          isAcceptable: true,
+          corrected: 'Right now.',
+          explanationJa: '',
+          comparisonJa: '',
+        ),
+        pronunciation: const PronunciationFeedback(
+          score: 70,
+          words: [WordPronunciation(word: 'Right', score: 70, issueJa: '')],
+          adviceJa: 'ok',
+        ),
+      );
+
+      expect(
+        DrillResult.fromJson(withPronunciation.toJson()),
+        withPronunciation,
+      );
+
+      final json = withPronunciation.toJson()..remove('pronunciation');
+      expect(DrillResult.fromJson(json).pronunciation, isNull);
     });
   });
 
