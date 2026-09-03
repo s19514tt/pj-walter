@@ -11,12 +11,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:pj_walter/models/token_usage.dart';
 import 'package:pj_walter/services/gemini_service.dart';
 import 'package:pj_walter/services/settings_service.dart';
 
 import 'test_support/hive_test_support.dart';
 
-Map<String, dynamic> _geminiEnvelope(Object payload) => {
+Map<String, dynamic> _geminiEnvelope(
+  Object payload, {
+  Map<String, dynamic>? usageMetadata,
+}) => {
   'candidates': [
     {
       'content': {
@@ -26,6 +30,7 @@ Map<String, dynamic> _geminiEnvelope(Object payload) => {
       },
     },
   ],
+  'usageMetadata': ?usageMetadata,
 };
 
 /// JSON文字列をUTF-8のResponseとして返す。
@@ -74,7 +79,7 @@ void main() {
       });
       final service = GeminiService(settingsService: settings, client: client);
 
-      final feedback = await service.correctComposition(
+      final (:feedback, :usage) = await service.correctComposition(
         ja: 'この件については後ほど折り返しご連絡します。',
         modelAnswer: "I'll get back to you on this matter later.",
         spoken: "I'll call you back later",
@@ -83,6 +88,8 @@ void main() {
       expect(feedback.score, 85);
       expect(feedback.isAcceptable, true);
       expect(feedback.corrected, "I'll call you back later.");
+      // usageMetadataが無い応答では使用量ゼロとして扱う
+      expect(usage, TokenUsage.zero);
       expect(capturedRequest?.headers['x-goog-api-key'], 'test-api-key');
       expect(
         capturedRequest?.url.toString(),
@@ -192,7 +199,7 @@ void main() {
       });
       final service = GeminiService(settingsService: settings, client: client);
 
-      final feedback = await service.reviewMonologue(
+      final (:feedback, usage: _) = await service.reviewMonologue(
         topicJa: '朝ごはんについて話してください',
         topicEn: 'Talk about your breakfast',
         seconds: 60,
@@ -206,18 +213,74 @@ void main() {
   });
 
   group('transcribe', () {
-    test('プレーンテキスト応答をそのまま返す', () async {
+    test('プレーンテキスト応答とusageMetadataを返す', () async {
       final client = MockClient((request) async {
-        return _jsonResponse(_geminiEnvelope('This is the transcript.'), 200);
+        return _jsonResponse(
+          _geminiEnvelope(
+            'This is the transcript.',
+            usageMetadata: {
+              'promptTokenCount': 320,
+              'candidatesTokenCount': 8,
+              'thoughtsTokenCount': 2,
+              'totalTokenCount': 330,
+            },
+          ),
+          200,
+        );
       });
       final service = GeminiService(settingsService: settings, client: client);
 
-      final text = await service.transcribe(
+      final (:text, :usage) = await service.transcribe(
         audioBytes: [1, 2, 3],
         mimeType: 'audio/wav',
       );
 
       expect(text, 'This is the transcript.');
+      expect(
+        usage,
+        const TokenUsage(
+          promptTokens: 320,
+          candidatesTokens: 8,
+          thoughtsTokens: 2,
+        ),
+      );
+    });
+  });
+
+  group('usageMetadata', () {
+    test('構造化出力でもusageMetadataを読み取り、thoughtsが無ければ0にする', () async {
+      final client = MockClient((request) async {
+        return _jsonResponse(
+          _geminiEnvelope(
+            {
+              'score': 80,
+              'is_acceptable': true,
+              'corrected': 'ok',
+              'explanation_ja': '',
+              'comparison_ja': '',
+            },
+            usageMetadata: {
+              'promptTokenCount': 150,
+              'candidatesTokenCount': 40,
+              'totalTokenCount': 190,
+            },
+          ),
+          200,
+        );
+      });
+      final service = GeminiService(settingsService: settings, client: client);
+
+      final (feedback: _, :usage) = await service.correctComposition(
+        ja: 'ja',
+        modelAnswer: 'model',
+        spoken: 'spoken',
+      );
+
+      expect(usage.promptTokens, 150);
+      expect(usage.candidatesTokens, 40);
+      expect(usage.thoughtsTokens, 0);
+      expect(usage.billedOutputTokens, 40);
+      expect(usage.totalTokens, 190);
     });
   });
 }

@@ -1,0 +1,93 @@
+// DrillSummaryScreenのトークン使用量・コスト表示のウィジェットテスト。
+// 単価はGeminiPricingを注入して固定する（日付に依存させない）。
+
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:pj_walter/models/token_usage.dart';
+import 'package:pj_walter/screens/composition/drill_summary_screen.dart';
+import 'package:pj_walter/services/gemini_pricing.dart';
+
+void main() {
+  testWidgets('用途別・合計のトークン数と、単価から算出したコストが表示される', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(400, 1600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    const entries = [
+      DrillSummaryEntry(
+        ja: '例文1',
+        score: 85,
+        usage: DrillQuestionUsage(
+          transcription: TokenUsage(promptTokens: 600, candidatesTokens: 20),
+          correction: TokenUsage(
+            promptTokens: 400,
+            candidatesTokens: 30,
+            thoughtsTokens: 10,
+          ),
+        ),
+      ),
+      // 手入力＋添削のみ
+      DrillSummaryEntry(
+        ja: '例文2',
+        score: 60,
+        usage: DrillQuestionUsage(
+          correction: TokenUsage(promptTokens: 1000, candidatesTokens: 40),
+        ),
+      ),
+      // 時間切れ（API呼び出し無し）
+      DrillSummaryEntry(ja: '例文3', score: 0),
+    ];
+
+    // 金額の文字列は浮動小数点の丸め（toStringAsFixed）に依存するため、
+    // 期待値も同じ関数で組み立てる。
+    const pricing = GeminiPricing.introductory;
+    String cost(TokenUsage usage) => formatUsd(pricing.costUsd(usage));
+    const transcription = TokenUsage(promptTokens: 600, candidatesTokens: 20);
+    const correction = TokenUsage(
+      promptTokens: 1400,
+      candidatesTokens: 70,
+      thoughtsTokens: 10,
+    );
+    const total = TokenUsage(
+      promptTokens: 2000,
+      candidatesTokens: 90,
+      thoughtsTokens: 10,
+    );
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: DrillSummaryScreen(
+          level: 700,
+          theme: 'daily',
+          entries: entries,
+          pricing: pricing,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('APIトークン使用量'), findsOneWidget);
+    // 文字起こし: 600 / 20
+    expect(find.text('入力 600 · 出力 20'), findsOneWidget);
+    expect(find.text(cost(transcription)), findsWidgets);
+    // 添削: 1400 / 80(30+10+40)
+    expect(find.text('入力 1,400 · 出力 80'), findsOneWidget);
+    expect(find.text(cost(correction)), findsWidgets);
+    // 合計: 2000 / 100
+    expect(find.text('入力 2,000 · 出力 100'), findsOneWidget);
+    expect(find.text(cost(total)), findsWidgets);
+    expect(find.text('出力のうち思考トークン 10'), findsOneWidget);
+    expect(find.textContaining('入力 \$0.75 / 出力 \$3.75'), findsOneWidget);
+
+    // 問ごとの行: 1問目 1000/60、2問目 1000/40
+    const q1 = TokenUsage(
+      promptTokens: 1000,
+      candidatesTokens: 50,
+      thoughtsTokens: 10,
+    );
+    const q2 = TokenUsage(promptTokens: 1000, candidatesTokens: 40);
+    expect(find.text('入力 1,000 · 出力 60 · ${cost(q1)}'), findsOneWidget);
+    expect(find.text('入力 1,000 · 出力 40 · ${cost(q2)}'), findsOneWidget);
+    // 3問目は使用量ゼロなので行を出さない
+    expect(find.textContaining('入力 0 · 出力 0 · \$'), findsNothing);
+  });
+}

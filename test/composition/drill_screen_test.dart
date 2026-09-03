@@ -17,6 +17,7 @@ import 'package:pj_walter/screens/composition/drill_screen.dart';
 import 'package:pj_walter/services/gemini_service.dart';
 import 'package:pj_walter/services/history_service.dart';
 import 'package:pj_walter/services/settings_service.dart';
+import 'package:pj_walter/models/token_usage.dart';
 import 'package:pj_walter/services/speech_input_service.dart';
 import 'package:provider/provider.dart';
 
@@ -25,12 +26,18 @@ import '../test_support/hive_test_support.dart';
 /// テスト用のフェイク音声入力サービス。
 ///
 /// [start]は常に固定のpartialテキストを1回流し、[stop]は
-/// あらかじめ設定した[stopResult]（またはエラー）を返す。
+/// あらかじめ設定した[stopResult]（またはエラー）を[stopUsage]付きで返す。
 class FakeSpeechInputService implements SpeechInputService {
   String stopResult = 'this is my spoken answer';
   Object? stopError;
   bool startCalled = false;
   bool stopCalled = false;
+
+  /// 文字起こし1回分のトークン使用量（音声入力分は入力300・出力10）
+  TokenUsage stopUsage = const TokenUsage(
+    promptTokens: 300,
+    candidatesTokens: 10,
+  );
 
   @override
   Future<bool> get isAvailable async => true;
@@ -42,17 +49,19 @@ class FakeSpeechInputService implements SpeechInputService {
   }
 
   @override
-  Future<String> stop() async {
+  Future<SpeechInputResult> stop() async {
     stopCalled = true;
     final error = stopError;
     if (error != null) throw error;
-    return stopResult;
+    return SpeechInputResult(text: stopResult, usage: stopUsage);
   }
 
   @override
   void dispose() {}
 }
 
+/// Gemini応答のエンベロープ。usageMetadataはトークン計測のテスト用に固定値
+/// （入力100・出力20・思考5）を付ける。
 Map<String, dynamic> _geminiEnvelope(Object payload) => {
   'candidates': [
     {
@@ -63,6 +72,12 @@ Map<String, dynamic> _geminiEnvelope(Object payload) => {
       },
     },
   ],
+  'usageMetadata': {
+    'promptTokenCount': 100,
+    'candidatesTokenCount': 20,
+    'thoughtsTokenCount': 5,
+    'totalTokenCount': 125,
+  },
 };
 
 http.Response _jsonResponse(Object payload, int statusCode) => http.Response(
@@ -228,6 +243,15 @@ void main() {
     expect(find.textContaining('日本語の例文1'), findsOneWidget);
     expect(find.textContaining('日本語の例文2'), findsOneWidget);
     expect(historyService.drillHistory, hasLength(2));
+
+    // トークン使用量: 手入力2問＝添削2回分（入力100・出力25(20+思考5)）×2。
+    // 文字起こしは呼んでいないので0。
+    expect(find.text('APIトークン使用量'), findsOneWidget);
+    expect(find.text('入力 0 · 出力 0'), findsOneWidget); // 文字起こし行
+    expect(find.text('入力 200 · 出力 50'), findsNWidgets(2)); // 添削行＋合計行
+    expect(find.text('出力のうち思考トークン 10'), findsOneWidget);
+    // 問ごとの行（コストは単価の適用日に依存するため数値は見ない）
+    expect(find.textContaining('入力 100 · 出力 25 · \$'), findsNWidgets(2));
   });
 
   testWidgets('マイクボタンで音声入力を開始・停止しTextFieldに反映される', (tester) async {
@@ -347,5 +371,65 @@ void main() {
     expect(historyService.drillHistory.first.feedback.score, 0);
     expect(historyService.drillHistory.first.spoken, isEmpty);
     expect(historyService.allSrsItems, hasLength(1));
+  });
+
+  testWidgets('音声入力の文字起こし分と添削分のトークンが問ごとに合算されてまとめ画面に出る', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(400, 2000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final sentences = [_sentence(1)];
+    final client = MockClient((request) async {
+      return _jsonResponse(
+        _geminiEnvelope({
+          'score': 90,
+          'is_acceptable': true,
+          'corrected': 'Recognized by mic.',
+          'explanation_ja': '解説',
+          'comparison_ja': '比較',
+        }),
+        200,
+      );
+    });
+    final geminiService = GeminiService(
+      settingsService: settings,
+      client: client,
+    );
+    final speechInputService = FakeSpeechInputService()
+      ..stopResult = 'recognized by mic';
+
+    await tester.pumpWidget(
+      buildApp(
+        sentences: sentences,
+        geminiService: geminiService,
+        speechInputService: speechInputService,
+      ),
+    );
+    await tester.pump();
+
+    // 2回録音し直す → 文字起こし分は2回分（入力600・出力20）加算される
+    for (var i = 0; i < 2; i++) {
+      await tester.tap(find.byIcon(Icons.mic));
+      await tester.pump();
+      await tester.tap(find.byIcon(Icons.stop));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.text('recognized by mic'), findsOneWidget);
+
+    await tester.runAsync(() async {
+      await tester.tap(find.text('答え合わせ'));
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+    });
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('次へ'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('結果まとめ'), findsOneWidget);
+    expect(find.text('入力 600 · 出力 20'), findsOneWidget); // 文字起こし行
+    expect(find.text('入力 100 · 出力 25'), findsOneWidget); // 添削行
+    expect(find.text('入力 700 · 出力 45'), findsOneWidget); // 合計行
+    expect(find.textContaining('入力 700 · 出力 45 · \$'), findsOneWidget); // 問の行
   });
 }
