@@ -1,0 +1,699 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ピンイン声調 POC — 音声 → ピンイン(声調付き) → 漢字</title>
+<style>
+  :root{
+    --orange:#FF5B00; --orange-dark:#E64F00; --orange-bg:#FFF3EC;
+    --ink:#212121; --sub:#757575; --line:#EEEEEE; --page:#F5F6F8;
+    --good:#0BA05F; --good-bg:#E6F7EF;
+    --warn:#F5A623; --warn-bg:#FEF3DC;
+    --bad:#D32F2F;  --bad-bg:#FDECEC;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--page);color:var(--ink);
+    font:14px/1.7 -apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;}
+  .wrap{max-width:900px;margin:0 auto;padding:24px 16px 80px}
+  h1{font-size:20px;margin:0 0 4px}
+  .lead{color:var(--sub);margin:0 0 20px;font-size:13px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:14px}
+  .card h2{font-size:15px;margin:0 0 12px;display:flex;align-items:center;gap:8px}
+  .card h2::before{content:"";width:4px;height:18px;border-radius:2px;background:var(--orange)}
+  label{display:block;font-size:12px;color:var(--sub);margin:0 0 4px}
+  input[type=text],input[type=password],select,textarea{
+    width:100%;padding:10px 12px;border:1px solid #DDD;border-radius:10px;font:inherit;background:#fff;color:var(--ink)}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--orange-bg);border-color:var(--orange)}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  .row>*{flex:1 1 200px;min-width:0}
+  .btn{appearance:none;border:none;border-radius:12px;padding:12px 20px;font:inherit;font-weight:700;
+    cursor:pointer;background:var(--orange);color:#fff;transition:background .15s}
+  .btn:hover:not(:disabled){background:var(--orange-dark)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .btn.sec{background:#fff;color:var(--orange);border:1.5px solid var(--orange)}
+  .btn.sec:hover:not(:disabled){background:var(--orange-bg)}
+  .btn.ghost{background:transparent;color:var(--sub);border:1px solid #DDD;font-weight:500;padding:8px 14px;font-size:13px}
+  .btn.rec{background:var(--bad)}
+  .btn.rec:hover:not(:disabled){background:#b71c1c}
+  .mini{font-size:12px;color:var(--sub)}
+  .note{background:var(--warn-bg);border-radius:10px;padding:10px 12px;font-size:12px;line-height:1.6}
+  .modes{display:grid;gap:8px}
+  .mode{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid #DDD;border-radius:12px;cursor:pointer}
+  .mode.on{border-color:var(--orange);background:var(--orange-bg)}
+  .mode input{margin-top:3px;accent-color:var(--orange)}
+  .mode b{font-size:13px}
+  .mode span{display:block;font-size:12px;color:var(--sub);line-height:1.5}
+  .reclane{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .lvl{flex:1 1 160px;height:8px;background:var(--line);border-radius:999px;overflow:hidden;min-width:120px}
+  .lvl i{display:block;height:100%;width:0;background:var(--orange);transition:width .07s linear}
+  .timer{font:700 15px/1 var(--mono);min-width:52px}
+  .pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700}
+  .pill.good{background:var(--good-bg);color:var(--good)}
+  .pill.warn{background:var(--warn-bg);color:#8a5a00}
+  .pill.bad{background:var(--bad-bg);color:var(--bad)}
+  .pill.flat{background:var(--page);color:var(--sub)}
+  .big{font-family:var(--mono);font-size:19px;line-height:1.9;word-break:break-word}
+  .han{font-size:22px;line-height:1.8;word-break:break-all}
+  .kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:13px;margin:0}
+  .kv dt{color:var(--sub)}
+  .kv dd{margin:0}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font-size:11px;color:var(--sub);font-weight:600;white-space:nowrap}
+  .scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .syl{font-family:var(--mono);font-size:15px}
+  tr.tone td{background:var(--warn-bg)}
+  tr.sub td{background:var(--bad-bg)}
+  .res{border-top:1px solid var(--line);margin-top:14px;padding-top:14px}
+  .res:first-of-type{border-top:none;margin-top:0;padding-top:0}
+  details{margin-top:10px}
+  summary{cursor:pointer;font-size:12px;color:var(--sub)}
+  pre{background:#FAFAFA;border:1px solid var(--line);border-radius:10px;padding:10px;overflow:auto;
+    font:12px/1.5 var(--mono);max-height:320px}
+  .err{background:var(--bad-bg);color:var(--bad);border-radius:10px;padding:10px 12px;font-size:13px;margin-top:10px}
+  .hidden{display:none !important}
+  .stack{display:flex;flex-direction:column;gap:12px}
+  .verdict{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
+  .tally{display:flex;gap:18px;flex-wrap:wrap;font-size:13px}
+  .tally b{font-size:20px;display:block;font-family:var(--mono)}
+  audio{width:100%;margin-top:10px;height:34px}
+  code{font-family:var(--mono);background:var(--page);padding:1px 5px;border-radius:5px;font-size:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>ピンイン声調 POC</h1>
+<p class="lead">録音 → Gemini で「聞こえたピンイン（声調付き）」と「漢字」を取得 → 本来あるべき声調と突き合わせる。<br>
+検証したいのは1点だけ： <b>わざと声調を間違えたとき、モデルはその間違いを報告するか？（それとも正しい声調に丸めるか）</b></p>
+
+<div class="card">
+  <h2>設定</h2>
+  <div class="row">
+    <div style="flex:2 1 320px">
+      <label for="key">Gemini APIキー</label>
+      <input type="password" id="key" placeholder="AIza..." autocomplete="off" spellcheck="false">
+    </div>
+    <div>
+      <label for="model">モデル</label>
+      <input type="text" id="model" value="gemini-3.8-flash" spellcheck="false">
+    </div>
+  </div>
+  <div class="row" style="margin-top:10px;align-items:flex-end">
+    <label style="flex:1 1 100%;display:flex;gap:8px;align-items:center;color:var(--ink);font-size:13px;margin:0">
+      <input type="checkbox" id="thinking" checked style="width:auto;accent-color:var(--orange)">
+      <span><code>thinkingConfig.thinkingLevel: "low"</code> を送る（Gemini 3系。古いモデルでエラーになる場合はオフに）</span>
+    </label>
+  </div>
+  <div class="row" style="margin-top:12px">
+    <button class="btn ghost" id="saveKey" style="flex:0 0 auto">キーをこのブラウザに保存</button>
+    <button class="btn ghost" id="clearKey" style="flex:0 0 auto">保存したキーを削除</button>
+    <span class="mini" id="keyState" style="flex:1 1 100%;margin-top:4px"></span>
+  </div>
+  <div class="note" style="margin-top:12px">
+    キーは <code>localStorage</code>（この端末のこのブラウザ内）にのみ保存され、送信先は
+    <code>generativelanguage.googleapis.com</code> だけです。共用PCでは保存しないでください。
+  </div>
+</div>
+
+<div class="card">
+  <h2>実験モード</h2>
+  <div class="modes" id="modes">
+    <label class="mode on"><input type="radio" name="mode" value="pinyinFirst" checked><div>
+      <b>案A: 1コール・ピンイン先出し</b>
+      <span>1回の呼び出しで <code>{pinyin, hanzi}</code> をこの順に生成させる。ピンインを先に出させることで、漢字に確定してからの辞書引きになる経路を避ける狙い。<code>propertyOrdering</code> で順序を固定。</span>
+    </div></label>
+    <label class="mode"><input type="radio" name="mode" value="hanziFirst"><div>
+      <b>案A': 1コール・漢字先出し（対照実験）</b>
+      <span>同じ呼び出しで順序だけ <code>{hanzi, pinyin}</code> に反転。案Aと結果が同じなら順序は効いていない＝ピンインは常に辞書引き、の証拠になる。</span>
+    </div></label>
+    <label class="mode"><input type="radio" name="mode" value="twoPass"><div>
+      <b>案B: 2コール（ピンイン専用 ＋ 漢字）</b>
+      <span>ピンインだけを返す呼び出しを独立して投げ、漢字の文脈に引きずられる経路を物理的に断つ。「学習者の発話。正しい声調に直さず聞こえたまま書け」と明示。音声を2回送るぶんコスト増。</span>
+    </div></label>
+  </div>
+</div>
+
+<div class="card">
+  <h2>録音</h2>
+  <div class="reclane">
+    <button class="btn" id="rec">● 録音開始</button>
+    <span class="timer" id="timer">0.0s</span>
+    <span class="lvl"><i id="lvl"></i></span>
+    <button class="btn sec" id="pick" style="flex:0 0 auto">音声ファイルを選ぶ</button>
+    <input type="file" id="file" accept="audio/*" class="hidden">
+  </div>
+  <audio id="play" controls class="hidden"></audio>
+  <p class="mini" id="audioState" style="margin:10px 0 0">未録音。16kHz モノラル WAV に変換して送ります（アプリ本体と同じ形式）。</p>
+
+  <div style="margin-top:14px">
+    <label for="expect">この録音で言おうとした文（任意・漢字で入力）</label>
+    <input type="text" id="expect" placeholder="例: 我想问你一件事情。" spellcheck="false">
+    <p class="mini" style="margin:6px 0 0">入れると「本来あるべき声調」をこの文から計算します。空なら認識された漢字から計算します。</p>
+  </div>
+  <div style="margin-top:12px">
+    <label for="memo">このテイクのメモ（実験ログ用）</label>
+    <input type="text" id="memo" placeholder="例: (b) wèn を wén にわざと崩した" spellcheck="false">
+  </div>
+
+  <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">
+    <button class="btn" id="run" disabled>Geminiに投げる</button>
+    <button class="btn ghost" id="clearRuns" style="flex:0 0 auto">結果をすべて消す</button>
+  </div>
+  <div id="err" class="err hidden"></div>
+</div>
+
+<div class="card" id="tallyCard">
+  <h2>実験タリー</h2>
+  <div class="tally">
+    <div><b id="tRuns">0</b><span class="mini">テイク</span></div>
+    <div><b id="tHit">0</b><span class="mini">検出できた</span></div>
+    <div><b id="tMiss">0</b><span class="mini">見逃した</span></div>
+    <div><b id="tFp">0</b><span class="mini">誤検出</span></div>
+    <div><b id="tCost">$0.0000</b><span class="mini">合計コスト</span></div>
+  </div>
+  <p class="mini" style="margin:12px 0 0">
+    判定の目安: わざと崩したテイク10本中<b>7本以上で「検出できた」</b>、正しく言ったテイクで<b>誤検出2本以下</b> → そのモードは実用可能。<br>
+    わざと崩したのに毎回「差分なし」なら、そのモードは<b>音を聞かずに辞書引きしている</b>＝実装しても無意味。
+  </p>
+  <div style="margin-top:12px"><button class="btn ghost" id="export">実験ログをJSONで書き出す</button></div>
+</div>
+
+<div id="results" class="stack"></div>
+
+</div>
+
+<script>
+"use strict";
+
+/* ============================================================
+   ピンインのユーティリティ
+   ============================================================ */
+
+// 声調記号つき母音 → [素の母音, 声調番号]
+const ACCENTS = {
+  "ā":["a",1],"á":["a",2],"ǎ":["a",3],"à":["a",4],
+  "ē":["e",1],"é":["e",2],"ě":["e",3],"è":["e",4],
+  "ī":["i",1],"í":["i",2],"ǐ":["i",3],"ì":["i",4],
+  "ō":["o",1],"ó":["o",2],"ǒ":["o",3],"ò":["o",4],
+  "ū":["u",1],"ú":["u",2],"ǔ":["u",3],"ù":["u",4],
+  "ǖ":["v",1],"ǘ":["v",2],"ǚ":["v",3],"ǜ":["v",4],
+  "ń":["n",2],"ň":["n",3],"ǹ":["n",4],
+  "ê":["e",5],"ü":["v",5]
+};
+
+// 声調番号つき表記（wen4 形式）も受け付ける
+function parseSyllable(raw){
+  let tone = 5, base = "";
+  const s = raw.normalize("NFC");
+  for (const ch of s){
+    const hit = ACCENTS[ch];
+    if (hit){ base += hit[0]; if (hit[1] !== 5) tone = hit[1]; }
+    else if (ch >= "1" && ch <= "5"){ tone = Number(ch); }
+    else base += ch.toLowerCase();
+  }
+  return { base, tone, raw: s };
+}
+
+// 音節の切り出し（長い韻母から貪欲マッチ）
+const INITIALS = ["zh","ch","sh","b","p","m","f","d","t","n","l","g","k","h","j","q","x","r","z","c","s","y","w",""];
+// j/q/x/y の後ろでは ü を u と綴るため、üe に加えて ue も受け付ける
+//（üan→uan, ün→un は既存の綴りと同形なのでそのまま使える）
+const FINALS = ["iang","iong","uang","ueng","üan","van","uai","uan","ian","iao","üe","ue","ve","ang","eng","ing","ong","ai","ei","ao","ou","an","en","er","ia","ie","iu","in","ua","uo","ui","un","ün","vn","io","a","o","e","i","u","ü","v"]
+  .sort((a,b)=>b.length-a.length);
+
+function splitWord(word){
+  const out = [];
+  let i = 0;
+  const plain = [...word].map(c => ACCENTS[c] ? ACCENTS[c][0] : c.toLowerCase());
+  const marks = [...word];
+  while (i < plain.length){
+    let matched = null;
+    for (const ini of INITIALS){
+      if (plain.slice(i, i+ini.length).join("") !== ini) continue;
+      for (const fin of FINALS){
+        const j = i + ini.length;
+        if (plain.slice(j, j+fin.length).join("") !== fin) continue;
+        let end = j + fin.length;
+        // 儿化: 後ろに r が続き、その次が母音でなければ取り込む
+        if (plain[end] === "r" && fin !== "er"){
+          const nx = plain[end+1];
+          if (nx === undefined || !"aeiouv".includes(nx)) end++;
+        }
+        // 数字による声調表記（wen4 形式）を同じ音節に取り込む
+        if (plain[end] >= "1" && plain[end] <= "5") end++;
+        matched = end;
+        break;
+      }
+      if (matched) break;
+    }
+    if (!matched){ // 切れない文字はそのまま1音節扱いにして前進
+      matched = i + 1;
+    }
+    out.push(marks.slice(i, matched).join(""));
+    i = matched;
+  }
+  return out;
+}
+
+function toSyllables(pinyin){
+  if (!pinyin) return [];
+  return pinyin
+    .replace(/[，。！？、,.!?;:"'()（）]/g, " ")
+    .split(/[\s\-']+/)
+    .filter(Boolean)
+    .flatMap(splitWord)
+    .map(parseSyllable)
+    .filter(s => s.base);
+}
+
+/* 素の音節（声調無視）でLCSを取り、声調だけの差を分離する */
+function alignSyllables(expected, actual){
+  const n = expected.length, m = actual.length;
+  const dp = Array.from({length:n+1}, () => new Int32Array(m+1));
+  for (let i=n-1;i>=0;i--)
+    for (let j=m-1;j>=0;j--)
+      dp[i][j] = expected[i].base === actual[j].base
+        ? dp[i+1][j+1] + 1
+        : Math.max(dp[i+1][j], dp[i][j+1]);
+
+  const rows = [];
+  let i=0, j=0;
+  while (i<n && j<m){
+    if (expected[i].base === actual[j].base){
+      rows.push({ kind: expected[i].tone === actual[j].tone ? "ok" : "tone", exp: expected[i], act: actual[j] });
+      i++; j++;
+    } else if (dp[i+1][j] >= dp[i][j+1]){
+      rows.push({ kind:"del", exp: expected[i], act: null }); i++;
+    } else {
+      rows.push({ kind:"ins", exp: null, act: actual[j] }); j++;
+    }
+  }
+  while (i<n) rows.push({ kind:"del", exp: expected[i++], act:null });
+  while (j<m) rows.push({ kind:"ins", exp:null, act: actual[j++] });
+
+  // 隣り合う del/ins は「置換」にまとめる
+  const merged = [];
+  for (let k=0;k<rows.length;k++){
+    const a = rows[k], b = rows[k+1];
+    if (a && b && ((a.kind==="del"&&b.kind==="ins")||(a.kind==="ins"&&b.kind==="del"))){
+      merged.push({ kind:"sub", exp:(a.exp||b.exp), act:(a.act||b.act) });
+      k++;
+    } else merged.push(a);
+  }
+  return merged;
+}
+
+/* ============================================================
+   録音（16kHz モノラル WAV）
+   ============================================================ */
+
+let audioCtx = null, stream = null, node = null, srcNode = null;
+let chunks = [], recSampleRate = 48000, recording = false, startedAt = 0, timerId = null;
+let wavBytes = null, wavUrl = null;
+
+const $ = id => document.getElementById(id);
+
+async function startRecording(){
+  stream = await navigator.mediaDevices.getUserMedia({
+    audio: { channelCount:1, echoCancellation:true, noiseSuppression:false, autoGainControl:false }
+  });
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  recSampleRate = audioCtx.sampleRate;
+  srcNode = audioCtx.createMediaStreamSource(stream);
+  node = audioCtx.createScriptProcessor(4096, 1, 1);
+  chunks = [];
+  node.onaudioprocess = e => {
+    const input = e.inputBuffer.getChannelData(0);
+    chunks.push(new Float32Array(input));
+    let peak = 0;
+    for (let i=0;i<input.length;i+=8) peak = Math.max(peak, Math.abs(input[i]));
+    $("lvl").style.width = Math.min(100, peak*140) + "%";
+  };
+  // ScriptProcessor は出力に繋がないと発火しないが、そのまま destination に
+  // 繋ぐとマイク音がスピーカーに返ってハウリングする。無音のゲインを挟む。
+  const mute = audioCtx.createGain();
+  mute.gain.value = 0;
+  srcNode.connect(node);
+  node.connect(mute);
+  mute.connect(audioCtx.destination);
+  recording = true; startedAt = performance.now();
+  timerId = setInterval(() => {
+    $("timer").textContent = ((performance.now()-startedAt)/1000).toFixed(1) + "s";
+  }, 100);
+}
+
+function stopRecording(){
+  recording = false;
+  clearInterval(timerId);
+  $("lvl").style.width = "0%";
+  if (node){ node.disconnect(); node.onaudioprocess = null; }
+  if (srcNode) srcNode.disconnect();
+  if (stream) stream.getTracks().forEach(t => t.stop());
+  if (audioCtx) audioCtx.close();
+
+  const total = chunks.reduce((n,c) => n + c.length, 0);
+  const flat = new Float32Array(total);
+  let o = 0;
+  for (const c of chunks){ flat.set(c, o); o += c.length; }
+  const pcm16k = resample(flat, recSampleRate, 16000);
+  setWav(encodeWav(pcm16k, 16000));
+}
+
+function resample(input, from, to){
+  if (from === to) return input;
+  const ratio = from / to;
+  const out = new Float32Array(Math.floor(input.length / ratio));
+  for (let i=0;i<out.length;i++){
+    const pos = i * ratio, lo = Math.floor(pos), hi = Math.min(lo+1, input.length-1);
+    out[i] = input[lo] + (input[hi]-input[lo]) * (pos-lo);
+  }
+  return out;
+}
+
+function encodeWav(samples, rate){
+  const buf = new ArrayBuffer(44 + samples.length*2);
+  const v = new DataView(buf);
+  const str = (off, s) => { for (let i=0;i<s.length;i++) v.setUint8(off+i, s.charCodeAt(i)); };
+  str(0,"RIFF"); v.setUint32(4, 36+samples.length*2, true); str(8,"WAVE");
+  str(12,"fmt "); v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,1,true);
+  v.setUint32(24,rate,true); v.setUint32(28,rate*2,true); v.setUint16(32,2,true); v.setUint16(34,16,true);
+  str(36,"data"); v.setUint32(40, samples.length*2, true);
+  let off = 44;
+  for (let i=0;i<samples.length;i++){
+    const s = Math.max(-1, Math.min(1, samples[i]));
+    v.setInt16(off, s<0 ? s*0x8000 : s*0x7FFF, true);
+    off += 2;
+  }
+  return new Uint8Array(buf);
+}
+
+function setWav(bytes, mime){
+  wavBytes = { bytes, mime: mime || "audio/wav" };
+  if (wavUrl) URL.revokeObjectURL(wavUrl);
+  wavUrl = URL.createObjectURL(new Blob([bytes], { type: wavBytes.mime }));
+  const p = $("play");
+  p.src = wavUrl; p.classList.remove("hidden");
+  const secs = wavBytes.mime === "audio/wav" ? ((bytes.length-44)/2/16000) : null;
+  $("audioState").textContent = secs
+    ? `録音済み ${secs.toFixed(1)}秒 / ${(bytes.length/1024).toFixed(0)} KB / 16kHz mono WAV（音声トークン約 ${Math.round(secs*32)}）`
+    : `ファイル読み込み済み ${(bytes.length/1024).toFixed(0)} KB (${wavBytes.mime})`;
+  $("run").disabled = false;
+}
+
+function b64(bytes){
+  let s = "";
+  for (let i=0;i<bytes.length;i+=0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i+0x8000));
+  return btoa(s);
+}
+
+/* ============================================================
+   Gemini 呼び出し
+   ============================================================ */
+
+const PRICE_IN = 0.75, PRICE_OUT = 3.75; // USD / 1M tokens（DESIGN.md の導入価格）
+
+function costOf(u){
+  return (u.prompt*PRICE_IN + (u.candidates+u.thoughts)*PRICE_OUT) / 1e6;
+}
+
+async function callGemini({ parts, schema, ordering }){
+  const key = $("key").value.trim();
+  if (!key) throw new Error("APIキーが未入力です。");
+  const model = $("model").value.trim() || "gemini-3.8-flash";
+  const generationConfig = {};
+  if (schema){
+    generationConfig.responseMimeType = "application/json";
+    generationConfig.responseSchema = {
+      type: "OBJECT",
+      properties: schema,
+      required: Object.keys(schema),
+      // 生成順を固定する。これが今回の実験の肝。
+      propertyOrdering: ordering || Object.keys(schema)
+    };
+  }
+  if ($("thinking").checked) generationConfig.thinkingConfig = { thinkingLevel: "low" };
+
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
+    { method:"POST",
+      headers:{ "Content-Type":"application/json", "x-goog-api-key": key },
+      body: JSON.stringify({ contents:[{ parts }], generationConfig }) }
+  );
+  const text = await res.text();
+  if (!res.ok) throw new Error(`Gemini API ${res.status}: ${text.slice(0,400)}`);
+  const data = JSON.parse(text);
+  const out = (data.candidates?.[0]?.content?.parts || []).map(p => p.text || "").join("").trim();
+  const um = data.usageMetadata || {};
+  const usage = {
+    prompt: um.promptTokenCount || 0,
+    candidates: um.candidatesTokenCount || 0,
+    thoughts: um.thoughtsTokenCount || 0
+  };
+  return { raw: out, json: schema ? JSON.parse(out) : null, usage, response: data };
+}
+
+const audioPart = () => ({ inline_data: { mime_type: wavBytes.mime, data: b64(wavBytes.bytes) } });
+
+const PINYIN_RULES = `あなたは中国語の音声を音声学的に書き起こす専門家です。話者は中国語学習者（日本語母語）で、声調を間違えている可能性があります。
+最重要ルール:
+- ピンインは「実際に聞こえた音」をそのまま書くこと。声調記号は聞こえたピッチのとおりに付ける。
+- 語彙的に正しい声調に直してはいけない。単語として不自然な声調になっても、聞こえたままを書く。
+- 意味や文脈から声調を推測しないこと。ピッチの高さ・変化だけを根拠にする。
+- 声調が判断できない音節は軽声（記号なし）とする。
+- 変調（3声連続・一・不）は実際に発音されたとおりに書く。
+- 中国語の発話が聞き取れない場合は空文字を返す。聞こえない語を推測して補ってはいけない。`;
+
+const SCHEMA_PINYIN = { pinyin: { type:"STRING", description:"実際に聞こえたとおりの声調付きピンイン。音節ごとに半角スペース区切り。" } };
+const SCHEMA_HANZI  = { hanzi:  { type:"STRING", description:"発話の簡体字書き起こし。" } };
+
+async function transcribeByMode(mode){
+  const calls = [];
+  if (mode === "twoPass"){
+    const p = await callGemini({
+      parts:[{ text: PINYIN_RULES + "\n\nこの音声をピンインのみで書き起こしてください。漢字は書かないこと。" }, audioPart()],
+      schema: SCHEMA_PINYIN
+    });
+    calls.push({ label:"ピンイン専用コール", ...p });
+    const h = await callGemini({
+      parts:[{ text:"この中国語の発話を簡体字で verbatim に書き起こしてください。聞き取れない場合は空文字。聞こえない語を推測して補わないこと。" }, audioPart()],
+      schema: SCHEMA_HANZI
+    });
+    calls.push({ label:"漢字コール", ...h });
+    return { pinyin: p.json.pinyin, hanzi: h.json.hanzi, calls };
+  }
+
+  const pinyinFirst = mode === "pinyinFirst";
+  const ordering = pinyinFirst ? ["pinyin","hanzi"] : ["hanzi","pinyin"];
+  const r = await callGemini({
+    parts:[{ text: PINYIN_RULES + `\n\nこの音声を書き起こし、pinyin と hanzi の両方を返してください。${
+      pinyinFirst
+        ? "pinyin を先に、音だけを根拠に確定させてから hanzi を書くこと。"
+        : "hanzi を先に確定させてから pinyin を書くこと。"}` }, audioPart()],
+    schema: pinyinFirst ? { ...SCHEMA_PINYIN, ...SCHEMA_HANZI } : { ...SCHEMA_HANZI, ...SCHEMA_PINYIN },
+    ordering
+  });
+  calls.push({ label:`1コール（${ordering.join(" → ")}）`, ...r });
+  return { pinyin: r.json.pinyin, hanzi: r.json.hanzi, calls };
+}
+
+// 「本来あるべき声調」= 漢字からの標準ピンイン（変調適用済み）。音声は渡さない。
+async function canonicalPinyin(hanzi){
+  return await callGemini({
+    parts:[{ text:`次の中国語の文の標準的なピンインを、実際の発音どおりに（変調を適用して）書いてください。
+- 3声の連続は 2声+3声 に、「一」「不」の変調も実際の発音に合わせる。
+- 音節ごとに半角スペースで区切る。
+- 軽声は声調記号なし。
+文: ${hanzi}` }],
+    schema: { pinyin:{ type:"STRING" }, notes:{ type:"STRING", description:"変調を適用した箇所があれば日本語で簡潔に。無ければ空文字。" } },
+    ordering: ["pinyin","notes"]
+  });
+}
+
+/* ============================================================
+   実行と描画
+   ============================================================ */
+
+const runs = [];
+
+async function run(){
+  $("err").classList.add("hidden");
+  $("run").disabled = true;
+  $("run").textContent = "実行中…";
+  const mode = document.querySelector("input[name=mode]:checked").value;
+  const memo = $("memo").value.trim();
+  const expectText = $("expect").value.trim();
+
+  try {
+    const heard = await transcribeByMode(mode);
+    const basis = expectText || heard.hanzi;
+    let canon = null;
+    if (basis) canon = await canonicalPinyin(basis);
+
+    const expSyl = toSyllables(canon ? canon.json.pinyin : "");
+    const actSyl = toSyllables(heard.pinyin || "");
+    const rows = alignSyllables(expSyl, actSyl);
+    const calls = [...heard.calls];
+    if (canon) calls.push({ label:"標準ピンイン算出（音声なし・テキストのみ）", ...canon });
+
+    runs.push({
+      at: new Date().toISOString(),
+      mode, memo,
+      expectText: expectText || null,
+      basis,
+      heardPinyin: heard.pinyin,
+      hanzi: heard.hanzi,
+      canonPinyin: canon ? canon.json.pinyin : null,
+      canonNotes: canon ? canon.json.notes : null,
+      rows, calls,
+      verdict: null
+    });
+    render();
+  } catch (e){
+    $("err").textContent = String(e.message || e);
+    $("err").classList.remove("hidden");
+  } finally {
+    $("run").disabled = false;
+    $("run").textContent = "Geminiに投げる";
+  }
+}
+
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+const MODE_LABEL = { pinyinFirst:"案A ピンイン先出し", hanziFirst:"案A' 漢字先出し", twoPass:"案B 2コール" };
+const KIND_LABEL = { ok:["一致","flat"], tone:["声調ちがい","warn"], sub:["別の音節","bad"], del:["言えていない","bad"], ins:["余分","bad"] };
+
+function render(){
+  $("results").innerHTML = runs.map((r, idx) => {
+    const toneDiffs = r.rows.filter(x => x.kind === "tone");
+    const otherDiffs = r.rows.filter(x => x.kind !== "tone" && x.kind !== "ok");
+    const cost = r.calls.reduce((s,c) => s + costOf(c.usage), 0);
+    const tokens = r.calls.reduce((s,c) => s + c.usage.prompt + c.usage.candidates + c.usage.thoughts, 0);
+
+    const head = toneDiffs.length
+      ? `<span class="pill warn">声調ちがい ${toneDiffs.length}箇所</span>`
+      : `<span class="pill good">声調の差分なし</span>`;
+
+    const table = r.rows.length ? `
+      <div class="scroll"><table>
+        <thead><tr><th>#</th><th>本来</th><th>聞こえた</th><th>判定</th></tr></thead>
+        <tbody>${r.rows.map((x,i) => {
+          const [lab, cls] = KIND_LABEL[x.kind];
+          return `<tr class="${x.kind === "tone" ? "tone" : (x.kind === "ok" ? "" : "sub")}">
+            <td class="mini">${i+1}</td>
+            <td class="syl">${esc(x.exp ? x.exp.raw : "—")}</td>
+            <td class="syl">${esc(x.act ? x.act.raw : "—")}</td>
+            <td><span class="pill ${cls}">${lab}${
+              x.kind === "tone" ? `（${x.exp.tone === 5 ? "軽" : x.exp.tone}声 → ${x.act.tone === 5 ? "軽" : x.act.tone}声）` : ""
+            }</span></td></tr>`;
+        }).join("")}</tbody>
+      </table></div>` : `<p class="mini">音節を取得できませんでした。</p>`;
+
+    return `<div class="card">
+      <h2>テイク ${idx+1} — ${MODE_LABEL[r.mode]} ${head}</h2>
+      ${r.memo ? `<p class="mini" style="margin:-6px 0 12px">${esc(r.memo)}</p>` : ""}
+      <dl class="kv">
+        <dt>漢字</dt><dd class="han">${esc(r.hanzi) || "<span class='mini'>（空）</span>"}</dd>
+        <dt>聞こえたピンイン</dt><dd class="big">${esc(r.heardPinyin) || "<span class='mini'>（空）</span>"}</dd>
+        <dt>本来あるべき</dt><dd class="big">${esc(r.canonPinyin) || "—"}</dd>
+        ${r.expectText ? `<dt>比較の基準</dt><dd>${esc(r.expectText)} <span class="mini">（手入力）</span></dd>`
+                       : `<dt>比較の基準</dt><dd class="mini">認識された漢字</dd>`}
+        ${r.canonNotes ? `<dt>変調メモ</dt><dd class="mini">${esc(r.canonNotes)}</dd>` : ""}
+      </dl>
+      <div style="margin-top:14px">${table}</div>
+      ${otherDiffs.length ? `<p class="mini" style="margin-top:8px">※ 声調以外の差分が ${otherDiffs.length} 箇所あります（別の語を言った／認識ずれ）。声調の判定はこの部分では当てになりません。</p>` : ""}
+
+      <div class="verdict">
+        <span class="mini">このテイクの判定:</span>
+        ${["hit","miss","fp","na"].map(v => `<button class="btn ghost" data-v="${v}" data-i="${idx}"
+          style="${r.verdict === v ? "border-color:var(--orange);color:var(--orange);font-weight:700" : ""}">${
+          ({hit:"検出できた", miss:"見逃した", fp:"誤検出", na:"対象外"})[v]}</button>`).join("")}
+      </div>
+
+      <p class="mini" style="margin-top:12px">合計 ${tokens} tokens / ${(cost).toFixed(6)} USD（${r.calls.length}コール）</p>
+      <details><summary>各コールの生レスポンスとトークン内訳</summary>
+        ${r.calls.map(c => `<p class="mini" style="margin:10px 0 4px"><b>${esc(c.label)}</b> — in ${c.usage.prompt} / out ${c.usage.candidates} / thinking ${c.usage.thoughts} = $${costOf(c.usage).toFixed(6)}</p>
+        <pre>${esc(c.raw)}</pre>`).join("")}
+      </details>
+    </div>`;
+  }).reverse().join("");
+
+  document.querySelectorAll("[data-v]").forEach(b => b.onclick = () => {
+    const i = Number(b.dataset.i);
+    runs[i].verdict = runs[i].verdict === b.dataset.v ? null : b.dataset.v;
+    render();
+  });
+
+  $("tRuns").textContent = runs.length;
+  $("tHit").textContent  = runs.filter(r => r.verdict === "hit").length;
+  $("tMiss").textContent = runs.filter(r => r.verdict === "miss").length;
+  $("tFp").textContent   = runs.filter(r => r.verdict === "fp").length;
+  $("tCost").textContent = "$" + runs.reduce((s,r) => s + r.calls.reduce((t,c) => t + costOf(c.usage), 0), 0).toFixed(4);
+}
+
+/* ============================================================
+   配線
+   ============================================================ */
+
+$("rec").onclick = async () => {
+  if (!recording){
+    try {
+      await startRecording();
+      $("rec").textContent = "■ 停止";
+      $("rec").classList.add("rec");
+    } catch(e){
+      $("err").textContent = "マイクを使えません: " + e.message +
+        "（file:// で開いていると使えないブラウザがあります。README のとおりローカルサーバー経由で開いてください）";
+      $("err").classList.remove("hidden");
+    }
+  } else {
+    stopRecording();
+    $("rec").textContent = "● 録音開始";
+    $("rec").classList.remove("rec");
+  }
+};
+
+$("pick").onclick = () => $("file").click();
+$("file").onchange = async e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  setWav(new Uint8Array(await f.arrayBuffer()), f.type || "audio/wav");
+};
+
+$("run").onclick = run;
+$("clearRuns").onclick = () => { runs.length = 0; render(); };
+
+$("export").onclick = () => {
+  const blob = new Blob([JSON.stringify(runs, null, 2)], { type:"application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `pinyin-poc-${Date.now()}.json`;
+  a.click();
+};
+
+$("saveKey").onclick = () => {
+  localStorage.setItem("poc_key", $("key").value.trim());
+  localStorage.setItem("poc_model", $("model").value.trim());
+  $("keyState").textContent = "このブラウザに保存しました。";
+};
+$("clearKey").onclick = () => {
+  localStorage.removeItem("poc_key");
+  $("key").value = "";
+  $("keyState").textContent = "保存したキーを削除しました。";
+};
+
+document.querySelectorAll("input[name=mode]").forEach(r => r.onchange = () => {
+  document.querySelectorAll(".mode").forEach(m => m.classList.toggle("on", m.querySelector("input").checked));
+});
+
+(function init(){
+  const k = localStorage.getItem("poc_key");
+  const m = localStorage.getItem("poc_model");
+  if (k){ $("key").value = k; $("keyState").textContent = "保存済みのキーを読み込みました。"; }
+  if (m) $("model").value = m;
+  render();
+})();
+</script>
+</body>
+</html>
