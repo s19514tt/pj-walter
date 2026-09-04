@@ -9,6 +9,8 @@ import '../theme/app_theme.dart';
 import '../utils/review_launcher.dart';
 import '../widgets/app_card.dart';
 import '../widgets/section_header.dart';
+import '../services/settings_service.dart';
+import '../models/learning_language.dart';
 
 /// 復習予定一覧で全件を個別表示する上限。超えた分は件数表示のみにする。
 const _upcomingListLimit = 8;
@@ -55,7 +57,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
     return phrases
         .where(
           (p) =>
-              p.en.toLowerCase().contains(query) ||
+              p.target.toLowerCase().contains(query) ||
               p.ja.toLowerCase().contains(query),
         )
         .toList();
@@ -64,7 +66,10 @@ class _ReviewScreenState extends State<ReviewScreen> {
   @override
   Widget build(BuildContext context) {
     final history = context.watch<HistoryService>();
-    final dueItems = history.dueSrsItems;
+    final profile = context.watch<SettingsService>().languageProfile;
+    // 復習は現在の学習言語だけを対象にする（別言語の文が現在の言語の
+    // プロンプトで採点されるのを防ぐ）。
+    final dueItems = history.dueSrsItems(language: profile.code);
     final allItems = history.allSrsItems;
     final phrases = _filteredPhrases(history.phrases);
 
@@ -90,7 +95,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          _buildSearchField(),
+          _buildSearchField(profile.label),
           const SizedBox(height: 12),
           _buildPhrases(history, phrases),
         ],
@@ -243,7 +248,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                 children: [
                   Expanded(
                     child: Text(
-                      'TOEIC ${item.level}点台の文',
+                      '${LanguageProfile.ofCode(item.language).levelLabel(item.level)}の文',
                       style: const TextStyle(color: AppColors.textPrimary),
                     ),
                   ),
@@ -273,14 +278,14 @@ class _ReviewScreenState extends State<ReviewScreen> {
     );
   }
 
-  Widget _buildSearchField() {
+  Widget _buildSearchField(String language) {
     return TextField(
       controller: _searchController,
       onChanged: (value) => setState(() => _query = value),
-      decoration: const InputDecoration(
-        hintText: '英語・日本語で検索',
-        prefixIcon: Icon(Icons.search),
-        border: OutlineInputBorder(),
+      decoration: InputDecoration(
+        hintText: '$language・日本語で検索',
+        prefixIcon: const Icon(Icons.search),
+        border: const OutlineInputBorder(),
       ),
     );
   }
@@ -307,7 +312,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        phrase.en,
+                        phrase.target,
                         style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,

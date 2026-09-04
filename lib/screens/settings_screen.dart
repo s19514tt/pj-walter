@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../models/learning_language.dart';
 import '../services/gemini_service.dart';
 import '../services/settings_service.dart';
 import '../theme/app_theme.dart';
@@ -47,6 +48,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          const SectionHeader(title: '学習する言語'),
+          const SizedBox(height: 12),
+          _LearningLanguageSection(settings: settings),
+          const SizedBox(height: 24),
           const SectionHeader(title: 'Gemini APIキー'),
           const SizedBox(height: 12),
           _ApiKeySection(
@@ -156,6 +161,92 @@ class _ApiKeySection extends StatelessWidget {
 }
 
 /// 使用モデルと音声認識方式の固定値を表示する（変更不可）。
+/// 学習言語の切り替え。教材・採点プロンプト・文字起こしの言語が一括で変わる。
+class _LearningLanguageSection extends StatelessWidget {
+  const _LearningLanguageSection({required this.settings});
+
+  final SettingsService settings;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (final profile in LanguageProfile.values) ...[
+            if (profile != LanguageProfile.values.first)
+              const SizedBox(height: 12),
+            _LanguageOption(
+              profile: profile,
+              selected: settings.learningLanguage == profile.language,
+              onTap: () => settings.setLearningLanguage(profile.language),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _LanguageOption extends StatelessWidget {
+  const _LanguageOption({
+    required this.profile,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final LanguageProfile profile;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          children: [
+            Icon(
+              selected ? Icons.radio_button_checked : Icons.radio_button_off,
+              color: selected ? AppColors.primary : AppColors.textSecondary,
+              size: 20,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    profile.label,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: selected
+                          ? AppColors.primary
+                          : AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${profile.levels.map((deck) => deck.label).join('・')}'
+                    'の教材で、${profile.compositionTitle}と'
+                    '${profile.monologueTitle}のトレーニングができます。',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _ModelInfoSection extends StatelessWidget {
   const _ModelInfoSection();
 

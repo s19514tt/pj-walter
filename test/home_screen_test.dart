@@ -32,16 +32,16 @@ Future<SettingsService> _buildSettingsService() async {
   return settings;
 }
 
+// Providerはmain.dartと同じくMaterialAppの外側に置く。home:の内側に置くと
+// push先の画面（デッキ選択など）からProviderが見えない。
 Widget _buildApp(HistoryService historyService, SettingsService settings) {
-  return MaterialApp(
-    home: MultiProvider(
-      providers: [
-        ChangeNotifierProvider<HistoryService>.value(value: historyService),
-        ChangeNotifierProvider<SettingsService>.value(value: settings),
-        Provider<SentenceRepository>(create: (_) => SentenceRepository()),
-      ],
-      child: const HomeScreen(),
-    ),
+  return MultiProvider(
+    providers: [
+      ChangeNotifierProvider<HistoryService>.value(value: historyService),
+      ChangeNotifierProvider<SettingsService>.value(value: settings),
+      Provider<SentenceRepository>(create: (_) => SentenceRepository()),
+    ],
+    child: const MaterialApp(home: HomeScreen()),
   );
 }
 
@@ -105,6 +105,7 @@ void main() {
         DrillResult(
           id: 'd-1',
           sentenceId: 's700-001',
+          language: 'en',
           level: 700,
           spoken: 'spoken text',
           timestamp: DateTime.now(),

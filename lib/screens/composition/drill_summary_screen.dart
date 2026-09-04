@@ -13,6 +13,7 @@ import '../../widgets/primary_button.dart';
 import '../../widgets/score_square_badge.dart';
 import '../../widgets/secondary_button.dart';
 import 'drill_screen.dart';
+import '../../services/settings_service.dart';
 
 /// 合格とみなすスコアのしきい値
 const _passingScore = 70;
@@ -101,7 +102,11 @@ class DrillSummaryScreen extends StatelessWidget {
 
   Future<void> _retry(BuildContext context) async {
     final repository = context.read<SentenceRepository>();
-    final sentences = await repository.sentencesFor(level: level, theme: theme);
+    final sentences = await repository.sentencesFor(
+      profile: context.read<SettingsService>().languageProfile,
+      level: level,
+      theme: theme,
+    );
     const selector = DrillQuestionSelector();
     final selected = selector.select(sentences);
     if (!context.mounted) return;

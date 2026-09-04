@@ -9,7 +9,7 @@ import 'package:pj_walter/services/review_question_resolver.dart';
 Sentence _sentence({required String id, int level = 700}) => Sentence(
   id: id,
   ja: '日本語 $id',
-  en: 'English $id',
+  target: 'English $id',
   theme: 'daily',
   tips: 'tips',
   level: level,
@@ -21,6 +21,7 @@ SrsItem _item({
   int level = 700,
 }) => SrsItem(
   sentenceId: sentenceId,
+  language: 'en',
   level: level,
   stage: 0,
   dueDate: dueDate,
@@ -45,7 +46,7 @@ void main() {
 
       final result = await resolver.resolve(
         items: items,
-        sentencesByLevel: (level) async => level700,
+        sentencesForDeck: (language, level) async => level700,
       );
 
       expect(result.map((s) => s.id).toList(), [
@@ -65,7 +66,7 @@ void main() {
 
       final result = await resolver.resolve(
         items: items,
-        sentencesByLevel: (level) async => level700,
+        sentencesForDeck: (language, level) async => level700,
       );
 
       expect(result, hasLength(1));
@@ -88,7 +89,7 @@ void main() {
 
       final result = await resolver.resolve(
         items: items,
-        sentencesByLevel: (level) async => level700,
+        sentencesForDeck: (language, level) async => level700,
       );
 
       expect(result, hasLength(10));
@@ -112,7 +113,7 @@ void main() {
 
       final result = await resolver.resolve(
         items: items,
-        sentencesByLevel: (level) async => level700,
+        sentencesForDeck: (language, level) async => level700,
       );
 
       expect(result, hasLength(3));
@@ -139,7 +140,7 @@ void main() {
 
       final result = await resolver.resolve(
         items: items,
-        sentencesByLevel: (level) async {
+        sentencesForDeck: (language, level) async {
           if (level == 700) {
             level700Calls++;
             return level700;

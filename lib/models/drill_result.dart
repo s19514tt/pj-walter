@@ -68,6 +68,7 @@ class DrillResult {
   const DrillResult({
     required this.id,
     required this.sentenceId,
+    required this.language,
     required this.level,
     required this.spoken,
     required this.timestamp,
@@ -79,6 +80,9 @@ class DrillResult {
 
   /// 出題された [Sentence] のid
   final String sentenceId;
+
+  /// 出題文の学習言語コード（[LanguageProfile.code]）
+  final String language;
 
   /// 出題文のTOEICレベル
   final int level;
@@ -95,6 +99,8 @@ class DrillResult {
   factory DrillResult.fromJson(Map<String, dynamic> json) => DrillResult(
     id: json['id'] as String,
     sentenceId: json['sentenceId'] as String,
+    // languageが無いのは中国語対応より前に保存された結果。英語とみなす。
+    language: (json['language'] as String?) ?? 'en',
     level: (json['level'] as num).toInt(),
     spoken: json['spoken'] as String,
     timestamp: DateTime.parse(json['timestamp'] as String),
@@ -106,6 +112,7 @@ class DrillResult {
   Map<String, dynamic> toJson() => {
     'id': id,
     'sentenceId': sentenceId,
+    'language': language,
     'level': level,
     'spoken': spoken,
     'timestamp': timestamp.toIso8601String(),
@@ -119,6 +126,7 @@ class DrillResult {
           runtimeType == other.runtimeType &&
           id == other.id &&
           sentenceId == other.sentenceId &&
+          language == other.language &&
           level == other.level &&
           spoken == other.spoken &&
           timestamp == other.timestamp &&
@@ -126,5 +134,5 @@ class DrillResult {
 
   @override
   int get hashCode =>
-      Object.hash(id, sentenceId, level, spoken, timestamp, feedback);
+      Object.hash(id, sentenceId, language, level, spoken, timestamp, feedback);
 }
