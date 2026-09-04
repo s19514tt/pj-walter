@@ -55,7 +55,7 @@ class HistoryService extends ChangeNotifier {
     bool updateSrs = true,
   }) async {
     await _drillResultsBox.put(result.id, result.toJson());
-    await _bumpDailyStats(drillCount: 1);
+    await _bumpDailyStats(language: result.language, drillCount: 1);
     if (updateSrs && result.feedback.score < _passingScore) {
       await _registerSrsFailure(
         sentenceId: result.sentenceId,
@@ -80,7 +80,11 @@ class HistoryService extends ChangeNotifier {
   /// 独り言英会話の結果を保存し、日次統計を更新する。
   Future<void> saveMonologueResult(MonologueResult result) async {
     await _monologueResultsBox.put(result.id, result.toJson());
-    await _bumpDailyStats(monologueCount: 1, studySeconds: result.seconds);
+    await _bumpDailyStats(
+      language: result.language,
+      monologueCount: 1,
+      studySeconds: result.seconds,
+    );
     notifyListeners();
   }
 
@@ -200,13 +204,62 @@ class HistoryService extends ChangeNotifier {
 
   // --- 日次統計 -----------------------------------------------------
 
-  /// 指定日の学習統計（drillCount / monologueCount / studySeconds）を返す。
-  Map<String, int> statsForDate(DateTime date) {
-    final existing = _dailyStatsBox.get(_dateKey(date)) as Map?;
-    if (existing == null) {
-      return {'drillCount': 0, 'monologueCount': 0, 'studySeconds': 0};
+  /// `daily_stats` の1日分。学習言語ごとに内訳を持つ。
+  ///
+  /// 中国語対応より前は言語の区別が無く、1日1個のフラットなMap
+  /// （`{drillCount: 3, ...}`）を保存していた。その形が来たら英語の記録と
+  /// みなして読む。保存は常に言語別の形で行う。
+  static Map<String, Map<String, int>> _readDay(Object? raw) {
+    if (raw == null) return {};
+    final map = Map<String, dynamic>.from(raw as Map);
+    if (map.values.any((v) => v is int)) {
+      return {'en': _readCounters(map)};
     }
-    return Map<String, int>.from(existing);
+    return {
+      for (final entry in map.entries)
+        entry.key: _readCounters(Map<String, dynamic>.from(entry.value as Map)),
+    };
+  }
+
+  static Map<String, int> _readCounters(Map<String, dynamic> map) => {
+    'drillCount': (map['drillCount'] as num?)?.toInt() ?? 0,
+    'monologueCount': (map['monologueCount'] as num?)?.toInt() ?? 0,
+    'studySeconds': (map['studySeconds'] as num?)?.toInt() ?? 0,
+  };
+
+  static Map<String, int> _emptyCounters() => {
+    'drillCount': 0,
+    'monologueCount': 0,
+    'studySeconds': 0,
+  };
+
+  static Map<String, int> _sum(Iterable<Map<String, int>> parts) {
+    final total = _emptyCounters();
+    for (final part in parts) {
+      for (final key in total.keys) {
+        total[key] = total[key]! + (part[key] ?? 0);
+      }
+    }
+    return total;
+  }
+
+  /// 指定日の学習統計（drillCount / monologueCount / studySeconds）を返す。
+  ///
+  /// [language]を渡すとその学習言語の分だけ、省略すると全言語の合計を返す。
+  Map<String, int> statsForDate(DateTime date, {String? language}) {
+    final day = _readDay(_dailyStatsBox.get(_dateKey(date)));
+    if (language != null) return day[language] ?? _emptyCounters();
+    return _sum(day.values);
+  }
+
+  /// 指定日に学習した言語コードの一覧（学習していない日は空）。
+  Set<String> languagesStudiedOn(DateTime date) {
+    final day = _readDay(_dailyStatsBox.get(_dateKey(date)));
+    return {
+      for (final entry in day.entries)
+        if (entry.value['drillCount']! + entry.value['monologueCount']! > 0)
+          entry.key,
+    };
   }
 
   /// 連続学習日数（現在のストリーク）。
@@ -215,66 +268,83 @@ class HistoryService extends ChangeNotifier {
   /// 過去へ連続する学習日数を数える。今日がまだ未学習でも、昨日までが連続して
   /// いればストリークは維持される（今日中に学習すればさらに伸びる）。
   /// 今日・昨日とも未学習ならストリークは0。
-  int get currentStreak {
+  ///
+  /// [language]を渡すとその言語だけで数える。省略時は言語を問わず数えるので、
+  /// 言語を切り替えても通算のストリークは途切れない。
+  int currentStreak({String? language}) {
     var cursor = _dateOnly(DateTime.now());
-    if (!_isStudyDay(cursor)) {
+    if (!_isStudyDay(cursor, language)) {
       cursor = _addDays(cursor, -1);
-      if (!_isStudyDay(cursor)) return 0;
+      if (!_isStudyDay(cursor, language)) return 0;
     }
 
     var streak = 0;
-    while (_isStudyDay(cursor)) {
+    while (_isStudyDay(cursor, language)) {
       streak++;
       cursor = _addDays(cursor, -1);
     }
     return streak;
   }
 
-  bool _isStudyDay(DateTime date) {
-    final stats = statsForDate(date);
+  bool _isStudyDay(DateTime date, String? language) {
+    final stats = statsForDate(date, language: language);
     return stats['drillCount']! + stats['monologueCount']! > 0;
   }
 
   /// 累計の学習統計（総ドリル数・総独り言回数・総学習秒数）。
-  Map<String, int> totalStats() {
-    var drillCount = 0;
-    var monologueCount = 0;
-    var studySeconds = 0;
+  ///
+  /// [language]を渡すとその学習言語の分だけ集計する。
+  Map<String, int> totalStats({String? language}) => _sum([
+    for (final value in _dailyStatsBox.values)
+      if (language == null)
+        _sum(_readDay(value).values)
+      else
+        _readDay(value)[language] ?? _emptyCounters(),
+  ]);
+
+  /// これまでに学習したことがある日数（[language]指定で言語別）。
+  int studyDayCount({String? language}) {
+    var days = 0;
     for (final value in _dailyStatsBox.values) {
-      final stats = Map<String, int>.from(value as Map);
-      drillCount += stats['drillCount'] ?? 0;
-      monologueCount += stats['monologueCount'] ?? 0;
-      studySeconds += stats['studySeconds'] ?? 0;
+      final day = _readDay(value);
+      final stats = language == null
+          ? _sum(day.values)
+          : (day[language] ?? _emptyCounters());
+      if (stats['drillCount']! + stats['monologueCount']! > 0) days++;
     }
-    return {
-      'drillCount': drillCount,
-      'monologueCount': monologueCount,
-      'studySeconds': studySeconds,
-    };
+    return days;
   }
 
   /// 直近[days]日分の日次統計を古い→新しい順で返す（欠損日は0埋め）。
-  List<MapEntry<DateTime, Map<String, int>>> statsForLastDays(int days) {
+  List<MapEntry<DateTime, Map<String, int>>> statsForLastDays(
+    int days, {
+    String? language,
+  }) {
     final today = _dateOnly(DateTime.now());
     return [
       for (var i = days - 1; i >= 0; i--)
-        MapEntry(_addDays(today, -i), statsForDate(_addDays(today, -i))),
+        MapEntry(
+          _addDays(today, -i),
+          statsForDate(_addDays(today, -i), language: language),
+        ),
     ];
   }
 
   Future<void> _bumpDailyStats({
+    required String language,
     int drillCount = 0,
     int monologueCount = 0,
     int studySeconds = 0,
   }) async {
     final key = _dateKey(DateTime.now());
-    final current = statsForDate(DateTime.now());
-    final updated = {
+    final day = _readDay(_dailyStatsBox.get(key));
+    final current = day[language] ?? _emptyCounters();
+    day[language] = {
       'drillCount': current['drillCount']! + drillCount,
       'monologueCount': current['monologueCount']! + monologueCount,
       'studySeconds': current['studySeconds']! + studySeconds,
     };
-    await _dailyStatsBox.put(key, updated);
+    await _dailyStatsBox.put(key, day);
   }
 
   static String _dateKey(DateTime date) =>

@@ -325,12 +325,12 @@ void main() {
 
   group('currentStreak', () {
     test('学習記録が全くない場合は0', () {
-      expect(historyService.currentStreak, 0);
+      expect(historyService.currentStreak(), 0);
     });
 
     test('今日だけ学習していれば1', () async {
       await _setDailyStats(DateTime.now(), drillCount: 1);
-      expect(historyService.currentStreak, 1);
+      expect(historyService.currentStreak(), 1);
     });
 
     test('今日未学習でも昨日まで連続していればストリークは維持される', () async {
@@ -344,7 +344,7 @@ void main() {
         monologueCount: 1,
       );
 
-      expect(historyService.currentStreak, 2);
+      expect(historyService.currentStreak(), 2);
     });
 
     test('今日も昨日も未学習ならストリークは0（一昨日だけ学習）', () async {
@@ -354,7 +354,7 @@ void main() {
         drillCount: 1,
       );
 
-      expect(historyService.currentStreak, 0);
+      expect(historyService.currentStreak(), 0);
     });
 
     test('飛び日があるとそれより前の連続日はカウントしない', () async {
@@ -370,7 +370,7 @@ void main() {
         drillCount: 1,
       );
 
-      expect(historyService.currentStreak, 2);
+      expect(historyService.currentStreak(), 2);
     });
   });
 

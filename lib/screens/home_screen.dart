@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../models/learning_language.dart';
 import '../models/srs_item.dart';
 import '../services/history_service.dart';
 import '../services/settings_service.dart';
@@ -45,6 +46,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// ドリル・独り言の履歴を新しい順に混ぜて上位3件を返す。
   List<_RecentEntry> _recentEntries(HistoryService history, DateTime now) {
+    // 履歴は言語混在なので、各エントリを記録された言語の呼び名で表示する。
     String when(DateTime t) {
       final days = DateTime(
         now.year,
@@ -61,8 +63,10 @@ class _HomeScreenState extends State<HomeScreen> {
         (
           r.timestamp,
           _RecentEntry(
-            title: '口頭英作文',
-            meta: 'TOEIC ${r.level}点台 · ${r.feedback.score}点',
+            title: LanguageProfile.ofCode(r.language).compositionTitle,
+            meta:
+                '${LanguageProfile.ofCode(r.language).levelLabel(r.level)}'
+                ' · ${r.feedback.score}点',
             when: when(r.timestamp),
             score: r.feedback.score,
           ),
@@ -71,7 +75,7 @@ class _HomeScreenState extends State<HomeScreen> {
         (
           r.timestamp,
           _RecentEntry(
-            title: '独り言英会話',
+            title: LanguageProfile.ofCode(r.language).monologueTitle,
             meta: '${r.seconds}秒 · 流暢さ${r.feedback.fluencyScore}',
             when: when(r.timestamp),
             score: r.feedback.fluencyScore,
@@ -135,7 +139,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 16),
           ],
           _StreakCard(
-            streak: history.currentStreak,
+            streak: history.currentStreak(),
             todayStats: todayStats,
             weekStudied: weekStudied,
           ),
@@ -154,7 +158,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Expanded(
                 child: _TrainingShortcutCard(
                   icon: Icons.edit_note,
-                  title: '口頭英作文',
+                  title: profile.compositionTitle,
                   description: '制限時間内に発話',
                   onTap: () {
                     Navigator.of(
@@ -167,7 +171,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Expanded(
                 child: _TrainingShortcutCard(
                   icon: Icons.forum_outlined,
-                  title: '独り言英会話',
+                  title: profile.monologueTitle,
                   description: 'お題を30秒〜3分',
                   onTap: () {
                     Navigator.of(
