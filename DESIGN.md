@@ -203,6 +203,9 @@ APIキーだけは `flutter_secure_storage`（キー名 `gemini_api_key`）。
 
 `inline_data`（base64、mimeType は録音フォーマットに一致: wav推奨）＋指示「Transcribe this English speech verbatim. Return only the transcript.」。プレーンテキスト応答。録音は `record` パッケージで wav (16kHz mono)。
 
+- 聞き取れる英語が無い場合はマーカー `[NO_SPEECH]`（`GeminiService.noSpeechMarker`）を返すよう指示し、応答に含まれていれば「音声を聞き取れませんでした」の `GeminiException`。空文字を返させると下記の空応答と区別できないため
+- 空応答（`"content": {}` で `parts` が無く `finishReason: STOP`、出力トークン0）は Gemini 3系Flash が稀に返す一時的な不調。`_requestText` で同じリクエストを最大3回まで送り直し、それでも空なら「文字起こし結果が返ってきませんでした」の `GeminiException`（添削の構造化出力も同じ再試行を通る）。使用量は再試行分も合算する
+
 ## 音声入力の抽象化
 
 `SpeechInputService`（抽象）の実装は `GeminiSpeechInputService` のみ:

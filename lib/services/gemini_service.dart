@@ -56,6 +56,17 @@ class GeminiService {
   /// 深い推論を必要としないため最小の`low`にして応答時間とコストを抑える。
   static const _thinkingLevel = 'low';
 
+  /// 文字起こしで「聞き取れる英語が無い」ときにモデルへ返させる目印。
+  ///
+  /// 空文字を返させると、モデルが（一時的な不調で）何も生成しなかった応答と
+  /// 区別できないため、明示的なマーカーで「無音」を表現させる。
+  static const noSpeechMarker = '[NO_SPEECH]';
+
+  /// 本文が空の応答（`parts`ごと省略され`candidatesTokenCount`も無い）に対する
+  /// 最大試行回数。Gemini 3系のFlashは`finishReason: STOP`のまま何も返さない
+  /// ことが稀にあり、同じリクエストを送り直すと正常に返ることが多い。
+  static const _maxAttempts = 3;
+
   final SettingsService _settings;
   final http.Client _client;
 
@@ -160,11 +171,12 @@ class GeminiService {
         {
           'parts': [
             {
-              // 「聞き取れなければ空文字」の指示が無いと、無音や壊れた音声を
+              // 「聞き取れなければマーカーを返す」指示が無いと、無音や壊れた音声を
               // 渡されたときにモデルがそれらしい英文を捏造して返してしまう。
               'text':
                   'Transcribe this English speech verbatim. Return only the transcript. '
-                  'If the audio contains no intelligible English speech, return an empty string. '
+                  'If the audio contains no intelligible English speech, return exactly '
+                  '$noSpeechMarker and nothing else. '
                   'Never guess or invent words that are not clearly audible.',
             },
             {
@@ -181,21 +193,19 @@ class GeminiService {
       },
     });
 
-    final response = await _post(uri: uri, apiKey: apiKey, body: body);
-    _checkStatus(response);
-    final String text;
-    final TokenUsage usage;
-    try {
-      final decoded =
-          jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
-      text = _extractText(decoded).trim();
-      usage = _extractUsage(decoded);
-    } catch (_) {
-      throw GeminiException('Geminiからの応答を解析できませんでした。時間を置いて再度お試しください。');
-    }
-    // 聞き取れなかった場合は空文字が返る（プロンプトでそう指示している）。
-    // 空のまま入力欄に反映すると理由が分からないため、明示的に案内する。
+    final (:text, :usage) = await _requestText(
+      uri: uri,
+      apiKey: apiKey,
+      body: body,
+    );
+    // 本文が空の応答は再試行しても解消しなかった（モデルが何も生成しなかった）。
+    // 「聞き取れなかった」とは区別し、送り直しを促す。
     if (text.isEmpty) {
+      throw GeminiException('Geminiから文字起こし結果が返ってきませんでした。もう一度お試しください。');
+    }
+    // 聞き取れる英語が無い場合はマーカーが返る（プロンプトでそう指示している）。
+    // 空のまま入力欄に反映すると理由が分からないため、明示的に案内する。
+    if (text.contains(noSpeechMarker)) {
       throw GeminiException('音声を聞き取れませんでした。もう一度お試しください。');
     }
     return (text: text, usage: usage);
@@ -223,19 +233,44 @@ class GeminiService {
       },
     });
 
-    final response = await _post(uri: uri, apiKey: apiKey, body: body);
-    _checkStatus(response);
+    final (:text, :usage) = await _requestText(
+      uri: uri,
+      apiKey: apiKey,
+      body: body,
+    );
     try {
-      final decoded =
-          jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
-      final text = _extractText(decoded);
-      return (
-        json: jsonDecode(text) as Map<String, dynamic>,
-        usage: _extractUsage(decoded),
-      );
+      return (json: jsonDecode(text) as Map<String, dynamic>, usage: usage);
     } catch (_) {
       throw GeminiException('Geminiからの応答を解析できませんでした。時間を置いて再度お試しください。');
     }
+  }
+
+  /// `generateContent`を呼び、候補本文のテキストとトークン使用量を返す。
+  ///
+  /// 本文が空（`parts`省略）の応答は最大[_maxAttempts]回まで同じリクエストを
+  /// 送り直す。全試行で空なら空文字を返す（意味付けは呼び出し側で行う）。
+  /// 使用量は再試行分も含めた合計（すべて課金対象のため）。
+  Future<({String text, TokenUsage usage})> _requestText({
+    required Uri uri,
+    required String apiKey,
+    required String body,
+  }) async {
+    var usage = TokenUsage.zero;
+    for (var attempt = 1; attempt <= _maxAttempts; attempt++) {
+      final response = await _post(uri: uri, apiKey: apiKey, body: body);
+      _checkStatus(response);
+      final String text;
+      try {
+        final decoded =
+            jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+        text = _extractText(decoded).trim();
+        usage += _extractUsage(decoded);
+      } catch (_) {
+        throw GeminiException('Geminiからの応答を解析できませんでした。時間を置いて再度お試しください。');
+      }
+      if (text.isNotEmpty) return (text: text, usage: usage);
+    }
+    return (text: '', usage: usage);
   }
 
   /// レスポンスの`usageMetadata`を読む。無ければ[TokenUsage.zero]。
@@ -248,8 +283,9 @@ class GeminiService {
   String _extractText(Map<String, dynamic> decoded) {
     final candidates = decoded['candidates'] as List;
     final content = candidates.first['content'] as Map<String, dynamic>;
-    // 出力が空の場合、partsごと省略された応答が返ることがある（文字起こしで
-    // 「聞き取れない＝空文字」となるケース）。解析エラーではなく空文字として扱う。
+    // 出力が空の場合、partsごと省略された応答が返ることがある
+    // （`"content": {}` で `finishReason: STOP`）。解析エラーではなく
+    // 空文字として扱い、再試行の判断は[_requestText]に任せる。
     final parts = content['parts'] as List?;
     if (parts == null || parts.isEmpty) return '';
     return parts.first['text'] as String;
