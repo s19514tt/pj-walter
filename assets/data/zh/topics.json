@@ -61,7 +61,7 @@
       "ja": "健康のためにしていることを話してください",
       "target": "请谈谈你平时为了身体健康做些什么。",
       "theme": "daily",
-      "reading": "Qǐng tán tán nǐ píngshí wèile shēntǐ jiànkāng zuò xiē shénme"
+      "reading": "Qǐng tántán nǐ píngshí wèile shēntǐ jiànkāng zuò xiē shénme"
     },
     {
       "id": "zt-010",
@@ -75,7 +75,7 @@
       "ja": "中国語の勉強で難しいと感じることを話してください",
       "target": "请谈谈学习汉语的时候你觉得什么最难。",
       "theme": "daily",
-      "reading": "Qǐng tán tán xuéxí hànyǔ de shíhou nǐ juéde shénme zuì nán"
+      "reading": "Qǐng tántán xuéxí hànyǔ de shíhou nǐ juéde shénme zuì nán"
     },
     {
       "id": "zt-012",
@@ -152,7 +152,7 @@
       "ja": "同僚とどのように協力していますか",
       "target": "请谈谈你跟同事怎么一起工作。",
       "theme": "business",
-      "reading": "Qǐng tán tán nǐ gēn tóngshì zěnme yìqǐ gōngzuò"
+      "reading": "Qǐng tántán nǐ gēn tóngshì zěnme yìqǐ gōngzuò"
     },
     {
       "id": "zt-023",
@@ -180,7 +180,7 @@
       "ja": "理想の働き方について話してください",
       "target": "请谈谈什么样的工作最适合你。",
       "theme": "business",
-      "reading": "Qǐng tán tán shénmeyàng de gōngzuò zuì shì hé nǐ"
+      "reading": "Qǐng tántán shénmeyàng de gōngzuò zuì shì hé nǐ"
     },
     {
       "id": "zt-027",
@@ -201,7 +201,7 @@
       "ja": "仕事とプライベートのバランスについて話してください",
       "target": "请谈谈你怎么安排工作和休息的时间。",
       "theme": "business",
-      "reading": "Qǐng tán tán nǐ zěnme ān pái gōngzuò hé xiūxi de shíjiān"
+      "reading": "Qǐng tántán nǐ zěnme ān pái gōngzuò hé xiūxi de shíjiān"
     },
     {
       "id": "zt-030",
@@ -264,7 +264,7 @@
       "ja": "旅行で写真を撮ることについて話してください",
       "target": "请谈谈旅游的时候你喜不喜欢照相。",
       "theme": "travel",
-      "reading": "Qǐng tán tán lǚyóu de shíhou nǐ xǐ bu xǐhuan zhàoxiàng"
+      "reading": "Qǐng tántán lǚyóu de shíhou nǐ xǐ bu xǐhuan zhàoxiàng"
     },
     {
       "id": "zt-039",
