@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>声調検出テスト（TTS自動）— ピンイン声調 POC</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+
+<h1>声調検出テスト（TTS自動）</h1>
+<p class="lead">
+「同じ綴り・違う声調」の音声をTTSで合成してGeminiに投げ、<b>崩した声調をそのまま報告するか、正しい声調に丸めるか</b>を自動判定します。<br>
+人の発音に依存しないので、ボタン1つで再現性のあるテストになります。 <a href="index.html">← 録音版はこちら</a>
+</p>
+
+<div class="card">
+  <h2>仕掛け</h2>
+  <p class="mini" style="margin:0 0 10px">
+    TTSに「崩れた声調」を喋らせるために、対象の漢字を<b>同音別声調の実在漢字</b>に置き換えます。
+  </p>
+  <div class="scroll"><table style="max-width:640px">
+    <tr><th style="width:120px">読ませる文</th><td>我去超市买几个<b style="color:var(--bad)">睡</b>果。 → <span class="syl">… shuǐ guǒ</span> ではなく <span class="syl">… <b style="color:var(--bad)">shuì</b> guǒ</span> と読まれる</td></tr>
+    <tr><th>期待する挙動</th><td>Geminiが <span class="syl">shuì</span>（実際に鳴った音）と返す ＝ <b>音を聞いている</b></td></tr>
+    <tr><th>ダメな挙動</th><td>Geminiが <span class="syl">shuǐ</span>（正しい声調）と返す ＝ <b>文脈から辞書引きしている</b>。声調フィードバックは実装不能</td></tr>
+  </table></div>
+  <div class="note" style="margin-top:12px">
+    置換後の文は意味的に壊れている（「睡果」＝寝る果物）ので、モデルが正しい声調へ戻そうとする圧力が最大にかかります。
+    <b>これは一番厳しい条件でのテストです。</b>逆に、TTSの声調はきれいに発音されるので、
+    実際の学習者の曖昧な発音より<b>検出しやすい</b>条件でもあります。つまりここでの成績は<b>上限値</b>で、
+    ここで検出できないなら人の発話では絶対に検出できません。
+  </div>
+</div>
+
+<div class="card">
+  <h2>設定</h2>
+  <div class="row">
+    <div style="flex:2 1 300px">
+      <label for="key">Gemini APIキー</label>
+      <input type="password" id="key" placeholder="AIza..." autocomplete="off" spellcheck="false">
+    </div>
+    <div>
+      <label for="model">認識モデル</label>
+      <input type="text" id="model" value="gemini-3.8-flash" spellcheck="false">
+    </div>
+  </div>
+  <div class="row" style="margin-top:10px">
+    <div><label for="ttsModel">TTSモデル</label><input type="text" id="ttsModel" value="gemini-3.1-flash-tts-preview" spellcheck="false"></div>
+    <div><label for="voice">TTSの声</label><input type="text" id="voice" value="Kore" spellcheck="false"></div>
+    <div><label for="mode">認識モード</label>
+      <select id="mode">
+        <option value="pinyinFirst">案A: 1コール・ピンイン先出し</option>
+        <option value="hanziFirst">案A': 1コール・漢字先出し（対照）</option>
+        <option value="twoPass">案B: 2コール（ピンイン専用＋漢字）</option>
+      </select>
+    </div>
+    <div><label for="delay">ケース間の待ち (ms)</label><input type="text" id="delay" value="600" spellcheck="false"></div>
+  </div>
+  <div class="row" style="margin-top:10px">
+    <label style="flex:1 1 100%;display:flex;gap:8px;align-items:center;color:var(--ink);font-size:13px;margin:0">
+      <input type="checkbox" id="thinking" checked style="width:auto;accent-color:var(--orange)">
+      <span><code>thinkingLevel: "low"</code> を送る（400が返るモデルではオフに）</span>
+    </label>
+  </div>
+  <div class="row" style="margin-top:12px">
+    <button class="btn ghost" id="saveKey" style="flex:0 0 auto">設定をこのブラウザに保存</button>
+    <button class="btn ghost" id="clearKey" style="flex:0 0 auto">保存を削除</button>
+    <button class="btn ghost" id="clearAudio" style="flex:0 0 auto">音声キャッシュを破棄</button>
+    <span class="mini" id="keyState" style="flex:1 1 100%;margin-top:4px"></span>
+  </div>
+  <div class="note" style="margin-top:12px">
+    合成した音声はメモリにキャッシュされ、同じケースを再実行してもTTSは呼び直しません（コスト節約）。
+    TTSモデル名や声を変えたら「音声キャッシュを破棄」してください。
+  </div>
+</div>
+
+<div class="card">
+  <h2>実行</h2>
+  <div class="row" style="align-items:center">
+    <button class="btn" id="runAll" style="flex:0 0 auto">全50ケースを実行</button>
+    <button class="btn sec" id="stop" style="flex:0 0 auto" disabled>中断</button>
+    <button class="btn ghost" id="reset" style="flex:0 0 auto">結果をリセット</button>
+    <span class="mini" id="progressText" style="flex:1 1 160px"></span>
+  </div>
+  <div class="lvl" style="margin-top:12px"><i id="progress"></i></div>
+  <div id="err" class="err hidden"></div>
+</div>
+
+<div class="card">
+  <h2>総合結果</h2>
+  <div class="tally">
+    <div><b id="tDone">0</b><span class="mini">実行済み / 50</span></div>
+    <div><b id="tHit" style="color:var(--good)">0</b><span class="mini">検出（音を聞いた）</span></div>
+    <div><b id="tNorm" style="color:var(--bad)">0</b><span class="mini">正規化（辞書引き）</span></div>
+    <div><b id="tOther">0</b><span class="mini">判定不能</span></div>
+    <div><b id="tFp" style="color:var(--warn)">0</b><span class="mini">誤検出（対照群）</span></div>
+    <div><b id="tCost">$0.0000</b><span class="mini">合計コスト</span></div>
+  </div>
+  <div id="conclusion" style="margin-top:16px"></div>
+</div>
+
+<div id="sets"></div>
+
+</div>
+
+<script src="poc.js"></script>
+<script src="cases.js"></script>
+<script>
+"use strict";
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+const toneLabel = t => t === 5 ? "軽声" : `${t}声`;
+
+const audioCache = new Map();   // caseId -> {audio, usage}
+const results = new Map();      // caseId -> result
+let stopped = false, running = false;
+
+const cfg = () => ({
+  apiKey: $("key").value.trim(),
+  model: $("model").value.trim() || "gemini-3.8-flash",
+  thinking: $("thinking").checked
+});
+
+/* ============================================================
+   1ケースの実行と判定
+   ============================================================ */
+
+async function runCase(c){
+  const conf = cfg();
+
+  // 1. 崩した文をTTSで読み上げる（キャッシュがあれば使う）
+  let tts = audioCache.get(c.id);
+  if (!tts){
+    tts = await synthesize({ apiKey: conf.apiKey, model: $("ttsModel").value.trim(),
+                             voice: $("voice").value.trim() || "Kore", text: c.corrupt });
+    audioCache.set(c.id, tts);
+  }
+
+  // 2. その音声を認識させる
+  const heard = await transcribeByMode({ ...conf, mode: $("mode").value, audio: tts.audio });
+
+  // 3. 対象音節の声調を取り出して判定する
+  const expected = toSyllables(c.pinyin);
+  const actual = toSyllables(heard.pinyin || "");
+  const rows = alignSyllables(expected, actual);
+  const row = rows.find(r => r.ei === c.idx);
+  const gotSyl = row && row.act ? row.act : null;
+  const gotTone = gotSyl ? gotSyl.tone : null;
+
+  let verdict;
+  if (!gotSyl) verdict = "unknown";
+  else if (c.control) verdict = gotTone === c.fromTone ? "clean" : "fp";
+  else if (gotTone === c.toTone) verdict = "hit";
+  else if (gotTone === c.fromTone) verdict = "norm";
+  else verdict = "unknown";
+
+  // 漢字側がどう出たかは独立した手がかりになる
+  const hanziSignal = !heard.hanzi ? "none"
+    : heard.hanzi.includes(c.toChar) && c.toChar !== c.fromChar ? "corrupt"
+    : heard.hanzi.includes(c.fromChar) ? "correct" : "other";
+
+  const usage = [tts.usage, ...heard.calls.map(x => x.usage)].reduce(addUsage, zeroUsage());
+
+  return { id:c.id, verdict, gotSyl, gotTone, rows, hanziSignal,
+           pinyin: heard.pinyin, hanzi: heard.hanzi, calls: heard.calls,
+           ttsUsage: tts.usage, usage, at: new Date().toISOString() };
+}
+
+async function execute(c){
+  results.set(c.id, { pending:true });
+  renderCase(c);
+  try {
+    results.set(c.id, await runCase(c));
+  } catch (e){
+    results.set(c.id, { error: String(e.message || e) });
+    $("err").textContent = `${c.id}: ${e.message || e}`;
+    $("err").classList.remove("hidden");
+  }
+  renderCase(c);
+  renderSummary();
+}
+
+async function runAll(){
+  if (running) return;
+  running = true; stopped = false;
+  $("runAll").disabled = true; $("stop").disabled = false;
+  $("err").classList.add("hidden");
+  const all = SETS.flatMap(s => s.cases);
+  const wait = Number($("delay").value) || 0;
+  for (let i=0;i<all.length;i++){
+    if (stopped) break;
+    $("progressText").textContent = `${i+1} / ${all.length}  （${all[i].id}）`;
+    $("progress").style.width = `${(i/all.length)*100}%`;
+    await execute(all[i]);
+    if (wait) await new Promise(r => setTimeout(r, wait));
+  }
+  $("progress").style.width = stopped ? "0%" : "100%";
+  $("progressText").textContent = stopped ? "中断しました" : "完了";
+  $("runAll").disabled = false; $("stop").disabled = true;
+  running = false;
+}
+
+async function runSet(set){
+  if (running) return;
+  running = true; stopped = false;
+  $("runAll").disabled = true; $("stop").disabled = false;
+  const list = SETS.find(s => s.set === set).cases;
+  const wait = Number($("delay").value) || 0;
+  for (let i=0;i<list.length;i++){
+    if (stopped) break;
+    $("progressText").textContent = `セット${set}: ${i+1} / ${list.length}  （${list[i].id}）`;
+    $("progress").style.width = `${(i/list.length)*100}%`;
+    await execute(list[i]);
+    if (wait) await new Promise(r => setTimeout(r, wait));
+  }
+  $("progress").style.width = "0%";
+  $("progressText").textContent = stopped ? "中断しました" : `セット${set} 完了`;
+  $("runAll").disabled = false; $("stop").disabled = true;
+  running = false;
+}
+
+/* ============================================================
+   描画
+   ============================================================ */
+
+const VERDICT = {
+  hit:     ["検出", "good",  "崩した声調をそのまま報告した＝音を聞いている"],
+  norm:    ["正規化", "bad", "正しい声調に丸めた＝漢字からの辞書引き"],
+  clean:   ["正常", "good",  "正しい声調のまま返した（対照群として期待どおり）"],
+  fp:      ["誤検出", "warn","崩していないのに違う声調を報告した"],
+  unknown: ["判定不能","flat","対象の音節を取り出せなかった、または第三の声調"]
+};
+
+function renderCase(c){
+  const el = document.getElementById("case-" + c.id);
+  if (!el) return;
+  const r = results.get(c.id);
+  const body = el.querySelector(".caseResult");
+
+  if (!r){ body.innerHTML = ""; el.className = "caseRow"; return; }
+  if (r.pending){ body.innerHTML = `<span class="mini">実行中…</span>`; el.className = "caseRow"; return; }
+  if (r.error){
+    body.innerHTML = `<span class="pill bad">エラー</span> <span class="mini">${esc(r.error)}</span>`;
+    el.className = "caseRow v-err"; return;
+  }
+
+  const [label, cls] = VERDICT[r.verdict];
+  el.className = "caseRow v-" + r.verdict;
+
+  // 返ってきたピンインを、対象音節だけ強調して並べ直す
+  const line = r.rows.map(row => {
+    const s = row.act ? row.act.raw : "—";
+    return row.ei === c.idx
+      ? `<b class="target">${esc(s)}</b>`
+      : `<span class="${row.kind === "ok" ? "" : "off"}">${esc(s)}</span>`;
+  }).join(" ");
+
+  const hanziNote = { corrupt:"漢字も崩れた字になった", correct:"漢字は正しい字に戻った",
+                      other:"別の字になった", none:"漢字が空" }[r.hanziSignal];
+
+  const audio = audioCache.get(c.id);
+  const url = audio ? (audio.url ||= URL.createObjectURL(new Blob([audio.audio.bytes], {type:"audio/wav"}))) : null;
+
+  body.innerHTML = `
+    <div class="verdictLine">
+      <span class="pill ${cls}">${label}</span>
+      <span class="mini">聞こえた声調: <b>${r.gotSyl ? esc(r.gotSyl.raw) : "—"}</b>${
+        r.gotTone ? `（${toneLabel(r.gotTone)}）` : ""}</span>
+      <span class="mini">／ ${hanziNote}: <b>${esc(r.hanzi) || "—"}</b></span>
+    </div>
+    <div class="syl pyline">${line}</div>
+    ${url ? `<audio controls preload="none" src="${url}"></audio>` : ""}
+    <details><summary>生レスポンスとトークン</summary>
+      <p class="mini">TTS: in ${r.ttsUsage.prompt} / out ${r.ttsUsage.candidates}　|　
+        合計 $${costOf(r.usage).toFixed(6)}</p>
+      ${r.calls.map(x => `<p class="mini" style="margin:8px 0 4px"><b>${esc(x.label)}</b>
+        — in ${x.usage.prompt} / out ${x.usage.candidates} / thinking ${x.usage.thoughts}</p>
+        <pre>${esc(x.raw)}</pre>`).join("")}
+    </details>`;
+}
+
+function renderSets(){
+  $("sets").innerHTML = SETS.map(s => `
+    <div class="card">
+      <h2>${esc(s.title)}</h2>
+      <p class="mini" style="margin:-6px 0 12px">${esc(s.desc)}</p>
+      <div class="row" style="margin-bottom:14px">
+        <button class="btn sec runSet" data-set="${s.set}" style="flex:0 0 auto">このセット10件を実行</button>
+        <span class="mini setTally" id="setTally-${s.set}" style="flex:1 1 auto;align-self:center"></span>
+      </div>
+      ${s.cases.map(c => {
+        const syl = toSyllables(c.pinyin)[c.idx];
+        return `<div class="caseRow" id="case-${c.id}">
+          <div class="caseHead">
+            <button class="btn ghost runOne" data-id="${c.id}">▶</button>
+            <div class="caseText">
+              <div><b class="cid">${c.id}</b> <span class="han">${esc(c.hanzi)}</span></div>
+              <div class="mini">${esc(c.ja)}</div>
+            </div>
+            <div class="caseChange syl">${
+              c.control
+                ? `<span class="mini">崩さない（${esc(syl.raw)} のまま）</span>`
+                : `${esc(syl.raw)}<span class="mini">(${toneLabel(c.fromTone)})</span> →
+                   <b>${esc(c.toChar)}</b><span class="mini">(${toneLabel(c.toTone)})</span>`
+            }</div>
+          </div>
+          <div class="caseResult"></div>
+        </div>`;
+      }).join("")}
+    </div>`).join("");
+
+  document.querySelectorAll(".runOne").forEach(b => b.onclick = () => {
+    if (running) return;
+    const c = SETS.flatMap(s => s.cases).find(x => x.id === b.dataset.id);
+    running = true;
+    execute(c).finally(() => { running = false; });
+  });
+  document.querySelectorAll(".runSet").forEach(b => b.onclick = () => runSet(Number(b.dataset.set)));
+}
+
+function renderSummary(){
+  const all = SETS.flatMap(s => s.cases);
+  const done = all.filter(c => { const r = results.get(c.id); return r && !r.pending && !r.error; });
+  const count = v => done.filter(c => results.get(c.id).verdict === v).length;
+
+  $("tDone").textContent = done.length;
+  $("tHit").textContent  = count("hit");
+  $("tNorm").textContent = count("norm");
+  $("tOther").textContent = count("unknown");
+  $("tFp").textContent   = count("fp");
+  $("tCost").textContent = "$" + done.reduce((s,c) => s + costOf(results.get(c.id).usage), 0).toFixed(4);
+
+  for (const s of SETS){
+    const d = s.cases.filter(c => { const r = results.get(c.id); return r && !r.pending && !r.error; });
+    const el = $("setTally-" + s.set);
+    if (!d.length){ el.textContent = ""; continue; }
+    const c2 = v => d.filter(c => results.get(c.id).verdict === v).length;
+    el.innerHTML = s.set === 5
+      ? `${d.length}件実行 — 正常 ${c2("clean")} / <b>誤検出 ${c2("fp")}</b> / 判定不能 ${c2("unknown")}`
+      : `${d.length}件実行 — <b>検出 ${c2("hit")}</b> / 正規化 ${c2("norm")} / 判定不能 ${c2("unknown")}`;
+  }
+
+  // 崩したセット（1〜4）と対照群（5）を分けて結論を出す
+  const corrupted = done.filter(c => !c.control);
+  const control = done.filter(c => c.control);
+  const hit = corrupted.filter(c => results.get(c.id).verdict === "hit").length;
+  const fp = control.filter(c => results.get(c.id).verdict === "fp").length;
+
+  const box = $("conclusion");
+  if (corrupted.length < 5){ box.innerHTML = `<p class="mini">崩したケースを5件以上実行すると判定が出ます。</p>`; return; }
+
+  const rate = hit / corrupted.length;
+  const fpRate = control.length ? fp / control.length : null;
+  let cls, head, detail;
+  if (rate <= 0.1){
+    cls = "bad"; head = "実装不可: モデルは音を聞かず辞書引きしている";
+    detail = `崩した ${corrupted.length} 件のうち検出できたのは ${hit} 件（${(rate*100).toFixed(0)}%）。
+      TTSのきれいな声調ですら報告されないので、学習者の曖昧な発音で検出できる見込みはありません。
+      このモードでの声調フィードバックは諦めて、他のモードを試すか、発音評価専用API（SpeechSuper / Chivox 等）に切り替える判断になります。`;
+  } else if (rate >= 0.7 && (fpRate === null || fpRate <= 0.2)){
+    cls = "good"; head = "実装GO の目安を満たしています";
+    detail = `検出 ${hit}/${corrupted.length}（${(rate*100).toFixed(0)}%）${
+      fpRate !== null ? `、対照群の誤検出 ${fp}/${control.length}（${(fpRate*100).toFixed(0)}%）` : ""}。
+      ただしこれはTTSのきれいな声調に対する<b>上限値</b>です。実際の学習者の発音では確実に下がるので、
+      録音版（index.html）で自分の声でも必ず確認してください。`;
+  } else {
+    cls = "warn"; head = "グレー: 実装は慎重に";
+    detail = `検出 ${hit}/${corrupted.length}（${(rate*100).toFixed(0)}%）${
+      fpRate !== null ? `、対照群の誤検出 ${fp}/${control.length}（${(fpRate*100).toFixed(0)}%）` : ""}。
+      TTSの条件でこの成績なら、人の発話ではさらに落ちます。中途半端に「たぶん声調が違います」と出すのは
+      何も言わないより有害なので、セット別の内訳を見て、特定の声調ペアだけに絞る等の判断が要ります。`;
+  }
+  box.innerHTML = `<div class="concl ${cls}"><b>${head}</b><p class="mini" style="margin:6px 0 0">${detail}</p></div>`;
+}
+
+/* ============================================================
+   配線
+   ============================================================ */
+
+$("runAll").onclick = runAll;
+$("stop").onclick = () => { stopped = true; };
+$("reset").onclick = () => {
+  results.clear();
+  SETS.flatMap(s => s.cases).forEach(renderCase);
+  renderSummary();
+  $("progress").style.width = "0%"; $("progressText").textContent = "";
+};
+$("clearAudio").onclick = () => {
+  audioCache.forEach(a => { if (a.url) URL.revokeObjectURL(a.url); });
+  audioCache.clear();
+  $("keyState").textContent = "音声キャッシュを破棄しました。次の実行でTTSを呼び直します。";
+};
+
+const SAVED = ["key","model","ttsModel","voice","mode","delay"];
+$("saveKey").onclick = () => {
+  SAVED.forEach(k => localStorage.setItem("poc_" + k, $(k).value.trim()));
+  $("keyState").textContent = "このブラウザに保存しました。";
+};
+$("clearKey").onclick = () => {
+  SAVED.forEach(k => localStorage.removeItem("poc_" + k));
+  $("key").value = "";
+  $("keyState").textContent = "保存を削除しました。";
+};
+
+(function init(){
+  SAVED.forEach(k => { const v = localStorage.getItem("poc_" + k); if (v) $(k).value = v; });
+  if (localStorage.getItem("poc_key")) $("keyState").textContent = "保存済みの設定を読み込みました。";
+  renderSets();
+  renderSummary();
+})();
+</script>
+</body>
+</html>
