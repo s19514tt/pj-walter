@@ -102,7 +102,7 @@ class DrillFeedbackView extends StatelessWidget {
                   _Section(
                     icon: Icons.menu_book_outlined,
                     title: '模範解答',
-                    content: sentence.en,
+                    content: sentence.target,
                     tips: sentence.tips,
                     highlight: timedOut,
                   ),

@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:record/record.dart';
 
+import '../models/learning_language.dart';
 import '../models/token_usage.dart';
 import '../utils/pcm_converter.dart';
 import '../utils/wav_builder.dart';
@@ -79,15 +80,19 @@ class GeminiSpeechInputService implements SpeechInputService {
   // （使うとパラメータ名がprivateになり外部から渡せなくなる）。
   GeminiSpeechInputService({
     required GeminiService geminiService,
+    required LanguageProfile profile,
     AudioRecorder? recorder,
     // ignore: prefer_initializing_formals
   }) : _geminiService = geminiService,
+       // ignore: prefer_initializing_formals
+       _profile = profile,
        _recorder = recorder ?? AudioRecorder();
 
   static const _sampleRate = 16000;
   static const _channels = 1;
 
   final GeminiService _geminiService;
+  final LanguageProfile _profile;
   final AudioRecorder _recorder;
   BytesBuilder? _bytesBuilder;
   StreamSubscription<Uint8List>? _subscription;
@@ -194,6 +199,7 @@ class GeminiSpeechInputService implements SpeechInputService {
       channels: _channels,
     );
     final (:text, :usage) = await _geminiService.transcribe(
+      profile: _profile,
       audioBytes: wavBytes,
       mimeType: 'audio/wav',
     );
@@ -214,6 +220,10 @@ class GeminiSpeechInputService implements SpeechInputService {
 /// 画面側はこの関数だけを呼び、実装クラスに直接依存しない。
 SpeechInputService createSpeechInputService({
   required GeminiService geminiService,
+  required LanguageProfile profile,
 }) {
-  return GeminiSpeechInputService(geminiService: geminiService);
+  return GeminiSpeechInputService(
+    geminiService: geminiService,
+    profile: profile,
+  );
 }

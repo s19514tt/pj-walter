@@ -15,6 +15,7 @@ import '../../widgets/bottom_cta_bar.dart';
 import '../../widgets/primary_button.dart';
 import '../../widgets/score_ring.dart';
 import '../../widgets/skeleton.dart';
+import '../../services/settings_service.dart';
 
 /// 独り言英会話のGeminiフィードバック画面（段階表示）。
 ///
@@ -116,16 +117,19 @@ class _MonologueFeedbackScreenState extends State<MonologueFeedbackScreen> {
     final gemini = context.read<GeminiService>();
     final historyService = context.read<HistoryService>();
     try {
-      // 独り言ではトークン使用量の表示はまだ行わない（口頭英作文のまとめ画面のみ）。
+      // 独り言ではトークン使用量の表示はまだ行わない（口頭作文のまとめ画面のみ）。
+      final profile = context.read<SettingsService>().languageProfile;
       final (:feedback, usage: _) = await gemini.reviewMonologue(
+        profile: profile,
         topicJa: widget.topic.ja,
-        topicEn: widget.topic.en,
+        topicTarget: widget.topic.target,
         seconds: widget.seconds,
         transcript: transcript,
       );
       final result = MonologueResult(
         id: const Uuid().v4(),
         topicId: widget.topic.id,
+        language: profile.code,
         seconds: widget.seconds,
         transcript: transcript,
         timestamp: DateTime.now(),
@@ -166,7 +170,7 @@ class _MonologueFeedbackScreenState extends State<MonologueFeedbackScreen> {
     await context.read<HistoryService>().addPhrase(
       Phrase(
         id: const Uuid().v4(),
-        en: phrase.en,
+        target: phrase.target,
         ja: phrase.ja,
         source: widget.topic.id,
         createdAt: DateTime.now(),
@@ -346,7 +350,10 @@ class _MonologueFeedbackScreenState extends State<MonologueFeedbackScreen> {
                                             CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            result.feedback.usefulPhrases[i].en,
+                                            result
+                                                .feedback
+                                                .usefulPhrases[i]
+                                                .target,
                                             style: const TextStyle(
                                               fontSize: 13,
                                               height: 1.5,

@@ -37,6 +37,7 @@ DrillResult _drillResult({
 }) => DrillResult(
   id: 'drill-$sentenceId-$score-${DateTime.now().microsecondsSinceEpoch}',
   sentenceId: sentenceId,
+  language: 'en',
   level: level,
   spoken: 'spoken text',
   timestamp: DateTime.now(),
@@ -52,6 +53,7 @@ DrillResult _drillResult({
 MonologueResult _monologueResult({int seconds = 60}) => MonologueResult(
   id: 'mono-${DateTime.now().microsecondsSinceEpoch}',
   topicId: 't-001',
+  language: 'en',
   seconds: seconds,
   transcript: 'transcript',
   timestamp: DateTime.now(),
@@ -235,7 +237,7 @@ void main() {
         _drillResult(sentenceId: 's700-020', score: 50),
       );
       // dueDateは翌日なので、まだ「今日の復習」には含まれない
-      expect(historyService.dueSrsItems, isEmpty);
+      expect(historyService.dueSrsItems(), isEmpty);
 
       // dueDateを今日に書き換える（内部boxを直接操作してシミュレート）
       final today = _dateOnly(DateTime.now());
@@ -243,8 +245,8 @@ void main() {
       final adjusted = item.copyWith(dueDate: today);
       await Hive.box('srs_items').put(item.sentenceId, adjusted.toJson());
 
-      expect(historyService.dueSrsItems, hasLength(1));
-      expect(historyService.dueSrsItems.first.sentenceId, 's700-020');
+      expect(historyService.dueSrsItems(), hasLength(1));
+      expect(historyService.dueSrsItems().first.sentenceId, 's700-020');
     });
   });
 
@@ -264,7 +266,7 @@ void main() {
       await historyService.addPhrase(
         Phrase(
           id: 'p-1',
-          en: 'first phrase',
+          target: 'first phrase',
           ja: '最初のフレーズ',
           source: 'manual',
           createdAt: DateTime.now(),
@@ -274,7 +276,7 @@ void main() {
       await historyService.addPhrase(
         Phrase(
           id: 'p-2',
-          en: 'second phrase',
+          target: 'second phrase',
           ja: '2番目のフレーズ',
           source: 'manual',
           createdAt: DateTime.now(),
@@ -292,7 +294,7 @@ void main() {
       await historyService.addPhrase(
         Phrase(
           id: 'p-10',
-          en: 'break the ice',
+          target: 'break the ice',
           ja: '緊張をほぐす',
           source: 'manual',
           createdAt: DateTime.now(),
@@ -301,7 +303,7 @@ void main() {
       await historyService.addPhrase(
         Phrase(
           id: 'p-11',
-          en: 'slip my mind',
+          target: 'slip my mind',
           ja: 'うっかり忘れる',
           source: 'manual',
           createdAt: DateTime.now(),

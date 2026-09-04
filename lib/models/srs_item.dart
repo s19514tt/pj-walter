@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 class SrsItem {
   const SrsItem({
     required this.sentenceId,
+    required this.language,
     required this.level,
     required this.stage,
     required this.dueDate,
@@ -17,7 +18,10 @@ class SrsItem {
   /// 対象の[Sentence]のid（Hive boxのキーとしても使う）
   final String sentenceId;
 
-  /// 対象文のTOEICレベル
+  /// 対象文の学習言語コード（[LanguageProfile.code]）
+  final String language;
+
+  /// 対象文のデッキレベル
   final int level;
 
   /// 復習段階（0〜4。5で卒業）
@@ -40,6 +44,7 @@ class SrsItem {
     bool? lastResult,
   }) => SrsItem(
     sentenceId: sentenceId,
+    language: language,
     level: level,
     stage: stage ?? this.stage,
     dueDate: dueDate ?? this.dueDate,
@@ -49,6 +54,8 @@ class SrsItem {
 
   factory SrsItem.fromJson(Map<String, dynamic> json) => SrsItem(
     sentenceId: json['sentenceId'] as String,
+    // languageが無いのは中国語対応より前に保存されたアイテム。英語とみなす。
+    language: (json['language'] as String?) ?? 'en',
     level: (json['level'] as num).toInt(),
     stage: (json['stage'] as num).toInt(),
     dueDate: DateTime.parse(json['dueDate'] as String),
@@ -58,6 +65,7 @@ class SrsItem {
 
   Map<String, dynamic> toJson() => {
     'sentenceId': sentenceId,
+    'language': language,
     'level': level,
     'stage': stage,
     'dueDate': dueDate.toIso8601String(),
@@ -71,6 +79,7 @@ class SrsItem {
       other is SrsItem &&
           runtimeType == other.runtimeType &&
           sentenceId == other.sentenceId &&
+          language == other.language &&
           level == other.level &&
           stage == other.stage &&
           dueDate == other.dueDate &&
@@ -78,6 +87,13 @@ class SrsItem {
           lastResult == other.lastResult;
 
   @override
-  int get hashCode =>
-      Object.hash(sentenceId, level, stage, dueDate, lapses, lastResult);
+  int get hashCode => Object.hash(
+    sentenceId,
+    language,
+    level,
+    stage,
+    dueDate,
+    lapses,
+    lastResult,
+  );
 }

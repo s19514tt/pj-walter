@@ -6,6 +6,7 @@ import '../screens/composition/drill_screen.dart';
 import '../services/review_question_resolver.dart';
 import '../services/sentence_repository.dart';
 import 'app_route.dart';
+import '../models/learning_language.dart';
 
 /// 「今日の復習」開始処理の共通ロジック。
 ///
@@ -22,7 +23,10 @@ class ReviewSessionLauncher {
     final repository = context.read<SentenceRepository>();
     final sentences = await resolver.resolve(
       items: dueItems,
-      sentencesByLevel: (level) => repository.sentencesFor(level: level),
+      sentencesForDeck: (language, level) => repository.sentencesFor(
+        profile: LanguageProfile.ofCode(language),
+        level: level,
+      ),
     );
     if (!context.mounted) return;
 

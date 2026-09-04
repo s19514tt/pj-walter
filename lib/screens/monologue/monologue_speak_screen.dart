@@ -67,7 +67,10 @@ class _MonologueSpeakScreenState extends State<MonologueSpeakScreen> {
     _secondsLeft = widget.seconds;
     _speechInput =
         widget.speechInputService ??
-        createSpeechInputService(geminiService: context.read<GeminiService>());
+        createSpeechInputService(
+          geminiService: context.read<GeminiService>(),
+          profile: context.read<SettingsService>().languageProfile,
+        );
     // カウントダウンは画面表示と同時に開始する（読む時間もカウントに含まれる）。
     // 録音は「話しはじめる」ボタンが押されるまで始めない。
     _startCountdown();
@@ -282,7 +285,7 @@ class _MonologueSpeakScreenState extends State<MonologueSpeakScreen> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            widget.topic.en,
+                            widget.topic.target,
                             textAlign: TextAlign.center,
                             style: const TextStyle(
                               fontSize: 13,

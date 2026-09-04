@@ -6,6 +6,8 @@ import '../../services/sentence_repository.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/theme_labels.dart';
 import '../../widgets/app_card.dart';
+import '../../services/settings_service.dart';
+import '../../models/learning_language.dart';
 
 /// 選択レベル×テーマの教材一覧。
 ///
@@ -25,12 +27,15 @@ class SentenceListScreen extends StatefulWidget {
 
 class _SentenceListScreenState extends State<SentenceListScreen> {
   late final Future<List<Sentence>> _sentencesFuture;
+  late final LanguageProfile _profile;
 
   @override
   void initState() {
     super.initState();
     final repository = context.read<SentenceRepository>();
+    _profile = context.read<SettingsService>().languageProfile;
     _sentencesFuture = repository.sentencesFor(
+      profile: _profile,
       level: widget.level,
       theme: widget.theme,
     );
@@ -122,7 +127,7 @@ class _SentenceCardState extends State<_SentenceCard> {
                   const Divider(height: 1),
                   const SizedBox(height: 12),
                   Text(
-                    sentence.en,
+                    sentence.target,
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,

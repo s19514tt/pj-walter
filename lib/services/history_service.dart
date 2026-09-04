@@ -43,7 +43,7 @@ class HistoryService extends ChangeNotifier {
   final Box _phrasesBox;
   final Box _dailyStatsBox;
 
-  // --- 口頭英作文 -----------------------------------------------------
+  // --- 口頭作文 -----------------------------------------------------
 
   /// 口頭英作文の結果を保存する。日次統計を更新し、
   /// [updateSrs]がtrue（既定）かつスコアが70未満なら対象文をSRS復習キューに登録する。
@@ -59,6 +59,7 @@ class HistoryService extends ChangeNotifier {
     if (updateSrs && result.feedback.score < _passingScore) {
       await _registerSrsFailure(
         sentenceId: result.sentenceId,
+        language: result.language,
         level: result.level,
       );
     }
@@ -98,11 +99,15 @@ class HistoryService extends ChangeNotifier {
 
   /// 今日復習すべきアイテム（dueDate <= 今日、日単位比較）を、
   /// dueDateが早い順に返す。
-  List<SrsItem> get dueSrsItems {
+  /// [language]を渡すとその学習言語のアイテムだけに絞る。復習セッションは
+  /// 現在の学習言語のプロンプトで採点するため、言語を混ぜると別言語の文が
+  /// 誤った言語で採点されてしまう。呼び出し側は必ず言語を指定すること。
+  List<SrsItem> dueSrsItems({String? language}) {
     final today = _dateOnly(DateTime.now());
     final list = _srsItemsBox.values
         .map((e) => SrsItem.fromJson(Map<String, dynamic>.from(e as Map)))
         .where((item) => !_dateOnly(item.dueDate).isAfter(today))
+        .where((item) => language == null || item.language == language)
         .toList();
     list.sort((a, b) => a.dueDate.compareTo(b.dueDate));
     return list;
@@ -151,6 +156,7 @@ class HistoryService extends ChangeNotifier {
 
   Future<void> _registerSrsFailure({
     required String sentenceId,
+    required String language,
     required int level,
   }) async {
     final existingMap = _srsItemsBox.get(sentenceId) as Map?;
@@ -159,6 +165,7 @@ class HistoryService extends ChangeNotifier {
         : 0;
     final item = SrsItem(
       sentenceId: sentenceId,
+      language: language,
       level: level,
       stage: 0,
       dueDate: _addDays(_dateOnly(DateTime.now()), _srsIntervalDays[0]!),
