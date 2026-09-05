@@ -16,6 +16,11 @@
 **発音・声調は採点対象外。** 文法・語彙・語順のみを見る。音声認識を経た時点で発音の情報は失われており、
 LLMに発音を評価させると根拠のない指摘（ハルシネーション）になるため、プロンプトで明示的に除外している。
 
+例外として、**口頭中国語作文ドリルだけ**は文字起こし時に「聞こえたままの声調付きピンイン」を
+併せて受け取り、模範解答のピンインとDart側で決定的に比較して、声調の食い違いを**スコアと無関係の
+別カード「気づいた点」**として控えめに出す（「声調フィードバック」の節を参照）。LLMに声調の正誤を
+判定させるのではなく、比較はすべてローカルで行う。独り言モードにはこの機能は無い。
+
 ### 学習言語の抽象化
 
 言語で分岐する設定は `models/learning_language.dart` の `LanguageProfile` に集約する。
@@ -56,7 +61,8 @@ lib/
   models/                   # 純Dartモデル（fromJson/toJson を持つ）
     sentence.dart           # 教材文
     topic.dart              # 独り言のお題
-    drill_result.dart       # 口頭英作文の1問の結果＋添削
+    drill_result.dart       # 口頭英作文の1問の結果＋添削（中国語は声調の気づき toneNotes も持つ）
+    tone_note.dart          # 声調の気づき1件（音節位置・期待/実測のピンインと声調番号）
     token_usage.dart        # Gemini APIのトークン使用量（usageMetadata由来）
     monologue_result.dart   # 独り言1回の結果＋添削
     srs_item.dart           # SRS復習アイテム
@@ -97,6 +103,7 @@ lib/
     review_launcher.dart    # 「今日の復習」開始処理の共通ロジック（ホーム/復習タブ両方から利用）
     score_colors.dart       # スコア(0-100)→表示色の変換
     theme_labels.dart       # テーマ識別子(daily/business/travel)→日本語表示名
+    pinyin.dart             # ピンインの音節分割・声調抽出・声調差分（自前実装、外部パッケージ不使用）
 assets/data/
   sentences_700.json        # TOEIC700点台 200文
   sentences_800.json        # TOEIC800点台 200文
@@ -129,6 +136,19 @@ assets/data/
 - `widgets/mic_button.dart` の `MicButton`: ドリル・独り言共通のマイク操作ボタン（直径88px既定）。未録音時はprimaryGradient背景＋オレンジ影（blur16、alpha 0.2）。録音中は外側に広がる半透明オレンジのパルスリングを1.2秒周期で繰り返しアニメーション（無限ループ。テストで`pumpAndSettle()`を使うと収束しないため、明示的に`pump(duration)`で扱う）
 - `utils/app_route.dart` の `appRoute()`: 250msの軽いスライド（右から）＋フェードの`PageRouteBuilder`。主要な画面遷移で`MaterialPageRoute`の代わりに使用
 
+### 口頭中国語作文の「気づいた点」カード（声調フィードバック）
+
+`DrillFeedbackView` は `profile.readingLabel != null` かつ `sentence.reading != null` かつ
+文字起こしの `reading` が模範解答と音節列で一致（ガード1）し、かつ指摘が1件以上あるときだけ、
+採点完了（stage 2）で「気づいた点」カードを他のカードと同じフェードインで出す。それ以外は
+カードごと非表示（「問題なし」の表示は無い）。
+
+- 見出し: `Icons.hearing` ＋「気づいた点」。「声調チェック」「声調OK」といった語は使わない
+- 補足文（textSecondary 12px）: 「音声認識が聞き取った声調（参考値）が模範解答のピンインと違っていた音節です。聞き取りの誤差も含まれます。」
+- 1件1行: `[3声 → 4声]` のピル（`scoreLowSurface` 背景・`scoreLow` 文字）＋ 対象の漢字（音節数と漢字数が一致するときだけ）
+  ＋ `shuǐ`（模範解答、textPrimary 太字）→ `shuì`（聞こえた音、scoreLow 太字）
+- 英語モード（`readingLabel == null`）ではこのカードに関わる処理は一切走らない
+
 ## データモデル
 
 ### 教材 (assets/data/sentences_*.json)
@@ -158,7 +178,7 @@ assets/data/
 | box名 | キー | 内容 |
 |---|---|---|
 | `settings` | 固定キー | 独り言デフォルト秒数など非秘匿設定（旧`modelName`/`sttMode`キーは起動時に削除） |
-| `drill_results` | uuid | DrillResult（sentenceId, spoken, feedback一式, timestamp） |
+| `drill_results` | uuid | DrillResult（sentenceId, spoken, feedback一式, timestamp, toneNotes=声調の気づき。null は未判定＝英語・ピンイン無し・音節列不一致。既存データは null で読める） |
 | `monologue_results` | uuid | MonologueResult（topicId, seconds, transcript, feedback一式, timestamp） |
 | `srs_items` | sentenceId | SrsItem（stage, dueDate, lapses, lastResult） |
 | `phrases` | uuid | Phrase（en, ja, source, createdAt） |
@@ -229,10 +249,69 @@ APIキーだけは `flutter_secure_storage`（キー名 `gemini_api_key`）。
 - 聞き取れる対象言語の発話が無い場合はマーカー `[NO_SPEECH]`（`GeminiService.noSpeechMarker`）を返すよう指示し、応答に含まれていれば「音声を聞き取れませんでした」の `GeminiException`。空文字を返させると下記の空応答と区別できないため
 - 空応答（`"content": {}` で `parts` が無く `finishReason: STOP`、出力トークン0）は Gemini 3系Flash が稀に返す一時的な不調。`_requestText` で同じリクエストを最大3回まで送り直し、それでも空なら「文字起こし結果が返ってきませんでした」の `GeminiException`（添削の構造化出力も同じ再試行を通る）。使用量は再試行分も合算する
 
+#### 中国語の文字起こし（声調付きピンイン併記）
+
+`LanguageProfile.readingLabel != null`（＝中国語）のときだけ、文字起こしを構造化出力にして
+漢字と一緒に「聞こえたままの声調付きピンイン」を受け取る。英語はプレーンテキストのまま一切変えない。
+
+```json
+{ "pinyin": "wǒ yào shuì",   // 聞こえたとおりの声調記号付きピンイン（音節ごとに半角スペース区切り）
+  "hanzi": "我要睡" }         // 簡体字の書き起こし（聞き取れなければ [NO_SPEECH]）
+```
+
+- `responseSchema.propertyOrdering` を **`["pinyin", "hanzi"]` に固定**する。構造化出力は左から順に
+  生成されるため、漢字を先に確定させるとピンインがその辞書引きになり実際の声調が消える
+  （`tool/pinyin_poc` はこの順序で測定している）
+- プロンプトで「ピンインは実際に聞こえた音をそのまま書く／語彙的に正しい声調に直さない／意味・文脈から
+  声調を推測せずピッチだけを根拠にする／声調が判断できない音節は軽声（記号なし）」を明示する
+- **この呼び出しに模範解答は渡さない**（渡すと確実にそれに引っ張られる）
+- 無音・聞き取り不能の扱いは英語と同じ（`hanzi` に `[NO_SPEECH]` を返させ、含まれていれば
+  「音声を聞き取れませんでした」の `GeminiException`。`hanzi` が空文字の場合も同様）
+- 返り値は `TranscriptionResult.reading`（英語では常に null）。ピンインの解釈・比較は Dart 側で行う
+- コスト増は1問あたり出力+50トークン程度
+
+### 声調フィードバック（口頭中国語作文ドリルのみ）
+
+**背景**: `tool/pinyin_poc`（ブランチ `claude/chinese-hanzi-pinyin-output-n0pzxe`）でTTS音声を使い
+3声⇄4声の最小対8組を実測したところ、取り違え0件・聞き分け7/8組だった一方、対象外の音節への
+誤指摘（嘘）が2箇所/56音節、音節ズレが4箇所あった。測定はTTSの明瞭な発音によるもので、学習者の
+あいまいな発音では未検証（上限値）。**嘘をゼロと仮定して設計してはいけない**ため、下記の3つの
+ガードは仕様として固定する。学習アプリでは「見逃し」より「嘘」（正しく発音できている箇所を誤りと
+教える）のほうが有害。
+
+**アルゴリズム**（`utils/pinyin.dart`、すべてDart側の決定的処理。Geminiに正誤判定を聞かない）:
+
+1. `Sentence.reading`（模範解答。変調適用済み）と認識ピンインをそれぞれ音節に分割する
+2. **声調記号を外した綴りの列**を比較し、完全一致しなければ打ち切って null（ガード1）
+3. 一致した場合のみ音節ごとに声調番号を比較する
+4. どちらかが軽声（記号なし＝tone 5）の音節はスキップする（ガード2）
+5. 残った不一致だけを `ToneNote`（音節位置・期待/実測のピンイン・声調番号）として返す
+
+音節分割の要件: 語ごとに連結された表記（`Qǐngwèn`）と音節スペース区切り（`qǐng wèn`）の両方／
+声調記号つき母音→素の母音＋声調番号／記号なし＝軽声／j・q・x・yの後ろの ü は u と綴られるため
+韻母表に `ue` を含める／儿化（`diǎnr`）の r を音節に取り込む／大文字小文字無視・句読点（全角含む）除去。
+
+**ガード（妥協不可）**:
+
+- **ガード1**: 音節列（綴り）が模範解答と一致しないときは声調について一切何も言わない。
+  聞き取り失敗時の巻き添え誤指摘と、模範解答と違う言い回しをしたときの期待ピンイン算出
+  （変調・多音字の解決）をまとめて回避する。v1は「模範解答どおりに言えたときだけ声調を見る」
+- **ガード2**: 軽声がらみの差は絶対に報告しない（喜欢 xǐhuan / xǐhuān のように辞書・話者・TTSで揺れる）
+- **ガード3**: UIで「声調をチェックした」と言わない。見出しは「気づいた点」。「声調OK」等の肯定的な
+  断定を出さない。指摘0件のときはカードごと非表示（「問題なし」と出さない）。検出できた誤りだけを
+  控えめに列挙する。指摘がない＝正しい、と誤解される見せ方をすると見逃した分がそのまま嘘になる
+
+**スコアに声調を含めない。** `correctComposition()` の「発音・声調は評価対象に含めません」の行は
+そのまま残す。声調は加点減点と無関係の別カード。
+
+**やらないこと**: 独り言モードへの追加／変調・多音字の自前解決／声調のスコアリング／
+発音評価専用API（SpeechSuper・Chivox等）の導入／`pinyin`・`lpinyin` 等の依存パッケージ追加。
+
 ## 音声入力の抽象化
 
 `SpeechInputService`（抽象）の実装は `GeminiSpeechInputService` のみ:
 - record の `startStream` でPCM16をメモリに蓄積 → 停止後に16kHz monoへ変換・WAV化して GeminiService.transcribe() → テキスト
+- 返り値 `SpeechInputResult` は `text`・`usage` に加えて `reading`（中国語の声調付きピンイン。英語では null）を透過する
 - 録音中は `onPartial` に「聞き取り中…」の固定文言、`onLevel` に正規化した入力音量を流す
 - 権限拒否・録音失敗時は日本語エラーメッセージ（`SpeechInputException`）を返し、画面側は録り直しの導線を用意する
 - 端末STT（speech_to_text）はPR17で廃止（設定項目も削除）
