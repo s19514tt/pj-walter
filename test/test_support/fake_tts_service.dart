@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:pj_walter/models/token_usage.dart';
 import 'package:pj_walter/services/tts_service.dart';
 
 /// 読み上げの呼び出しを記録するだけの[TtsService]。
@@ -19,6 +20,9 @@ class FakeTtsService implements TtsService {
   /// [speak]で投げる例外。nullなら正常に完了する。
   TtsException? error;
 
+  /// [speak]が返すトークン使用量（読み上げ1回分）
+  TokenUsage usage = TokenUsage.zero;
+
   /// [speak]を完了させずに保留させるかどうか（読み上げ中の表示の検証用）。
   ///
   /// trueにすると[speak]は[completeSpeaking]が呼ばれるまで返らない。
@@ -27,7 +31,7 @@ class FakeTtsService implements TtsService {
   Completer<void>? _pendingSpeak;
 
   @override
-  Future<void> speak(String text) async {
+  Future<SpeakResult> speak(String text) async {
     spoken.add(text);
     final error = this.error;
     if (error != null) throw error;
@@ -36,6 +40,7 @@ class FakeTtsService implements TtsService {
       _pendingSpeak = completer;
       await completer.future;
     }
+    return (usage: usage);
   }
 
   /// 保留中の[speak]を完了させる。

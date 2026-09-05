@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pj_walter/models/drill_result.dart';
 import 'package:pj_walter/models/sentence.dart';
+import 'package:pj_walter/models/token_usage.dart';
 import 'package:pj_walter/screens/composition/drill_feedback_view.dart';
 import 'package:pj_walter/services/tts_service.dart';
 import 'package:pj_walter/widgets/speak_button.dart';
@@ -294,5 +295,46 @@ void main() {
     await tester.tap(find.byType(SpeakButton));
     await tester.pumpAndSettle();
     expect(tts.spoken, ['English sentence']);
+  });
+
+  testWidgets('読み上げで消費したトークンが親に通知される', (tester) async {
+    const feedback = CompositionFeedback(
+      score: 85,
+      isAcceptable: true,
+      corrected: 'I had toast this morning.',
+      explanationJa: '解説',
+      comparisonJa: '比較',
+    );
+    // 1回目はGeminiを呼ぶので使用量が返る
+    final tts = FakeTtsService()
+      ..usage = const TokenUsage(promptTokens: 20, candidatesTokens: 900);
+    final reported = <TokenUsage>[];
+
+    await tester.pumpWidget(
+      _wrap(
+        DrillFeedbackView(
+          sentence: _sentence(),
+          spoken: 'I eat toast this morning',
+          feedback: feedback,
+          onNext: () {},
+          onRetry: () {},
+          ttsService: tts,
+          onSpeechUsage: reported.add,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(SpeakButton).first);
+    await tester.pumpAndSettle();
+    expect(reported, [
+      const TokenUsage(promptTokens: 20, candidatesTokens: 900),
+    ]);
+
+    // キャッシュ再生（使用量ゼロ）は通知しない
+    tts.usage = TokenUsage.zero;
+    await tester.tap(find.byType(SpeakButton).first);
+    await tester.pumpAndSettle();
+    expect(reported.length, 1);
   });
 }

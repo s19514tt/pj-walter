@@ -21,8 +21,7 @@ LLMに発音を評価させると根拠のない指摘（ハルシネーショ�
 言語で分岐する設定は `models/learning_language.dart` の `LanguageProfile` に集約する。
 言語を増やすときは `LanguageProfile.values` に1件足し、教材アセットを置くだけで済むようにしてある。
 `LanguageProfile` が持つもの: 言語コード / 表示名 / トレーニングの呼び名 / 教材アセットのディレクトリ /
-デッキのレベル一覧 / 発音表記のラベル（中国語のみ「ピンイン」）/ 分かち書きする言語かどうか /
-読み上げ（TTS）のロケール（`en-US` / `zh-CN`）。
+デッキのレベル一覧 / 発音表記のラベル（中国語のみ「ピンイン」）/ 分かち書きする言語かどうか。
 
 「分かち書きするか」は差分表示に効く。`utils/word_diff.dart` は空白分割ではなく
 CJK文字を1文字1トークンとして切るため、中国語でも語レベルに近い差分が出る
@@ -44,7 +43,7 @@ CJK文字を1文字1トークンとして切るため、中国語でも語レベ
 - ローカルDB: `hive` / `hive_flutter`（コード生成なし、`Box<Map>` 相当で Map を格納）
 - APIキー保存: `flutter_secure_storage`
 - 音声認識: `record`（録音→Gemini音声認識）のみ。端末STT（speech_to_text）はPR17で廃止
-- 読み上げ: `flutter_tts`（端末OSのTTSエンジン。添削結果の発音確認に使用）
+- 読み上げ: Gemini TTS（`gemini-3.1-flash-tts-preview`）で音声生成し、`audioplayers` で再生
 - HTTP: `http`
 - グラフ: `fl_chart`
 - その他: `intl`, `uuid`
@@ -219,11 +218,32 @@ APIキーだけは `flutter_secure_storage`（キー名 `gemini_api_key`）。
   - 2026-12-31まで: 入力 $0.75 / 出力 $3.75 per 1M tokens（導入価格）
   - 2027-01-01から: 入力 $1.50 / 出力 $7.50 per 1M tokens（標準価格）
   - 音声入力も入力単価をそのまま適用（このモデルでは音声の別単価なし）。コンテキストキャッシュ・Batchは未使用
+- 読み上げは別モデル（`gemini-3.1-flash-tts-preview`）なので単価も別: `GeminiPricing.tts`
+  （入力 $1.00 / 出力（音声）$20.00 per 1M tokens、導入価格の設定なし。2026-09-05確認）。
+  **合計トークンに単価を1つ掛けると請求とずれる**ため、コストは必ず用途ごとに計算して足す
+  （`DrillQuestionUsage.costUsd()`）。音声出力は単価が高いので同じ文の読み上げはキャッシュする
 - 口頭英作文の `DrillScreen` は問ごとに文字起こしと添削の `TokenUsage` を `DrillSummaryEntry.usage`（`DrillQuestionUsage`）に積み（「もう一度」のやり直し分も加算）、全問終了後の `DrillSummaryScreen` で
-  - 「APIトークン使用量」カード: 文字起こし／添削／合計の入力・出力トークンとコスト（USD、小数4桁）、思考トークン数、適用単価
+  - 「APIトークン使用量」カード: 文字起こし／添削／読み上げ（使った場合のみ）／合計の入力・出力トークンとコスト（USD、小数4桁）、思考トークン数、適用単価
   - 問ごとの行: `入力 N · 出力 M · $X.XXXX`（使用量ゼロの問は非表示）
 - 独り言英会話は使用量を受け取るが表示はまだしない
 - Hive には保存しない（セッション内表示のみ）
+
+### 読み上げ（TTS）
+
+`POST .../models/gemini-3.1-flash-tts-preview:generateContent`（`GeminiService.ttsModelName`）。
+`gemini-3.8-flash` は音声出力に対応していないため、読み上げだけモデルを分けている。
+
+```json
+{ "contents": [{ "parts": [{ "text": "Read the following 英語 sentence clearly and a little slowly, in a calm teaching voice: I had toast this morning." }] }],
+  "generationConfig": {
+    "responseModalities": ["AUDIO"],
+    "speechConfig": { "voiceConfig": { "prebuiltVoiceConfig": { "voiceName": "Kore" } } } } }
+```
+
+応答は `candidates[0].content.parts[0].inlineData` に base64 のPCM16（モノラル、mimeType は
+`audio/L16;codec=pcm;rate=24000`）。`buildWavBytes` でWAVヘッダーを付けて再生する
+（サンプリングレートは mimeType の `rate` を読む。無ければ 24000）。
+`thinkingConfig` は付けない（TTSモデルは思考を持たない）。
 
 ### 音声文字起こし
 
@@ -242,13 +262,15 @@ APIキーだけは `flutter_secure_storage`（キー名 `gemini_api_key`）。
 
 ## 読み上げ（TTS）の抽象化
 
-`TtsService`（抽象）の実装は `FlutterTtsService` のみ:
-- `flutter_tts` に `LanguageProfile.ttsLanguage`（`en-US` / `zh-CN`）を設定して読み上げる
-- 初回 `speak()` で言語・速度・音量をまとめて設定する（`isLanguageAvailable` が false なら
-  「この端末にその言語の音声が無い」旨の `TtsException`）。学習用途なので速度は等速よりやや遅くする
-  （Android/iOS は 0.5 が等速なので 0.45、Web は Web Speech API の 1.0 が等速なので 0.9）
-- `awaitSpeakCompletion(true)` を設定するため `speak()` は読み上げ完了まで待つ。
-  画面側はこれを「読み上げ中」表示（ボタンが「停止」に変わる）にそのまま使える
+`TtsService`（抽象）の実装は `GeminiTtsService` のみ。端末のTTSエンジンは使わない
+（対応言語・声質が端末ごとにぶれるため。中国語の音声が入っていない端末でも読み上げたい）:
+- `GeminiService.synthesizeSpeech()` が Gemini TTS のWAVを返し、それを `audioplayers` の
+  `BytesSource` で鳴らす。読み上げ言語はモデルが入力テキストから自動判定する
+- `speak()` は再生完了（または `stop()` による中断）まで待つ。画面側はこれを
+  「読み上げ中」表示（ボタンが「停止」に変わる）にそのまま使える。
+  `audioplayers` は `stop()` では `onPlayerComplete` を流さないため、
+  完了通知と停止の両方で `Completer` を解いている（片方だけだと停止後に待ち続ける）
+- 音声出力は単価が高いので、同じ文の2回目以降はメモリ上のキャッシュから再生してAPIを呼ばない
 - 生成・破棄は画面（`DrillScreen`）が持ち、テストでは `FakeTtsService` に差し替える
 
 添削画面（`drill_feedback_view.dart`）の「修正版」「模範解答」の見出し右端に

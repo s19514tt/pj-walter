@@ -22,6 +22,19 @@ class GeminiPricing {
     label: '2026年12月31日までの導入価格',
   );
 
+  /// 読み上げ（TTS）モデル`gemini-3.1-flash-tts-preview`の単価。
+  ///
+  /// 出典: https://ai.google.dev/gemini-api/docs/pricing （2026-09-05 確認）
+  /// 入力（テキスト）$1.00 / 出力（音声）$20.00 per 1M tokens。
+  /// 導入価格の設定は無く、日付による切り替えもない。
+  /// 音声出力はテキスト出力よりかなり高いため、同じ文の読み上げは
+  /// [GeminiTtsService]がキャッシュしてAPIの再呼び出しを避けている。
+  static const tts = GeminiPricing(
+    inputUsdPerMillion: 1.00,
+    outputUsdPerMillion: 20.00,
+    label: 'gemini-3.1-flash-tts-preview',
+  );
+
   /// 標準価格（2027年1月1日以降）
   static const standard = GeminiPricing(
     inputUsdPerMillion: 1.50,

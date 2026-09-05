@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/drill_result.dart';
 import '../../models/sentence.dart';
+import '../../models/token_usage.dart';
 import '../../services/tts_service.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/score_colors.dart';
@@ -28,8 +29,9 @@ import '../../widgets/stat_badge.dart';
 ///
 /// スコアカードの直下には出題された日本語文（問題文）を常に表示する。採点を
 /// 待っている間も何に答えたのかを見失わないようにするため、段階表示の対象外。
-/// 「修正版」「模範解答」には[SpeakButton]を置き、[ttsService]で学習言語の
-/// 発音を確認できるようにする。
+/// 「修正版」「模範解答」には[SpeakButton]を置き、[ttsService]（Gemini TTS）で
+/// 学習言語の発音を確認できるようにする。読み上げで消費したトークンは
+/// [onSpeechUsage]で親に渡し、まとめ画面のコスト表示に含める。
 class DrillFeedbackView extends StatefulWidget {
   const DrillFeedbackView({
     super.key,
@@ -39,6 +41,7 @@ class DrillFeedbackView extends StatefulWidget {
     required this.onNext,
     required this.onRetry,
     required this.ttsService,
+    this.onSpeechUsage,
     this.isLast = false,
   });
 
@@ -59,6 +62,10 @@ class DrillFeedbackView extends StatefulWidget {
 
   /// 「修正版」「模範解答」の読み上げに使う音声合成
   final TtsService ttsService;
+
+  /// 読み上げでGeminiが消費したトークンの通知。
+  /// キャッシュから再生した場合は[TokenUsage.zero]なので呼ばれない。
+  final void Function(TokenUsage usage)? onSpeechUsage;
 
   /// 最終問題かどうか（プライマリボタンのラベルに反映）
   final bool isLast;
@@ -90,7 +97,8 @@ class _DrillFeedbackViewState extends State<DrillFeedbackView> {
     }
     setState(() => _speaking = text);
     try {
-      await widget.ttsService.speak(text);
+      final (:usage) = await widget.ttsService.speak(text);
+      if (usage != TokenUsage.zero) widget.onSpeechUsage?.call(usage);
     } on TtsException catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(

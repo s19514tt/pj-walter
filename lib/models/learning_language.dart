@@ -38,7 +38,6 @@ class LanguageProfile {
     required this.levels,
     required this.readingLabel,
     required this.wordSeparated,
-    required this.ttsLanguage,
   });
 
   /// この設定が対象とする言語
@@ -78,9 +77,6 @@ class LanguageProfile {
   /// falseの中国語では空白分割が使えないため、差分表示を文字単位で行う。
   final bool wordSeparated;
 
-  /// 読み上げ（TTS）に渡すBCP-47ロケール（例: `en-US` / `zh-CN`）。
-  final String ttsLanguage;
-
   static const english = LanguageProfile(
     language: LearningLanguage.english,
     code: 'en',
@@ -94,7 +90,6 @@ class LanguageProfile {
     ],
     readingLabel: null,
     wordSeparated: true,
-    ttsLanguage: 'en-US',
   );
 
   static const chinese = LanguageProfile(
@@ -110,7 +105,6 @@ class LanguageProfile {
     ],
     readingLabel: 'ピンイン',
     wordSeparated: false,
-    ttsLanguage: 'zh-CN',
   );
 
   static const values = <LanguageProfile>[english, chinese];
