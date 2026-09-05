@@ -122,6 +122,8 @@
   .pyline{word-break:break-word;line-height:1.9}
   .pyline .target{background:var(--warn-bg);border-radius:5px;padding:1px 6px;font-weight:700}
   .pyline .lie{background:var(--bad-bg);color:var(--bad);border-radius:5px;padding:1px 6px}
+  /* 軽声のゆれは嘘とは別扱い。赤で煽らない */
+  .pyline .wobble{background:var(--page);color:var(--sub);border-radius:5px;padding:1px 6px}
   .pyline .off{color:var(--sub);text-decoration:line-through}
 
   /* ---- 嘘の総数（総合結果の主役） ---- */

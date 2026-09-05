@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>声調識別テスト（最小対）— ピンイン声調 POC</title>
-<link rel="stylesheet" href="style.css?v=2">
+<link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
 <div class="wrap">
@@ -104,6 +104,7 @@
     <div><b id="tNone" style="color:var(--bad)">0</b><span class="mini">両方外し</span></div>
     <div><b id="tSwap">0</b><span class="mini">取り違え（読み単位）</span></div>
     <div><b id="tSlip">0</b><span class="mini">音節ズレ</span></div>
+    <div><b id="tWobble">0</b><span class="mini">軽声ゆれ（嘘に数えない）</span></div>
     <div><b id="tCost">$0.0000</b><span class="mini">合計コスト</span></div>
   </div>
   <div id="quality" style="margin-top:14px"></div>
@@ -114,8 +115,8 @@
 
 </div>
 
-<script src="poc.js?v=2"></script>
-<script src="cases.js?v=2"></script>
+<script src="poc.js?v=3"></script>
+<script src="cases.js?v=3"></script>
 <script>
 "use strict";
 
@@ -168,7 +169,12 @@ async function runPair(p){
       : tone === otherTone ? "swap" : "third";
 
     // 対象以外はどちらの文でも同じ発音。そこでの声調ちがいは嘘。
-    const lies = rows.filter(x => x.kind === "tone" && x.ei !== p.idx);
+    // ただし軽声が絡む食い違いは別枠にする。ある音節が軽声かどうかは辞書でも
+    // 話者でもTTSでも揺れるので（喜欢 xǐhuan / xǐhuān など）、こちらの表記ミスや
+    // 読み上げの癖と区別がつかず、モデルの作り話の証拠にはできない。
+    const toneDiffs = rows.filter(x => x.kind === "tone" && x.ei !== p.idx);
+    const lies   = toneDiffs.filter(x => x.exp.tone !== 5 && x.act.tone !== 5);
+    const wobble = toneDiffs.filter(x => x.exp.tone === 5 || x.act.tone === 5);
     // 音節そのものの取り違え。TTSか認識の品質問題で、声調判定の材料にならない。
     const slips = rows.filter(x => x.kind === "sub" || x.kind === "del" || x.kind === "ins");
 
@@ -178,7 +184,7 @@ async function runPair(p){
       : gh === hanziOnly(other.hanzi) ? "swap" : "other";
 
     readings.push({ key, verdict, hanziVerdict, got, tone, readTone, otherTone,
-                    rows, lies, slips, matched: rows.filter(x => x.kind === "ok").length,
+                    rows, lies, wobble, slips, matched: rows.filter(x => x.kind === "ok").length,
                     total: truth.length, pinyin: heard.pinyin, hanzi: heard.hanzi,
                     calls: heard.calls, ttsUsage: tts.usage });
   }
@@ -253,7 +259,10 @@ function transcriptLine(p, r){
   return r.rows.map(row => {
     const s = row.act ? row.act.raw : "—";
     if (row.ei === p.idx) return `<b class="target">${esc(s)}</b>`;
-    if (row.kind === "tone") return `<b class="lie">${esc(s)}</b>`;
+    if (row.kind === "tone")
+      return (row.exp.tone === 5 || row.act.tone === 5)
+        ? `<b class="wobble">${esc(s)}</b>`
+        : `<b class="lie">${esc(s)}</b>`;
     if (row.kind !== "ok") return `<span class="off">${esc(s)}</span>`;
     return `<span>${esc(s)}</span>`;
   }).join(" ");
@@ -295,6 +304,10 @@ function readingBlock(p, key, r){
             r.lies.map(x => `<span class="syl">${esc(x.exp.raw)}→${esc(x.act.raw)}</span>`).join("、 ") +
             `　<span class="mini">両方の文で同じ発音の音節に声調ちがいを報告＝でたらめ</span>`
           : `<span class="pill good">0箇所</span>`}</span></div>
+      ${r.wobble.length ? `<div class="resLine"><span class="resKey">軽声ゆれ</span>
+        <span><span class="pill flat">${r.wobble.length}箇所</span> ` +
+        r.wobble.map(x => `<span class="syl">${esc(x.exp.raw)}→${esc(x.act.raw)}</span>`).join("、 ") +
+        `　<span class="mini">軽声かどうかは辞書でも話者でも揺れるので、嘘とは数えません</span></span></div>` : ""}
       <div class="resLine"><span class="resKey">漢字</span>
         <span><span class="pill ${hc}">${hl}</span> <span class="han">${esc(r.hanzi) || "—"}</span></span></div>
       <div class="resLine"><span class="resKey">音節一致</span>
@@ -385,6 +398,7 @@ function renderSummary(){
   const readings = done.flatMap(p => R(p).readings);
 
   const lieTotal = readings.reduce((n,r) => n + r.lies.length, 0);
+  const wobbleTotal = readings.reduce((n,r) => n + r.wobble.length, 0);
   const slipTotal = readings.reduce((n,r) => n + r.slips.length, 0);
   // 対象以外の音節の総数（嘘の分母）
   const nonTarget = readings.reduce((n,r) => n + Math.max(0, r.total - 1), 0);
@@ -395,6 +409,7 @@ function renderSummary(){
   $("tNone").textContent = done.filter(p => R(p).pairVerdict === "none").length;
   $("tSwap").textContent = readings.filter(r => r.verdict === "swap").length;
   $("tSlip").textContent = slipTotal;
+  $("tWobble").textContent = wobbleTotal;
   $("tCost").textContent = "$" + done.reduce((s,p) => s + costOf(R(p).usage), 0).toFixed(4);
 
   $("tLie").textContent = lieTotal;
@@ -404,7 +419,9 @@ function renderSummary(){
        （${nonTarget ? (lieTotal/nonTarget*100).toFixed(1) : 0}%）。<br>
        ${lieTotal === 0
          ? "でたらめな指摘は出ていません。この音節は両方の文でまったく同じ発音なので、TTSの事故では説明できない指標です。"
-         : "この音節は両方の文でまったく同じ発音です。つまりTTSのせいにはできず、モデルが作り話をしています。"}`;
+         : "この音節は両方の文でまったく同じ発音です。つまりTTSのせいにはできず、モデルが作り話をしています。"}
+       ${wobbleTotal ? `<br><span class="mini">別途、軽声がらみの食い違いが ${wobbleTotal} 箇所ありますが、
+         軽声かどうかは辞書でも話者でも揺れるため嘘には数えていません。</span>` : ""}`;
 
   for (const s of SETS){
     const d = s.pairs.filter(p => { const r = R(p); return r && !r.pending && !r.error; });
@@ -414,6 +431,7 @@ function renderSummary(){
     const lies = d.flatMap(p => R(p).readings).reduce((n,r) => n + r.lies.length, 0);
     el.innerHTML = `${d.length}組実行 — <b>両方向 ${both}</b> / 片方向 ${d.filter(p=>R(p).pairVerdict==="half").length}
       / 両方外し ${d.filter(p=>R(p).pairVerdict==="none").length}　嘘 <b class="${lies?"lieRed":""}">${lies}</b>箇所`;
+    // ※ lies は軽声ゆれを除いた件数
   }
 
   // コーパスの健全性: 音節ズレが多いならTTSか認識が壊れていて、判定以前の問題
@@ -499,6 +517,7 @@ $("export").onclick = () => {
                  reading:x.key, verdict:x.verdict, hanziVerdict:x.hanziVerdict,
                  transcript:x.pinyin, hanzi:x.hanzi,
                  lies:x.lies.map(y => `${y.exp.raw}->${y.act.raw}`),
+                 neutralWobble:x.wobble.map(y => `${y.exp.raw}->${y.act.raw}`),
                  slips:x.slips.length, matched:x.matched, total:x.total }))
              } };
   }).filter(Boolean);

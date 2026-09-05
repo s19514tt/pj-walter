@@ -19,6 +19,20 @@
  *
  * idx は pinyin を音節に割ったときの0始まりの位置。a と b は idx の声調だけが
  * 異なり、それ以外の音節は完全に同一であること（cases_test で機械検証する）。
+ *
+ * ■ 軽声の扱い（重要）
+ *
+ * 単語の中で軽声になる音節を、辞書どおりに書かないとテストが壊れる。実際に
+ * 「喜欢」を xǐ huān（1声）と書いていたため、モデルが正しく xǐ huan（軽声）と
+ * 返すたびに、こちらの誤りを「モデルの嘘」として数えてしまっていた。
+ * 正しくは 喜欢 = xǐ huan、眼睛 = yǎn jing、那边 = nà bian。
+ *
+ * ルールは2つ。
+ *  1. 対象音節（idx）に軽声が絡むペアは採用しない。軽声かどうかは辞書でも
+ *     話者でも揺れるので、正解を一意に決められず、テストとして成立しない。
+ *     この理由で 眼睛/眼镜（yǎn jing ⇄ yǎn jìng）は不採用にした。
+ *  2. 対象以外の音節も、軽声になりうる語（喜欢・那边など）は枠ごと避ける。
+ *     残すのは 子・个・的・了 のように軽声で揺れのないものだけにする。
  */
 "use strict";
 
@@ -50,18 +64,15 @@ const PAIRS = [
     b:{ hanzi:"这是一种预言。", pinyin:"zhè shì yì zhǒng yù yán", ja:"これは一種の予言です。" } },
 
   // ---- セット2: 1声 ⇄ 4声 ----
-  { id:"2-1", set:2, idx:3,
-    a:{ hanzi:"我的眼睛很大。", pinyin:"wǒ de yǎn jīng hěn dà", ja:"私の目は大きい。" },
-    b:{ hanzi:"我的眼镜很大。", pinyin:"wǒ de yǎn jìng hěn dà", ja:"私のメガネは大きい。" } },
   { id:"2-2", set:2, idx:2,
     a:{ hanzi:"这是包子。",     pinyin:"zhè shì bāo zi",       ja:"これは肉まんです。" },
     b:{ hanzi:"这是豹子。",     pinyin:"zhè shì bào zi",       ja:"これはヒョウです。" } },
   { id:"2-3", set:2, idx:3,
-    a:{ hanzi:"他喜欢花。",     pinyin:"tā xǐ huān huā",       ja:"彼は花が好きです。" },
-    b:{ hanzi:"他喜欢画。",     pinyin:"tā xǐ huān huà",       ja:"彼は絵が好きです。" } },
-  { id:"2-4", set:2, idx:5,
-    a:{ hanzi:"那边有很多书。", pinyin:"nà biān yǒu hěn duō shū", ja:"あそこには本がたくさんある。" },
-    b:{ hanzi:"那边有很多树。", pinyin:"nà biān yǒu hěn duō shù", ja:"あそこには木がたくさんある。" } },
+    a:{ hanzi:"他买了花。",     pinyin:"tā mǎi le huā",        ja:"彼は花を買った。" },
+    b:{ hanzi:"他买了画。",     pinyin:"tā mǎi le huà",        ja:"彼は絵を買った。" } },
+  { id:"2-4", set:2, idx:4,
+    a:{ hanzi:"他有很多书。",   pinyin:"tā yǒu hěn duō shū",   ja:"彼は本をたくさん持っている。" },
+    b:{ hanzi:"他有很多树。",   pinyin:"tā yǒu hěn duō shù",   ja:"彼は木をたくさん持っている。" } },
   { id:"2-5", set:2, idx:2,
     a:{ hanzi:"这是杯子。",     pinyin:"zhè shì bēi zi",       ja:"これはコップです。" },
     b:{ hanzi:"这是被子。",     pinyin:"zhè shì bèi zi",       ja:"これは布団です。" } },
@@ -90,17 +101,17 @@ const PAIRS = [
   { id:"4-1", set:4, idx:3,
     a:{ hanzi:"我在学韩语。",   pinyin:"wǒ zài xué hán yǔ",    ja:"私は韓国語を学んでいます。" },
     b:{ hanzi:"我在学汉语。",   pinyin:"wǒ zài xué hàn yǔ",    ja:"私は中国語を学んでいます。" } },
-  { id:"4-2", set:4, idx:3,
-    a:{ hanzi:"他喜欢骑车。",   pinyin:"tā xǐ huān qí chē",    ja:"彼は自転車に乗るのが好きです。" },
-    b:{ hanzi:"他喜欢汽车。",   pinyin:"tā xǐ huān qì chē",    ja:"彼は自動車が好きです。" } },
+  { id:"4-2", set:4, idx:0,
+    a:{ hanzi:"骑车很方便。",   pinyin:"qí chē hěn fāng biàn", ja:"自転車は便利です。" },
+    b:{ hanzi:"汽车很方便。",   pinyin:"qì chē hěn fāng biàn", ja:"自動車は便利です。" } },
   { id:"4-3", set:4, idx:4,
     a:{ hanzi:"这是一个实验。", pinyin:"zhè shì yí ge shí yàn", ja:"これは一つの実験です。" },
     b:{ hanzi:"这是一个试验。", pinyin:"zhè shì yí ge shì yàn", ja:"これは一つの試験・テストです。" } },
 
   // ---- セット5: 2声 ⇄ 3声 ----
   { id:"5-1", set:5, idx:4,
-    a:{ hanzi:"我喜欢大学。",   pinyin:"wǒ xǐ huān dà xué",    ja:"私は大学が好きです。" },
-    b:{ hanzi:"我喜欢大雪。",   pinyin:"wǒ xǐ huān dà xuě",    ja:"私は大雪が好きです。" } },
+    a:{ hanzi:"他讨厌大学。",   pinyin:"tā tǎo yàn dà xué",    ja:"彼は大学が嫌いです。" },
+    b:{ hanzi:"他讨厌大雪。",   pinyin:"tā tǎo yàn dà xuě",    ja:"彼は大雪が嫌いです。" } },
   { id:"5-2", set:5, idx:3,
     a:{ hanzi:"今天有鱼。",     pinyin:"jīn tiān yǒu yú",      ja:"今日は魚があります。" },
     b:{ hanzi:"今天有雨。",     pinyin:"jīn tiān yǒu yǔ",      ja:"今日は雨が降ります。" } },
