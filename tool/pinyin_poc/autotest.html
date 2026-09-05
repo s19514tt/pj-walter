@@ -3,33 +3,37 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>声調検出テスト（TTS自動）— ピンイン声調 POC</title>
+<title>声調識別テスト（最小対）— ピンイン声調 POC</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div class="wrap">
 
-<h1>声調検出テスト（TTS自動）</h1>
+<h1>声調識別テスト（最小対）</h1>
 <p class="lead">
-正しい文と、声調だけを崩した文を<b>両方TTSで合成</b>して聴き比べられるようにし、
-<b>崩したほうだけ</b>をGeminiに認識させて、崩した声調をそのまま報告するか正しい声調に丸めるかを自動判定します。
+綴りが完全に同じで<b>1音節の声調だけが違う、どちらも自然な文</b>を2つ用意し、
+両方をTTSで読み上げてGeminiに認識させます。<b>2つを聞き分けられるか</b>を両方向で見る識別テストです。
 <a href="index.html">← 録音版はこちら</a></p>
 
 <div class="card">
-  <h2>この画面が測っているもの</h2>
+  <h2>なぜ作り直したか</h2>
+  <p class="mini" style="margin:0 0 10px">
+    前の版は「同音別声調の漢字に置き換えて不自然な文を作る」方式でした（我去超市买几个<b>睡</b>果）。
+    これには致命的な欠陥がありました。<b>意味の壊れた文はTTSが正しく読んでくれない</b>のです。
+    実際、対象と関係ない音節が別の音に化ける事故が起きました。そうなると
+    「崩していない音節への誤指摘」を数えても、それが<b>モデルの嘘なのかTTSの事故なのか区別がつかず</b>、
+    測定として成立しません。
+  </p>
   <div class="scroll"><table style="max-width:720px">
-    <tr><th style="width:130px">検出</th><td>崩した声調をそのまま報告した ＝ <b>音を聞いている</b></td></tr>
-    <tr><th>正規化</th><td>正しい声調に丸めた ＝ 漢字からの辞書引き。声調フィードバックは実装不能</td></tr>
-    <tr><th class="lieTh">嘘</th><td><b>崩していない音節に「声調ちがい」を報告した数。</b>対象以外はTTSが正しく読んでいるので、
-      そこでの指摘は全部でたらめ。学習アプリでは見逃しより嘘のほうが有害（正しい発音を壊す）なので、
-      <b>この数字が一番重要</b>です</td></tr>
+    <tr><th style="width:110px">旧</th><td>我去超市买几个<b class="lieRed">睡</b>果。 — 意味が壊れている。TTSが崩れる</td></tr>
+    <tr><th>新</th><td>我要<b>水</b>。／ 我要<b>睡</b>。 — <b>どちらも自然な実在の文</b>。TTSは普通に読める</td></tr>
   </table></div>
   <div class="note" style="margin-top:12px">
-    崩した文は、対象の漢字を<b>同音別声調の実在漢字</b>に置き換えて作っています（水 shuǐ → 睡 shuì）。
-    TTSは普通に読むだけで狙った声調の崩れが音になります。置換後の文は意味的に壊れている（睡果＝寝る果物）ので、
-    モデルが正しい声調へ戻そうとする圧力は最大にかかります。<br>
-    また、TTSの声調はきれいに発音されるので<b>実際の学習者の発音より検出しやすい条件</b>です。
-    ここでの成績は<b>上限値</b>だと思ってください。
+    どちらも正しい文なので「正解／不正解」ではありません。測るのは
+    <b>モデルが2つを区別できるか</b>です。両方向を認識させるので、<b>各組がそれ自身の対照群</b>になります
+    （別の対照セットは不要になりました）。<br>
+    対象以外の音節はどちらの文でも<b>まったく同じ発音</b>なので、そこでの声調ちがいの指摘は
+    今度こそ純粋に<b class="lieRed">モデルの嘘</b>として数えられます。
   </div>
 </div>
 
@@ -55,7 +59,7 @@
         <option value="twoPass">案B: 2コール（ピンイン専用＋漢字）</option>
       </select>
     </div>
-    <div><label for="delay">ケース間の待ち (ms)</label><input type="text" id="delay" value="600" spellcheck="false"></div>
+    <div><label for="delay">読み上げ間の待ち (ms)</label><input type="text" id="delay" value="600" spellcheck="false"></div>
   </div>
   <div class="row" style="margin-top:10px">
     <label style="flex:1 1 100%;display:flex;gap:8px;align-items:center;color:var(--ink);font-size:13px;margin:0">
@@ -69,16 +73,12 @@
     <button class="btn ghost" id="clearAudio" style="flex:0 0 auto">音声キャッシュを破棄</button>
     <span class="mini" id="keyState" style="flex:1 1 100%;margin-top:4px"></span>
   </div>
-  <div class="note" style="margin-top:12px">
-    1ケースにつきTTSを2回（正・誤）呼びます。合成した音声はメモリにキャッシュされ、
-    同じケースを再実行してもTTSは呼び直しません。TTSモデル名や声を変えたら「音声キャッシュを破棄」を押してください。
-  </div>
 </div>
 
 <div class="card">
   <h2>実行</h2>
   <div class="row" style="align-items:center">
-    <button class="btn" id="runAll" style="flex:0 0 auto">全50ケースを実行</button>
+    <button class="btn" id="runAll" style="flex:0 0 auto">全25組（50読み）を実行</button>
     <button class="btn sec" id="stop" style="flex:0 0 auto" disabled>中断</button>
     <button class="btn ghost" id="reset" style="flex:0 0 auto">結果をリセット</button>
     <button class="btn ghost" id="export" style="flex:0 0 auto">結果をJSONで書き出す</button>
@@ -93,20 +93,21 @@
   <div class="lieBox" id="lieBox">
     <div class="lieNum" id="tLie">0</div>
     <div>
-      <b>嘘（崩していない音節への誤指摘）</b>
+      <b>嘘（対象以外の音節への声調誤指摘）</b>
       <div class="mini" id="lieDetail">まだ実行していません。</div>
     </div>
   </div>
   <div class="tally" style="margin-top:16px">
-    <div><b id="tDone">0</b><span class="mini">実行済み / 50</span></div>
-    <div><b id="tHit" style="color:var(--good)">0</b><span class="mini">検出</span></div>
-    <div><b id="tNorm" style="color:var(--bad)">0</b><span class="mini">正規化</span></div>
-    <div><b id="tOther">0</b><span class="mini">それ以外</span></div>
-    <div><b id="tFp" style="color:var(--warn)">0</b><span class="mini">誤検出（対照群）</span></div>
-    <div><b id="tAcc">—</b><span class="mini">音節一致率</span></div>
+    <div><b id="tPairs">0</b><span class="mini">実行済み / 25組</span></div>
+    <div><b id="tBoth" style="color:var(--good)">0</b><span class="mini">両方向で聞き分け</span></div>
+    <div><b id="tHalf" style="color:var(--warn)">0</b><span class="mini">片方向だけ</span></div>
+    <div><b id="tNone" style="color:var(--bad)">0</b><span class="mini">両方外し</span></div>
+    <div><b id="tSwap">0</b><span class="mini">取り違え（読み単位）</span></div>
+    <div><b id="tSlip">0</b><span class="mini">音節ズレ</span></div>
     <div><b id="tCost">$0.0000</b><span class="mini">合計コスト</span></div>
   </div>
-  <div id="conclusion" style="margin-top:16px"></div>
+  <div id="quality" style="margin-top:14px"></div>
+  <div id="conclusion" style="margin-top:14px"></div>
 </div>
 
 <div id="sets"></div>
@@ -123,8 +124,8 @@ const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt
 const toneLabel = t => t === 5 ? "軽声" : `${t}声`;
 const hanziOnly = s => [...String(s ?? "")].filter(ch => /[一-鿿]/.test(ch)).join("");
 
-const audioCache = new Map();   // caseId -> {right, wrong}
-const results = new Map();      // caseId -> result
+const audioCache = new Map();   // pairId+key -> tts result
+const results = new Map();      // pairId -> {readings:[a,b], ...}
 let stopped = false, running = false;
 
 const cfg = () => ({
@@ -133,82 +134,73 @@ const cfg = () => ({
   thinking: $("thinking").checked
 });
 
-/** 実際に鳴る音（＝崩した文）のピンイン。対象音節の声調だけ差し替える。 */
-function spokenPinyin(c){
-  if (c.control) return c.pinyin;
-  return toSyllables(c.pinyin).map((s,i) => i === c.idx ? retone(s.raw, c.toTone) : s.raw).join(" ");
-}
-
 /* ============================================================
-   1ケースの実行と判定
+   1組（2読み）の実行と判定
    ============================================================ */
 
-async function runCase(c){
+async function runPair(p){
   const conf = cfg();
   const ttsCfg = { apiKey: conf.apiKey, model: $("ttsModel").value.trim(), voice: $("voice").value.trim() || "Kore" };
+  const readings = [];
 
-  // 1. 正・誤の両方を合成する（聴き比べ用）。対照群は正＝誤なので1回で済む。
-  let pair = audioCache.get(c.id);
-  if (!pair){
-    const wrong = await synthesize({ ...ttsCfg, text: c.corrupt });
-    const right = c.control ? wrong : await synthesize({ ...ttsCfg, text: c.hanzi });
-    pair = { wrong, right, shared: !!c.control };
-    audioCache.set(c.id, pair);
+  for (const key of ["a","b"]){
+    const self = p[key], other = p[key === "a" ? "b" : "a"];
+
+    let tts = audioCache.get(p.id + key);
+    if (!tts){
+      tts = await synthesize({ ...ttsCfg, text: self.hanzi });
+      audioCache.set(p.id + key, tts);
+    }
+    const heard = await transcribeByMode({ ...conf, mode: $("mode").value, audio: tts.audio });
+
+    const truth = toSyllables(self.pinyin);
+    const actual = toSyllables(heard.pinyin || "");
+    const rows = alignSyllables(truth, actual);
+    const row = rows.find(x => x.ei === p.idx);
+    const got = row && row.act ? row.act : null;
+    const tone = got ? got.tone : null;
+    const readTone = truth[p.idx].tone;
+    const otherTone = toSyllables(other.pinyin)[p.idx].tone;
+
+    // 読んだほうの声調で返れば聞き分け成功。相手の声調なら取り違え。
+    const verdict = !got ? "skip"
+      : tone === readTone ? "ok"
+      : tone === otherTone ? "swap" : "third";
+
+    // 対象以外はどちらの文でも同じ発音。そこでの声調ちがいは嘘。
+    const lies = rows.filter(x => x.kind === "tone" && x.ei !== p.idx);
+    // 音節そのものの取り違え。TTSか認識の品質問題で、声調判定の材料にならない。
+    const slips = rows.filter(x => x.kind === "sub" || x.kind === "del" || x.kind === "ins");
+
+    const gh = hanziOnly(heard.hanzi);
+    const hanziVerdict = !gh ? "none"
+      : gh === hanziOnly(self.hanzi) ? "read"
+      : gh === hanziOnly(other.hanzi) ? "swap" : "other";
+
+    readings.push({ key, verdict, hanziVerdict, got, tone, readTone, otherTone,
+                    rows, lies, slips, matched: rows.filter(x => x.kind === "ok").length,
+                    total: truth.length, pinyin: heard.pinyin, hanzi: heard.hanzi,
+                    calls: heard.calls, ttsUsage: tts.usage });
   }
 
-  // 2. 認識させるのは「誤の文」の音声だけ。
-  const heard = await transcribeByMode({ ...conf, mode: $("mode").value, audio: pair.wrong.audio });
+  const ok = readings.filter(r => r.verdict === "ok").length;
+  const pairVerdict = ok === 2 ? "both" : ok === 1 ? "half" : "none";
+  const usage = readings.flatMap(r => [r.ttsUsage, ...r.calls.map(c => c.usage)]).reduce(addUsage, zeroUsage());
 
-  // 3. 実際に鳴った音（誤の文のピンイン）を正解として突き合わせる。
-  const truthPinyin = spokenPinyin(c);
-  const truth = toSyllables(truthPinyin);
-  const actual = toSyllables(heard.pinyin || "");
-  const rows = alignSyllables(truth, actual);
-
-  const target = rows.find(r => r.ei === c.idx);
-  const got = target && target.act ? target.act : null;
-  const tone = got ? got.tone : null;
-
-  let verdict;
-  if (!got) verdict = "unknown";
-  else if (c.control) verdict = tone === c.fromTone ? "clean" : "fp";
-  else if (tone === c.toTone) verdict = "hit";
-  else if (tone === c.fromTone) verdict = "norm";
-  else verdict = "other";
-
-  // 崩していない音節への「声調ちがい」の指摘は、すべて嘘。
-  const lies = rows.filter(r => r.kind === "tone" && r.ei !== c.idx);
-  // 音節そのものを取り違えた箇所（声調の話ではなく認識ズレ）
-  const slips = rows.filter(r => r.kind === "sub" || r.kind === "del" || r.kind === "ins");
-  const matched = rows.filter(r => r.kind === "ok").length;
-
-  // 漢字は「誤の文 / 正の文 / それ以外」のどれになったか
-  const gh = hanziOnly(heard.hanzi);
-  const hanziVerdict = !gh ? "none"
-    : gh === hanziOnly(c.corrupt) ? (c.control ? "same" : "wrong")
-    : gh === hanziOnly(c.hanzi) ? "right" : "other";
-
-  const usage = [pair.wrong.usage, ...(pair.shared ? [] : [pair.right.usage]),
-                 ...heard.calls.map(x => x.usage)].reduce(addUsage, zeroUsage());
-
-  return { id:c.id, verdict, hanziVerdict, got, tone, rows, lies, slips,
-           matched, total: truth.length, truthPinyin,
-           pinyin: heard.pinyin, hanzi: heard.hanzi, calls: heard.calls,
-           ttsUsage: addUsage(pair.wrong.usage, pair.shared ? zeroUsage() : pair.right.usage),
-           usage, at: new Date().toISOString(), mode: $("mode").value };
+  return { id:p.id, readings, pairVerdict, usage, at:new Date().toISOString(), mode:$("mode").value };
 }
 
-async function execute(c){
-  results.set(c.id, { pending:true });
-  renderCase(c);
+async function execute(p){
+  results.set(p.id, { pending:true });
+  renderPair(p);
   try {
-    results.set(c.id, await runCase(c));
+    results.set(p.id, await runPair(p));
   } catch (e){
-    results.set(c.id, { error: String(e.message || e) });
-    $("err").textContent = `${c.id}: ${e.message || e}`;
+    results.set(p.id, { error: String(e.message || e) });
+    $("err").textContent = `${p.id}: ${e.message || e}`;
     $("err").classList.remove("hidden");
   }
-  renderCase(c);
+  renderPair(p);
   renderSummary();
 }
 
@@ -235,110 +227,120 @@ async function runList(list, label){
    描画
    ============================================================ */
 
-const VERDICT = {
-  hit:     ["検出", "good"],
-  norm:    ["正規化", "bad"],
-  other:   ["第三の声調", "warn"],
-  clean:   ["正常", "good"],
-  fp:      ["誤検出", "warn"],
-  unknown: ["取得不能", "flat"]
+const READING_VERDICT = {
+  ok:    ["聞き分けた", "good"],
+  swap:  ["取り違え", "bad"],
+  third: ["第三の声調", "warn"],
+  skip:  ["対象外", "flat"]
 };
 const HANZI_VERDICT = {
-  wrong: ["誤の文", "flat"], right: ["正の文", "good"],
-  same:  ["一致", "good"],   other: ["それ以外", "warn"], none: ["空", "bad"]
+  read:  ["読んだ文", "good"], swap: ["相手の文", "bad"],
+  other: ["別の文", "warn"],   none: ["空", "bad"]
+};
+const PAIR_VERDICT = {
+  both: ["両方向で聞き分け", "good"],
+  half: ["片方向だけ", "warn"],
+  none: ["両方外し", "bad"]
 };
 
 function audioTag(a){
-  if (!a) return "";
+  if (!a) return `<span class="mini">未合成</span>`;
   a.url ||= URL.createObjectURL(new Blob([a.audio.bytes], { type:"audio/wav" }));
   return `<audio controls preload="none" src="${a.url}"></audio>`;
 }
 
-/** 文字起こしを音節ごとに色分けする。対象音節は枠で囲み、嘘は赤。 */
-function transcriptLine(c, r){
+function transcriptLine(p, r){
   return r.rows.map(row => {
     const s = row.act ? row.act.raw : "—";
-    if (row.ei === c.idx) return `<b class="target">${esc(s)}</b>`;
+    if (row.ei === p.idx) return `<b class="target">${esc(s)}</b>`;
     if (row.kind === "tone") return `<b class="lie">${esc(s)}</b>`;
     if (row.kind !== "ok") return `<span class="off">${esc(s)}</span>`;
     return `<span>${esc(s)}</span>`;
   }).join(" ");
 }
 
-function renderCase(c){
-  const el = document.getElementById("case-" + c.id);
-  if (!el) return;
-  const r = results.get(c.id);
-  const body = el.querySelector(".caseResult");
-  const pair = audioCache.get(c.id);
-  const syl = toSyllables(c.pinyin)[c.idx];
+function readingBlock(p, key, r){
+  const self = p[key];
+  const tts = audioCache.get(p.id + key);
+  const syl = toSyllables(self.pinyin);
+  const label = key === "a" ? "読み1" : "読み2";
 
-  // 正・誤の文と発音は結果が出る前から出しておく（音声は合成後に付く）
-  const sentences = `
-    <div class="scroll"><table class="pairTable">
-      <tr class="rowRight">
-        <th>正（本来）</th>
-        <td class="han">${esc(c.hanzi)}</td>
-        <td class="syl">${toSyllables(c.pinyin).map((s,i) =>
-          i === c.idx ? `<b>${esc(s.raw)}</b>` : esc(s.raw)).join(" ")}</td>
-        <td class="audioCell">${pair ? audioTag(pair.right) : `<span class="mini">未合成</span>`}</td>
-      </tr>
-      <tr class="rowWrong">
-        <th>誤（合成）</th>
-        <td class="han">${esc(c.corrupt)}${c.control ? ` <span class="mini">＝正の文</span>` : ""}</td>
-        <td class="syl">${toSyllables(spokenPinyin(c)).map((s,i) =>
-          i === c.idx ? `<b>${esc(s.raw)}</b>` : esc(s.raw)).join(" ")}</td>
-        <td class="audioCell">${pair ? (pair.shared ? `<span class="mini">正と同じ音声</span>` : audioTag(pair.wrong)) : `<span class="mini">未合成</span>`}</td>
-      </tr>
-      <tr class="rowNote"><td colspan="4" class="mini">認識させるのは<b>誤の音声だけ</b>。正の音声は聴き比べ用で、Geminiには渡していません。</td></tr>
-    </table></div>`;
+  const head = `
+    <div class="readingHead">
+      <span class="rKey">${label}</span>
+      <span class="han">${esc(self.hanzi)}</span>
+      <span class="syl">${syl.map((s,i) => i === p.idx ? `<b>${esc(s.raw)}</b>` : esc(s.raw)).join(" ")}</span>
+      <span class="audioCell">${audioTag(tts)}</span>
+    </div>`;
 
-  if (!r){ body.innerHTML = sentences; el.className = "caseRow"; return; }
-  if (r.pending){ body.innerHTML = sentences + `<p class="mini">実行中…</p>`; el.className = "caseRow"; return; }
-  if (r.error){
-    body.innerHTML = sentences + `<p class="err" style="margin-top:10px">${esc(r.error)}</p>`;
-    el.className = "caseRow v-err"; return;
-  }
+  if (!r) return `<div class="reading">${head}</div>`;
 
-  const [vl, vc] = VERDICT[r.verdict];
+  const [vl, vc] = READING_VERDICT[r.verdict];
   const [hl, hc] = HANZI_VERDICT[r.hanziVerdict];
-  el.className = "caseRow v-" + r.verdict + (r.lies.length ? " hasLie" : "");
+  const detail = !r.got ? "対象の音節を取り出せませんでした（音節ズレ）"
+    : r.verdict === "ok"    ? `${esc(r.got.raw)}（${toneLabel(r.tone)}）＝ 読んだほうの声調`
+    : r.verdict === "swap"  ? `${esc(r.got.raw)}（${toneLabel(r.tone)}）＝ <b>相手の文の声調</b>`
+    : `${esc(r.got.raw)}（${toneLabel(r.tone)}）＝ どちらでもない第三の声調`;
 
-  const targetDetail = !r.got ? "対象の音節を取り出せませんでした"
-    : c.control ? `${esc(r.got.raw)}（${toneLabel(r.tone)}）— 崩していないので、これが本来の声調`
-    : r.verdict === "hit" ? `${esc(r.got.raw)}（${toneLabel(r.tone)}）＝ <b>実際に鳴った声調</b>`
-    : r.verdict === "norm" ? `${esc(r.got.raw)}（${toneLabel(r.tone)}）＝ <b>正の文の声調に戻された</b>`
-    : `${esc(r.got.raw)}（${toneLabel(r.tone)}）＝ 正でも誤でもない第三の声調`;
-
-  body.innerHTML = sentences + `
+  return `<div class="reading v-${r.verdict}${r.lies.length ? " hasLie" : ""}">
+    ${head}
     <div class="resultBlock">
       <div class="resLine"><span class="resKey">文字起こし</span>
-        <span class="syl pyline">${transcriptLine(c, r)}</span></div>
-
+        <span class="syl pyline">${transcriptLine(p, r)}</span></div>
       <div class="resLine"><span class="resKey">対象音節</span>
-        <span><span class="pill ${vc}">${vl}</span> ${targetDetail}</span></div>
-
+        <span><span class="pill ${vc}">${vl}</span> ${detail}</span></div>
       <div class="resLine"><span class="resKey lieKey">嘘</span>
         <span>${r.lies.length
-          ? `<span class="pill bad">${r.lies.length}箇所</span> ` + r.lies.map(x =>
-              `<span class="syl">${esc(x.exp.raw)}→${esc(x.act.raw)}</span>`).join("、 ") +
-            `　<span class="mini">崩していない音節に声調ちがいを報告＝でたらめ</span>`
-          : `<span class="pill good">0箇所</span> <span class="mini">崩していない音節への誤指摘なし</span>`}</span></div>
-
+          ? `<span class="pill bad">${r.lies.length}箇所</span> ` +
+            r.lies.map(x => `<span class="syl">${esc(x.exp.raw)}→${esc(x.act.raw)}</span>`).join("、 ") +
+            `　<span class="mini">両方の文で同じ発音の音節に声調ちがいを報告＝でたらめ</span>`
+          : `<span class="pill good">0箇所</span>`}</span></div>
       <div class="resLine"><span class="resKey">漢字</span>
         <span><span class="pill ${hc}">${hl}</span> <span class="han">${esc(r.hanzi) || "—"}</span></span></div>
-
       <div class="resLine"><span class="resKey">音節一致</span>
-        <span>${r.matched} / ${r.total}（実際に鳴った音との一致）${
-          r.slips.length ? `　<span class="mini">音節取り違え ${r.slips.length}箇所</span>` : ""}</span></div>
+        <span>${r.matched} / ${r.total}${
+          r.slips.length ? `　<span class="pill warn">音節ズレ ${r.slips.length}</span>
+            <span class="mini">TTSか認識の品質問題。声調の判定材料にはなりません</span>` : ""}</span></div>
     </div>
-
     <details><summary>生レスポンスとトークン</summary>
-      <p class="mini">TTS: in ${r.ttsUsage.prompt} / out ${r.ttsUsage.candidates}　|　合計 $${costOf(r.usage).toFixed(6)}</p>
+      <p class="mini">TTS: in ${r.ttsUsage.prompt} / out ${r.ttsUsage.candidates}</p>
       ${r.calls.map(x => `<p class="mini" style="margin:8px 0 4px"><b>${esc(x.label)}</b>
         — in ${x.usage.prompt} / out ${x.usage.candidates} / thinking ${x.usage.thoughts}</p>
         <pre>${esc(x.raw)}</pre>`).join("")}
-    </details>`;
+    </details>
+  </div>`;
+}
+
+function renderPair(p){
+  const el = document.getElementById("pair-" + p.id);
+  if (!el) return;
+  const r = results.get(p.id);
+  const body = el.querySelector(".pairBody");
+  const badge = el.querySelector(".pairBadge");
+
+  if (r && r.error){
+    el.className = "caseRow v-err";
+    badge.innerHTML = `<span class="pill bad">エラー</span>`;
+    body.innerHTML = `<p class="err">${esc(r.error)}</p>`;
+    return;
+  }
+  if (r && r.pending){
+    el.className = "caseRow";
+    badge.innerHTML = `<span class="mini">実行中…</span>`;
+  } else if (r){
+    const [pl, pc] = PAIR_VERDICT[r.pairVerdict];
+    const lies = r.readings.reduce((n,x) => n + x.lies.length, 0);
+    el.className = "caseRow v-" + r.pairVerdict + (lies ? " hasLie" : "");
+    badge.innerHTML = `<span class="pill ${pc}">${pl}</span>` +
+      (lies ? ` <span class="pill bad">嘘 ${lies}箇所</span>` : "");
+  } else {
+    el.className = "caseRow";
+    badge.innerHTML = "";
+  }
+
+  const rd = r && r.readings ? r.readings : [];
+  body.innerHTML = readingBlock(p, "a", rd.find(x => x.key === "a")) +
+                   readingBlock(p, "b", rd.find(x => x.key === "b"));
 }
 
 function renderSets(){
@@ -347,123 +349,125 @@ function renderSets(){
       <h2>${esc(s.title)}</h2>
       <p class="mini" style="margin:-6px 0 12px">${esc(s.desc)}</p>
       <div class="row" style="margin-bottom:14px">
-        <button class="btn sec runSet" data-set="${s.set}" style="flex:0 0 auto">このセット10件を実行</button>
+        <button class="btn sec runSet" data-set="${s.set}" style="flex:0 0 auto">このセット${s.pairs.length}組を実行</button>
         <span class="mini setTally" id="setTally-${s.set}" style="flex:1 1 auto;align-self:center"></span>
       </div>
-      ${s.cases.map(c => {
-        const syl = toSyllables(c.pinyin)[c.idx];
-        return `<div class="caseRow" id="case-${c.id}">
+      ${s.pairs.map(p => `
+        <div class="caseRow" id="pair-${p.id}">
           <div class="caseHead">
-            <button class="btn ghost runOne" data-id="${c.id}">▶</button>
+            <button class="btn ghost runOne" data-id="${p.id}">▶</button>
             <div class="caseText">
-              <div><b class="cid">${c.id}</b> <span class="mini">${esc(c.ja)}</span></div>
+              <div><b class="cid">${p.id}</b>
+                <span class="syl">${esc(toSyllables(p.a.pinyin)[p.idx].raw)} ⇄ ${esc(toSyllables(p.b.pinyin)[p.idx].raw)}</span>
+                <span class="mini">（${esc(tonePairLabel(p))}）</span></div>
+              <div class="mini">${esc(p.a.ja)} ／ ${esc(p.b.ja)}</div>
             </div>
-            <div class="caseChange syl">${
-              c.control
-                ? `<span class="mini">崩さない（${esc(syl.raw)} のまま）</span>`
-                : `${esc(syl.raw)}<span class="mini">(${toneLabel(c.fromTone)})</span> →
-                   ${esc(retone(syl.raw, c.toTone))}<span class="mini">(${toneLabel(c.toTone)})</span>`
-            }</div>
+            <div class="pairBadge"></div>
           </div>
-          <div class="caseResult"></div>
-        </div>`;
-      }).join("")}
+          <div class="pairBody"></div>
+        </div>`).join("")}
     </div>`).join("");
 
   document.querySelectorAll(".runOne").forEach(b => b.onclick = () => {
-    const c = SETS.flatMap(s => s.cases).find(x => x.id === b.dataset.id);
-    runList([c], c.id);
+    const p = PAIRS.find(x => x.id === b.dataset.id);
+    runList([p], p.id);
   });
   document.querySelectorAll(".runSet").forEach(b => b.onclick = () => {
     const s = SETS.find(x => x.set === Number(b.dataset.set));
-    runList(s.cases, `セット${s.set}`);
+    runList(s.pairs, `セット${s.set}`);
   });
-  SETS.flatMap(s => s.cases).forEach(renderCase);
+  PAIRS.forEach(renderPair);
 }
 
 function renderSummary(){
-  const all = SETS.flatMap(s => s.cases);
-  const done = all.filter(c => { const r = results.get(c.id); return r && !r.pending && !r.error; });
-  const R = c => results.get(c.id);
-  const count = v => done.filter(c => R(c).verdict === v).length;
+  const R = p => results.get(p.id);
+  const done = PAIRS.filter(p => { const r = R(p); return r && !r.pending && !r.error; });
+  const readings = done.flatMap(p => R(p).readings);
 
-  const lieTotal = done.reduce((s,c) => s + R(c).lies.length, 0);
-  const sylTotal = done.reduce((s,c) => s + R(c).total, 0);
-  const nonTarget = Math.max(0, sylTotal - done.length);
-  const matched = done.reduce((s,c) => s + R(c).matched, 0);
+  const lieTotal = readings.reduce((n,r) => n + r.lies.length, 0);
+  const slipTotal = readings.reduce((n,r) => n + r.slips.length, 0);
+  // 対象以外の音節の総数（嘘の分母）
+  const nonTarget = readings.reduce((n,r) => n + Math.max(0, r.total - 1), 0);
 
-  $("tDone").textContent = done.length;
-  $("tHit").textContent  = count("hit");
-  $("tNorm").textContent = count("norm");
-  $("tOther").textContent = count("other") + count("unknown");
-  $("tFp").textContent   = count("fp");
-  $("tAcc").textContent  = sylTotal ? `${Math.round(matched/sylTotal*100)}%` : "—";
-  $("tCost").textContent = "$" + done.reduce((s,c) => s + costOf(R(c).usage), 0).toFixed(4);
+  $("tPairs").textContent = done.length;
+  $("tBoth").textContent = done.filter(p => R(p).pairVerdict === "both").length;
+  $("tHalf").textContent = done.filter(p => R(p).pairVerdict === "half").length;
+  $("tNone").textContent = done.filter(p => R(p).pairVerdict === "none").length;
+  $("tSwap").textContent = readings.filter(r => r.verdict === "swap").length;
+  $("tSlip").textContent = slipTotal;
+  $("tCost").textContent = "$" + done.reduce((s,p) => s + costOf(R(p).usage), 0).toFixed(4);
 
   $("tLie").textContent = lieTotal;
   $("lieBox").className = "lieBox " + (!done.length ? "" : lieTotal === 0 ? "ok" : "ng");
-  $("lieDetail").innerHTML = !done.length
-    ? "まだ実行していません。"
-    : `崩していない ${nonTarget} 音節のうち ${lieTotal} 箇所で、ありもしない声調ちがいを報告
+  $("lieDetail").innerHTML = !done.length ? "まだ実行していません。"
+    : `対象以外の ${nonTarget} 音節のうち ${lieTotal} 箇所で、ありもしない声調ちがいを報告
        （${nonTarget ? (lieTotal/nonTarget*100).toFixed(1) : 0}%）。<br>
        ${lieTotal === 0
-         ? "でたらめな指摘は出ていません。見逃しはあっても、言うときは当たっているタイプ。"
-         : "この指摘を学習者に見せると、正しく発音できている箇所を「間違い」と教えることになります。"}`;
+         ? "でたらめな指摘は出ていません。この音節は両方の文でまったく同じ発音なので、TTSの事故では説明できない指標です。"
+         : "この音節は両方の文でまったく同じ発音です。つまりTTSのせいにはできず、モデルが作り話をしています。"}`;
 
   for (const s of SETS){
-    const d = s.cases.filter(c => { const r = R(c); return r && !r.pending && !r.error; });
+    const d = s.pairs.filter(p => { const r = R(p); return r && !r.pending && !r.error; });
     const el = $("setTally-" + s.set);
     if (!d.length){ el.textContent = ""; continue; }
-    const c2 = v => d.filter(c => R(c).verdict === v).length;
-    const lies = d.reduce((n,c) => n + R(c).lies.length, 0);
-    el.innerHTML = (s.set === 5
-      ? `${d.length}件 — 正常 ${c2("clean")} / <b>誤検出 ${c2("fp")}</b>`
-      : `${d.length}件 — <b>検出 ${c2("hit")}</b> / 正規化 ${c2("norm")} / その他 ${c2("other")+c2("unknown")}`)
-      + `　嘘 <b class="${lies ? "lieRed" : ""}">${lies}</b>箇所`;
+    const both = d.filter(p => R(p).pairVerdict === "both").length;
+    const lies = d.flatMap(p => R(p).readings).reduce((n,r) => n + r.lies.length, 0);
+    el.innerHTML = `${d.length}組実行 — <b>両方向 ${both}</b> / 片方向 ${d.filter(p=>R(p).pairVerdict==="half").length}
+      / 両方外し ${d.filter(p=>R(p).pairVerdict==="none").length}　嘘 <b class="${lies?"lieRed":""}">${lies}</b>箇所`;
   }
 
-  renderConclusion(done, lieTotal, nonTarget);
+  // コーパスの健全性: 音節ズレが多いならTTSか認識が壊れていて、判定以前の問題
+  const q = $("quality");
+  if (!readings.length) q.innerHTML = "";
+  else if (slipTotal === 0) q.innerHTML = "";
+  else {
+    const affected = readings.filter(r => r.slips.length).length;
+    q.innerHTML = `<div class="concl warn"><b>音声の品質に注意</b><p class="mini" style="margin:6px 0 0">
+      ${readings.length}読みのうち ${affected} 読みで音節そのものがズレています（計 ${slipTotal}箇所）。
+      最小対はどちらも自然な文なのでTTSは正しく読めるはずです。ズレが多い場合は、
+      該当読みの音声を実際に聴いて、TTSがおかしいのか認識がおかしいのかを確かめてください。
+      音節がズレている読みでは声調の判定は当てになりません。</p></div>`;
+  }
+
+  renderConclusion(done, readings, lieTotal, nonTarget);
 }
 
-function renderConclusion(done, lieTotal, nonTarget){
+function renderConclusion(done, readings, lieTotal, nonTarget){
   const box = $("conclusion");
-  const R = c => results.get(c.id);
-  const corrupted = done.filter(c => !c.control);
-  const control = done.filter(c => c.control);
-  if (corrupted.length < 5){
-    box.innerHTML = `<p class="mini">崩したケースを5件以上実行すると判定が出ます。</p>`;
+  const R = p => results.get(p.id);
+  if (done.length < 5){
+    box.innerHTML = `<p class="mini">5組以上実行すると判定が出ます。</p>`;
     return;
   }
-
-  const hit = corrupted.filter(c => R(c).verdict === "hit").length;
-  const fp = control.filter(c => R(c).verdict === "fp").length;
-  const rate = hit / corrupted.length;
+  const both = done.filter(p => R(p).pairVerdict === "both").length;
+  const rate = both / done.length;
+  const swap = readings.filter(r => r.verdict === "swap").length;
   const lieRate = nonTarget ? lieTotal / nonTarget : 0;
-  const noisy = lieTotal > 0 || fp > 0;
 
   let cls, head, detail;
-  if (noisy){
+  if (lieTotal > 0){
     cls = "bad"; head = "実装非推奨: 嘘をつくタイプ";
-    detail = `崩していない音節への誤指摘が ${lieTotal} 箇所（${(lieRate*100).toFixed(1)}%）${
-      control.length ? `、対照群の誤検出が ${fp}/${control.length} 件` : ""}。
-      検出率が ${(rate*100).toFixed(0)}% あっても、<b>正しく発音できている箇所を「間違い」と教える</b>のは
-      学習者の正しい習慣を壊します。声調フィードバックは何も出さないほうがマシです。
-      モードを変えて嘘がゼロになるか確かめ、それでも出るなら発音評価専用API（SpeechSuper / Chivox 等）に切り替える判断になります。`;
-  } else if (rate <= 0.1){
-    cls = "bad"; head = "実装不可: 音を聞かず辞書引きしている";
-    detail = `嘘はゼロですが、崩した ${corrupted.length} 件のうち検出できたのは ${hit} 件（${(rate*100).toFixed(0)}%）だけ。
-      TTSのきれいな声調ですら報告されないので、学習者の曖昧な発音で検出できる見込みはありません。`;
-  } else if (rate >= 0.7){
-    cls = "good"; head = "実装GO の目安を満たしています";
-    detail = `検出 ${hit}/${corrupted.length}（${(rate*100).toFixed(0)}%）、嘘ゼロ。
-      ただしこれはTTSのきれいな声調に対する<b>上限値</b>です。実際の学習者の発音では確実に下がるので、
-      録音版（index.html）で自分の声でも必ず確認してください。`;
+    detail = `両方の文で同じ発音の音節に、${lieTotal} 箇所（${(lieRate*100).toFixed(1)}%）のありもしない
+      声調ちがいを報告しています。今回はTTSのせいにできません。聞き分け率が ${(rate*100).toFixed(0)}% あっても、
+      <b>正しく発音できている箇所を「間違い」と教える</b>のは学習者の正しい習慣を壊します。
+      モードを変えて嘘がゼロになるか確かめ、それでも出るなら発音評価専用API（SpeechSuper / Chivox 等）
+      に切り替える判断になります。`;
+  } else if (rate >= 0.8){
+    cls = "good"; head = "声調を聞いています。実装GO";
+    detail = `${done.length}組中 ${both}組（${(rate*100).toFixed(0)}%）で両方向を聞き分け、嘘ゼロ。
+      モデルは辞書引きではなく実際の音を根拠にしています。
+      ただしTTSのきれいな発音での成績なので、録音版（index.html）で自分の声でも必ず確認してください。`;
+  } else if (rate <= 0.2){
+    cls = "bad"; head = "実装不可: 声調を聞いていない";
+    detail = `両方向を聞き分けられたのは ${both}/${done.length}組（${(rate*100).toFixed(0)}%）だけ。
+      取り違えが ${swap} 読みあり、頻度の高いほうの語に引き寄せられています。
+      嘘はつきませんが、声調の情報そのものが出力に残っていないので、声調フィードバックは作れません。`;
   } else {
-    cls = "warn"; head = "条件付きで実装可: 見逃すが嘘はつかない";
-    detail = `検出 ${hit}/${corrupted.length}（${(rate*100).toFixed(0)}%）、<b>嘘ゼロ</b>。
-      半分以上は見逃しますが、指摘した内容は当たっています。この性質なら
-      「声調をチェックしました」とは言わずに<b>「気づいた点」として検出できたものだけ控えめに出す</b>作りにすれば、
-      無いよりマシとして成立します。指摘がない＝正しい、と誤解される見せ方だけは避けてください。`;
+    cls = "warn"; head = "条件付き: 聞き分けられる組とそうでない組がある";
+    detail = `両方向を聞き分けたのは ${both}/${done.length}組（${(rate*100).toFixed(0)}%）、取り違え ${swap} 読み、<b>嘘ゼロ</b>。
+      セット別の内訳を見て、特定の声調ペアだけ成績が良いなら<b>そのペアに絞って実装する</b>道があります。
+      嘘がゼロなのは重要で、「見逃すが嘘はつかない」性質なら
+      「気づいた点」として控えめに出す作りで成立します。`;
   }
   box.innerHTML = `<div class="concl ${cls}"><b>${head}</b><p class="mini" style="margin:6px 0 0">${detail}</p></div>`;
 }
@@ -472,36 +476,36 @@ function renderConclusion(done, lieTotal, nonTarget){
    配線
    ============================================================ */
 
-$("runAll").onclick = () => runList(SETS.flatMap(s => s.cases), "全体");
+$("runAll").onclick = () => runList(PAIRS, "全体");
 $("stop").onclick = () => { stopped = true; };
 $("reset").onclick = () => {
-  results.clear();
-  SETS.flatMap(s => s.cases).forEach(renderCase);
-  renderSummary();
+  results.clear(); PAIRS.forEach(renderPair); renderSummary();
   $("progress").style.width = "0%"; $("progressText").textContent = "";
 };
 $("clearAudio").onclick = () => {
-  audioCache.forEach(p => { [p.right, p.wrong].forEach(a => { if (a && a.url) URL.revokeObjectURL(a.url); }); });
-  audioCache.clear();
-  SETS.flatMap(s => s.cases).forEach(renderCase);
+  audioCache.forEach(a => { if (a.url) URL.revokeObjectURL(a.url); });
+  audioCache.clear(); PAIRS.forEach(renderPair);
   $("keyState").textContent = "音声キャッシュを破棄しました。次の実行でTTSを呼び直します。";
 };
 $("export").onclick = () => {
-  const out = SETS.flatMap(s => s.cases).map(c => {
-    const r = results.get(c.id);
+  const out = PAIRS.map(p => {
+    const r = results.get(p.id);
     if (!r || r.pending) return null;
-    return { ...c, spokenPinyin: spokenPinyin(c),
-             result: r && !r.error ? {
-               mode:r.mode, verdict:r.verdict, hanziVerdict:r.hanziVerdict,
-               transcript:r.pinyin, hanzi:r.hanzi,
-               lies:r.lies.map(x => `${x.exp.raw}->${x.act.raw}`),
-               matched:r.matched, total:r.total, at:r.at
-             } : { error: r.error } };
+    return { id:p.id, set:p.set, idx:p.idx, tonePair:tonePairLabel(p),
+             a:p.a, b:p.b,
+             result: r.error ? { error:r.error } : {
+               mode:r.mode, pairVerdict:r.pairVerdict, at:r.at,
+               readings: r.readings.map(x => ({
+                 reading:x.key, verdict:x.verdict, hanziVerdict:x.hanziVerdict,
+                 transcript:x.pinyin, hanzi:x.hanzi,
+                 lies:x.lies.map(y => `${y.exp.raw}->${y.act.raw}`),
+                 slips:x.slips.length, matched:x.matched, total:x.total }))
+             } };
   }).filter(Boolean);
   const blob = new Blob([JSON.stringify(out, null, 2)], { type:"application/json" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = `tone-autotest-${$("mode").value}-${Date.now()}.json`;
+  a.download = `tone-pairs-${$("mode").value}-${Date.now()}.json`;
   a.click();
 };
 

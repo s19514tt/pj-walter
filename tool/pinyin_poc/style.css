@@ -76,10 +76,9 @@
 
   /* ---- 自動テスト画面（autotest.html） ---- */
   .caseRow{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px;background:#fff}
-  .caseRow.v-hit{border-color:var(--good);background:var(--good-bg)}
-  .caseRow.v-clean{border-color:var(--good)}
-  .caseRow.v-norm{border-color:var(--bad);background:var(--bad-bg)}
-  .caseRow.v-fp{border-color:var(--warn);background:var(--warn-bg)}
+  .caseRow.v-both{border-color:var(--good);background:var(--good-bg)}
+  .caseRow.v-half{border-color:var(--warn);background:var(--warn-bg)}
+  .caseRow.v-none{border-color:var(--bad);background:var(--bad-bg)}
   .caseRow.v-err{border-color:var(--bad)}
   .caseHead{display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap}
   .caseHead .runOne{flex:0 0 auto;padding:6px 12px;font-size:13px}
@@ -101,17 +100,20 @@
   /* ---- 正/誤の対と結果ブロック ---- */
   /* 嘘は検出より重い問題なので、検出できたケースでも赤で塗りつぶす */
   .caseRow.hasLie{border-color:var(--bad);background:var(--bad-bg);box-shadow:inset 4px 0 0 var(--bad)}
-  .pairTable{margin-top:10px}
-  .pairTable th{width:78px;vertical-align:middle;color:var(--sub)}
-  .pairTable td{vertical-align:middle}
-  .pairTable .han{font-size:16px;white-space:nowrap}
-  .pairTable .syl{font-size:13px;white-space:nowrap}
-  .pairTable .audioCell{width:230px}
-  .pairTable audio{width:220px;height:30px;margin:0}
-  .rowRight th{color:var(--good)}
-  .rowWrong th{color:var(--bad)}
-  .rowWrong td{background:var(--bad-bg)}
-  .rowNote td{border-bottom:none;padding-top:6px}
+  .pairBadge{flex:0 0 auto;align-self:center;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+  .pairBody:not(:empty){margin-top:10px;display:flex;flex-direction:column;gap:10px}
+  .reading{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff}
+  .reading.v-ok{border-color:var(--good)}
+  .reading.v-swap{border-color:var(--bad);background:var(--bad-bg)}
+  .reading.v-third{border-color:var(--warn);background:var(--warn-bg)}
+  .reading.hasLie{border-color:var(--bad);background:var(--bad-bg);box-shadow:inset 4px 0 0 var(--bad)}
+  .readingHead{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  .rKey{flex:0 0 auto;font-size:11px;color:var(--sub);font-weight:700;
+    background:var(--page);border-radius:6px;padding:3px 8px}
+  .readingHead .han{font-size:17px;white-space:nowrap}
+  .readingHead .syl{font-size:13px;color:var(--sub);white-space:nowrap}
+  .readingHead .audioCell{margin-left:auto}
+  .readingHead audio{width:220px;height:30px;margin:0}
   .resultBlock{margin-top:12px;padding-top:12px;border-top:1px dashed var(--line);
     display:flex;flex-direction:column;gap:8px}
   .resLine{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap}

@@ -1,160 +1,127 @@
-/* 声調検出テストのケース定義。
+/* 声調識別テストの最小対（ミニマルペア）。
  *
- * 仕掛け: 「同じ綴り・違う声調」の音声を作るために、対象の漢字を
- * 同音別声調の実在漢字に置き換える（水 shuǐ → 睡 shuì）。TTSはこれを
- * 普通に読むだけで、狙った声調の崩れがそのまま音になる。
- * 置換後の文は意味的に壊れているので、モデルが「文脈から正しい声調に
- * 戻してしまう」圧力が最大にかかる ＝ 一番厳しい条件でのテストになる。
+ * 前の版は「同音別声調の漢字に置き換えて不自然な文を作る」方式だったが、
+ * 意味の壊れた文（睡果＝寝る果物）はTTS側が正しく読んでくれない。実際、
+ * 対象と関係ない音節が別の音に化ける事故が起きた。そうなると「崩していない
+ * 音節への誤指摘」を数えても、それがモデルの嘘なのかTTSの事故なのか
+ * 区別がつかず、測定として成立しない。
  *
- * idx は pinyin を音節に割ったときの0始まりの位置。
- * fromTone は本来の声調、toTone は崩した先の声調。
+ * この版は、**両方とも自然な実在の文**からなる最小対だけを使う。
+ * 綴りは完全に同じで、1音節の声調だけが違う。
+ *
+ *   我要水。 wǒ yào shuǐ   （水がほしい）
+ *   我要睡。 wǒ yào shuì   （寝たい）
+ *
+ * どちらもTTSは普通に読める。どちらも「正しい文」なので、正解／不正解では
+ * なく **モデルが2つを聞き分けられるか** を両方向で見る識別テストになる。
+ * 対象以外の音節はどちらの文でも同じ発音なので、そこでの声調ちがいの指摘は
+ * 今度こそ純粋にモデルの嘘として数えられる。
+ *
+ * idx は pinyin を音節に割ったときの0始まりの位置。a と b は idx の声調だけが
+ * 異なり、それ以外の音節は完全に同一であること（cases_test で機械検証する）。
  */
 "use strict";
 
-const CASES = [
-  // ---- セット1: 3声 → 4声（日本人学習者に最も多い崩れ方） ----
-  { id:"1-01", set:1, ja:"私はスーパーに行って果物を何個か買います。",
-    hanzi:"我去超市买几个水果。", pinyin:"wǒ qù chāo shì mǎi jǐ ge shuǐ guǒ",
-    idx:7, fromChar:"水", toChar:"睡", fromTone:3, toTone:4, corrupt:"我去超市买几个睡果。" },
-  { id:"1-02", set:1, ja:"水を一杯ください。",
-    hanzi:"请给我一杯水。", pinyin:"qǐng gěi wǒ yì bēi shuǐ",
-    idx:0, fromChar:"请", toChar:"庆", fromTone:3, toTone:4, corrupt:"庆给我一杯水。" },
-  { id:"1-03", set:1, ja:"私は中華料理がとても好きです。",
-    hanzi:"我很喜欢中国菜。", pinyin:"wǒ hěn xǐ huān zhōng guó cài",
-    idx:1, fromChar:"很", toChar:"恨", fromTone:3, toTone:4, corrupt:"我恨喜欢中国菜。" },
-  { id:"1-04", set:1, ja:"彼は毎朝ジョギングをします。",
-    hanzi:"他每天早上跑步。", pinyin:"tā měi tiān zǎo shàng pǎo bù",
-    idx:3, fromChar:"早", toChar:"造", fromTone:3, toTone:4, corrupt:"他每天造上跑步。" },
-  { id:"1-05", set:1, ja:"お名前を書いてください。",
-    hanzi:"请写下你的名字。", pinyin:"qǐng xiě xià nǐ de míng zi",
-    idx:1, fromChar:"写", toChar:"谢", fromTone:3, toTone:4, corrupt:"请谢下你的名字。" },
-  { id:"1-06", set:1, ja:"これはとても小さいです。",
-    hanzi:"这个东西很小。", pinyin:"zhè ge dōng xi hěn xiǎo",
-    idx:5, fromChar:"小", toChar:"笑", fromTone:3, toTone:4, corrupt:"这个东西很笑。" },
-  { id:"1-07", set:1, ja:"私たちは何時に始めますか。",
-    hanzi:"我们几点开始？", pinyin:"wǒ men jǐ diǎn kāi shǐ",
-    idx:3, fromChar:"点", toChar:"电", fromTone:3, toTone:4, corrupt:"我们几电开始？" },
-  { id:"1-08", set:1, ja:"姉は銀行で働いています。",
-    hanzi:"我姐姐在银行工作。", pinyin:"wǒ jiě jie zài yín háng gōng zuò",
-    idx:1, fromChar:"姐", toChar:"借", fromTone:3, toTone:4, corrupt:"我借姐在银行工作。" },
-  { id:"1-09", set:1, ja:"新しい仕事を探したいです。",
-    hanzi:"我想找一个新工作。", pinyin:"wǒ xiǎng zhǎo yí ge xīn gōng zuò",
-    idx:2, fromChar:"找", toChar:"照", fromTone:3, toTone:4, corrupt:"我想照一个新工作。" },
-  { id:"1-10", set:1, ja:"彼には子供が2人います。",
-    hanzi:"他有两个孩子。", pinyin:"tā yǒu liǎng ge hái zi",
-    idx:1, fromChar:"有", toChar:"又", fromTone:3, toTone:4, corrupt:"他又两个孩子。" },
+const PAIRS = [
+  // ---- セット1: 3声 ⇄ 4声（日本人学習者が最も混同する組み合わせ） ----
+  { id:"1-1", set:1, idx:2,
+    a:{ hanzi:"我要水。",       pinyin:"wǒ yào shuǐ",          ja:"水がほしい。" },
+    b:{ hanzi:"我要睡。",       pinyin:"wǒ yào shuì",          ja:"寝たい。" } },
+  { id:"1-2", set:1, idx:2,
+    a:{ hanzi:"他要买房子。",   pinyin:"tā yào mǎi fáng zi",   ja:"彼は家を買いたい。" },
+    b:{ hanzi:"他要卖房子。",   pinyin:"tā yào mài fáng zi",   ja:"彼は家を売りたい。" } },
+  { id:"1-3", set:1, idx:5,
+    a:{ hanzi:"他是我的老板。", pinyin:"tā shì wǒ de lǎo bǎn", ja:"彼は私の上司です。" },
+    b:{ hanzi:"他是我的老伴。", pinyin:"tā shì wǒ de lǎo bàn", ja:"彼は私の連れ合いです。" } },
+  { id:"1-4", set:1, idx:2,
+    a:{ hanzi:"他很想我。",     pinyin:"tā hěn xiǎng wǒ",      ja:"彼は私をとても恋しがっている。" },
+    b:{ hanzi:"他很像我。",     pinyin:"tā hěn xiàng wǒ",      ja:"彼は私にとてもよく似ている。" } },
+  { id:"1-5", set:1, idx:2,
+    a:{ hanzi:"我想问他。",     pinyin:"wǒ xiǎng wèn tā",      ja:"彼に聞きたい。" },
+    b:{ hanzi:"我想吻他。",     pinyin:"wǒ xiǎng wěn tā",      ja:"彼にキスしたい。" } },
+  { id:"1-6", set:1, idx:3,
+    a:{ hanzi:"这个很近。",     pinyin:"zhè ge hěn jìn",       ja:"これはとても近い。" },
+    b:{ hanzi:"这个很紧。",     pinyin:"zhè ge hěn jǐn",       ja:"これはとてもきつい。" } },
+  { id:"1-7", set:1, idx:3,
+    a:{ hanzi:"这个很慢。",     pinyin:"zhè ge hěn màn",       ja:"これはとても遅い。" },
+    b:{ hanzi:"这个很满。",     pinyin:"zhè ge hěn mǎn",       ja:"これはとても満杯だ。" } },
+  { id:"1-8", set:1, idx:4,
+    a:{ hanzi:"这是一种语言。", pinyin:"zhè shì yì zhǒng yǔ yán", ja:"これは一種の言語です。" },
+    b:{ hanzi:"这是一种预言。", pinyin:"zhè shì yì zhǒng yù yán", ja:"これは一種の予言です。" } },
 
-  // ---- セット2: 4声 → 2声 ----
-  { id:"2-01", set:2, ja:"ちょっとお聞きしたいことがあります。",
-    hanzi:"我想问你一件事情。", pinyin:"wǒ xiǎng wèn nǐ yí jiàn shì qing",
-    idx:2, fromChar:"问", toChar:"文", fromTone:4, toTone:2, corrupt:"我想文你一件事情。" },
-  { id:"2-02", set:2, ja:"これは私の本です。",
-    hanzi:"这是我的书。", pinyin:"zhè shì wǒ de shū",
-    idx:1, fromChar:"是", toChar:"十", fromTone:4, toTone:2, corrupt:"这十我的书。" },
-  { id:"2-03", set:2, ja:"今日の宿題はとても難しいです。",
-    hanzi:"今天的作业很难。", pinyin:"jīn tiān de zuò yè hěn nán",
-    idx:3, fromChar:"作", toChar:"昨", fromTone:4, toTone:2, corrupt:"今天的昨业很难。" },
-  { id:"2-04", set:2, ja:"一緒にご飯を食べましょう。",
-    hanzi:"我们一起吃饭吧。", pinyin:"wǒ men yì qǐ chī fàn ba",
-    idx:5, fromChar:"饭", toChar:"烦", fromTone:4, toTone:2, corrupt:"我们一起吃烦吧。" },
-  { id:"2-05", set:2, ja:"中国語が話せますか。",
-    hanzi:"你会说中文吗？", pinyin:"nǐ huì shuō zhōng wén ma",
-    idx:1, fromChar:"会", toChar:"回", fromTone:4, toTone:2, corrupt:"你回说中文吗？" },
-  { id:"2-06", set:2, ja:"この件はとても重要です。",
-    hanzi:"这件事很重要。", pinyin:"zhè jiàn shì hěn zhòng yào",
-    idx:2, fromChar:"事", toChar:"时", fromTone:4, toTone:2, corrupt:"这件时很重要。" },
-  { id:"2-07", set:2, ja:"手伝ってくれてありがとう。",
-    hanzi:"谢谢你的帮助。", pinyin:"xiè xie nǐ de bāng zhù",
-    idx:0, fromChar:"谢", toChar:"鞋", fromTone:4, toTone:2, corrupt:"鞋谢你的帮助。" },
-  { id:"2-08", set:2, ja:"彼とは長年の知り合いです。",
-    hanzi:"我认识他很多年了。", pinyin:"wǒ rèn shi tā hěn duō nián le",
-    idx:1, fromChar:"认", toChar:"人", fromTone:4, toTone:2, corrupt:"我人识他很多年了。" },
-  { id:"2-09", set:2, ja:"彼は北京に住んでいます。",
-    hanzi:"他住在北京。", pinyin:"tā zhù zài běi jīng",
-    idx:1, fromChar:"住", toChar:"竹", fromTone:4, toTone:2, corrupt:"他竹在北京。" },
-  { id:"2-10", set:2, ja:"この問題は大きいです。",
-    hanzi:"这个问题很大。", pinyin:"zhè ge wèn tí hěn dà",
-    idx:5, fromChar:"大", toChar:"答", fromTone:4, toTone:2, corrupt:"这个问题很答。" },
+  // ---- セット2: 1声 ⇄ 4声 ----
+  { id:"2-1", set:2, idx:3,
+    a:{ hanzi:"我的眼睛很大。", pinyin:"wǒ de yǎn jīng hěn dà", ja:"私の目は大きい。" },
+    b:{ hanzi:"我的眼镜很大。", pinyin:"wǒ de yǎn jìng hěn dà", ja:"私のメガネは大きい。" } },
+  { id:"2-2", set:2, idx:2,
+    a:{ hanzi:"这是包子。",     pinyin:"zhè shì bāo zi",       ja:"これは肉まんです。" },
+    b:{ hanzi:"这是豹子。",     pinyin:"zhè shì bào zi",       ja:"これはヒョウです。" } },
+  { id:"2-3", set:2, idx:3,
+    a:{ hanzi:"他喜欢花。",     pinyin:"tā xǐ huān huā",       ja:"彼は花が好きです。" },
+    b:{ hanzi:"他喜欢画。",     pinyin:"tā xǐ huān huà",       ja:"彼は絵が好きです。" } },
+  { id:"2-4", set:2, idx:5,
+    a:{ hanzi:"那边有很多书。", pinyin:"nà biān yǒu hěn duō shū", ja:"あそこには本がたくさんある。" },
+    b:{ hanzi:"那边有很多树。", pinyin:"nà biān yǒu hěn duō shù", ja:"あそこには木がたくさんある。" } },
+  { id:"2-5", set:2, idx:2,
+    a:{ hanzi:"这是杯子。",     pinyin:"zhè shì bēi zi",       ja:"これはコップです。" },
+    b:{ hanzi:"这是被子。",     pinyin:"zhè shì bèi zi",       ja:"これは布団です。" } },
+  { id:"2-6", set:2, idx:3,
+    a:{ hanzi:"这是教师。",     pinyin:"zhè shì jiào shī",     ja:"これは教師です。" },
+    b:{ hanzi:"这是教室。",     pinyin:"zhè shì jiào shì",     ja:"これは教室です。" } },
 
-  // ---- セット3: 1声 → 4声 ----
-  { id:"3-01", set:3, ja:"本を一冊買いたいです。",
-    hanzi:"我要买一本书。", pinyin:"wǒ yào mǎi yì běn shū",
-    idx:5, fromChar:"书", toChar:"树", fromTone:1, toTone:4, corrupt:"我要买一本树。" },
-  { id:"3-02", set:3, ja:"彼は出かけました。",
-    hanzi:"他出去了。", pinyin:"tā chū qù le",
-    idx:1, fromChar:"出", toChar:"处", fromTone:1, toTone:4, corrupt:"他处去了。" },
-  { id:"3-03", set:3, ja:"うちは3人家族です。",
-    hanzi:"我家有三口人。", pinyin:"wǒ jiā yǒu sān kǒu rén",
-    idx:1, fromChar:"家", toChar:"架", fromTone:1, toTone:4, corrupt:"我架有三口人。" },
-  { id:"3-04", set:3, ja:"土曜日は時間があります。",
-    hanzi:"星期六我有空。", pinyin:"xīng qī liù wǒ yǒu kòng",
-    idx:0, fromChar:"星", toChar:"姓", fromTone:1, toTone:4, corrupt:"姓期六我有空。" },
-  { id:"3-05", set:3, ja:"彼らはみんな学生です。",
-    hanzi:"他们都是学生。", pinyin:"tā men dōu shì xué sheng",
-    idx:2, fromChar:"都", toChar:"豆", fromTone:1, toTone:4, corrupt:"他们豆是学生。" },
-  { id:"3-06", set:3, ja:"果物をいくつか買いました。",
-    hanzi:"我买了一些水果。", pinyin:"wǒ mǎi le yì xiē shuǐ guǒ",
-    idx:4, fromChar:"些", toChar:"谢", fromTone:1, toTone:4, corrupt:"我买了一谢水果。" },
-  { id:"3-07", set:3, ja:"この学生は背が高いです。",
-    hanzi:"这个学生很高。", pinyin:"zhè ge xué sheng hěn gāo",
-    idx:5, fromChar:"高", toChar:"告", fromTone:1, toTone:4, corrupt:"这个学生很告。" },
-  { id:"3-08", set:3, ja:"病院に診てもらいに行きます。",
-    hanzi:"我去医院看病。", pinyin:"wǒ qù yī yuàn kàn bìng",
-    idx:2, fromChar:"医", toChar:"意", fromTone:1, toTone:4, corrupt:"我去意院看病。" },
-  { id:"3-09", set:3, ja:"3組に分かれてください。",
-    hanzi:"请分成三组。", pinyin:"qǐng fēn chéng sān zǔ",
-    idx:1, fromChar:"分", toChar:"份", fromTone:1, toTone:4, corrupt:"请份成三组。" },
-  { id:"3-10", set:3, ja:"私の誕生日は明日です。",
-    hanzi:"我的生日是明天。", pinyin:"wǒ de shēng rì shì míng tiān",
-    idx:2, fromChar:"生", toChar:"剩", fromTone:1, toTone:4, corrupt:"我的剩日是明天。" },
+  // ---- セット3: 1声 ⇄ 2声 / 1声 ⇄ 3声 ----
+  { id:"3-1", set:3, idx:5,
+    a:{ hanzi:"请给我一点汤。", pinyin:"qǐng gěi wǒ yì diǎn tāng", ja:"スープを少しください。" },
+    b:{ hanzi:"请给我一点糖。", pinyin:"qǐng gěi wǒ yì diǎn táng", ja:"砂糖を少しください。" } },
+  { id:"3-2", set:3, idx:2,
+    a:{ hanzi:"这是猪。",       pinyin:"zhè shì zhū",          ja:"これはブタです。" },
+    b:{ hanzi:"这是竹。",       pinyin:"zhè shì zhú",          ja:"これは竹です。" } },
+  { id:"3-3", set:3, idx:2,
+    a:{ hanzi:"这是窗。",       pinyin:"zhè shì chuāng",       ja:"これは窓です。" },
+    b:{ hanzi:"这是床。",       pinyin:"zhè shì chuáng",       ja:"これはベッドです。" } },
+  { id:"3-4", set:3, idx:2,
+    a:{ hanzi:"这是烟。",       pinyin:"zhè shì yān",          ja:"これはタバコです。" },
+    b:{ hanzi:"这是盐。",       pinyin:"zhè shì yán",          ja:"これは塩です。" } },
+  { id:"3-5", set:3, idx:4,
+    a:{ hanzi:"这是我的妈。",   pinyin:"zhè shì wǒ de mā",     ja:"これは私の母です。" },
+    b:{ hanzi:"这是我的马。",   pinyin:"zhè shì wǒ de mǎ",     ja:"これは私の馬です。" } },
 
-  // ---- セット4: 2声 → 4声 ----
-  { id:"4-01", set:4, ja:"彼は来年北京に来ます。",
-    hanzi:"他明年来北京。", pinyin:"tā míng nián lái běi jīng",
-    idx:3, fromChar:"来", toChar:"赖", fromTone:2, toTone:4, corrupt:"他明年赖北京。" },
-  { id:"4-02", set:4, ja:"お名前は何ですか。",
-    hanzi:"你叫什么名字？", pinyin:"nǐ jiào shén me míng zi",
-    idx:4, fromChar:"名", toChar:"命", fromTone:2, toTone:4, corrupt:"你叫什么命字？" },
-  { id:"4-03", set:4, ja:"来年中国に行きます。",
-    hanzi:"我明年去中国。", pinyin:"wǒ míng nián qù zhōng guó",
-    idx:2, fromChar:"年", toChar:"念", fromTone:2, toTone:4, corrupt:"我明念去中国。" },
-  { id:"4-04", set:4, ja:"私の部屋はきれいです。",
-    hanzi:"我的房间很干净。", pinyin:"wǒ de fáng jiān hěn gān jìng",
-    idx:2, fromChar:"房", toChar:"放", fromTone:2, toTone:4, corrupt:"我的放间很干净。" },
-  { id:"4-05", set:4, ja:"この単語はどういう意味ですか。",
-    hanzi:"这个词是什么意思？", pinyin:"zhè ge cí shì shén me yì si",
-    idx:2, fromChar:"词", toChar:"次", fromTone:2, toTone:4, corrupt:"这个次是什么意思？" },
-  { id:"4-06", set:4, ja:"彼はよく図書館に行きます。",
-    hanzi:"他常常去图书馆。", pinyin:"tā cháng cháng qù tú shū guǎn",
-    idx:1, fromChar:"常", toChar:"唱", fromTone:2, toTone:4, corrupt:"他唱常去图书馆。" },
-  { id:"4-07", set:4, ja:"私たちは同級生です。",
-    hanzi:"我们是同学。", pinyin:"wǒ men shì tóng xué",
-    idx:3, fromChar:"同", toChar:"痛", fromTone:2, toTone:4, corrupt:"我们是痛学。" },
-  { id:"4-08", set:4, ja:"この人は私の友達です。",
-    hanzi:"这个人是我朋友。", pinyin:"zhè ge rén shì wǒ péng you",
-    idx:2, fromChar:"人", toChar:"认", fromTone:2, toTone:4, corrupt:"这个认是我朋友。" },
-  { id:"4-09", set:4, ja:"銀行にお金を下ろしに行きます。",
-    hanzi:"我去银行取钱。", pinyin:"wǒ qù yín háng qǔ qián",
-    idx:2, fromChar:"银", toChar:"印", fromTone:2, toTone:4, corrupt:"我去印行取钱。" },
-  { id:"4-10", set:4, ja:"この問題は難しいです。",
-    hanzi:"这个题很难。", pinyin:"zhè ge tí hěn nán",
-    idx:2, fromChar:"题", toChar:"替", fromTone:2, toTone:4, corrupt:"这个替很难。" },
+  // ---- セット4: 2声 ⇄ 4声 ----
+  { id:"4-1", set:4, idx:3,
+    a:{ hanzi:"我在学韩语。",   pinyin:"wǒ zài xué hán yǔ",    ja:"私は韓国語を学んでいます。" },
+    b:{ hanzi:"我在学汉语。",   pinyin:"wǒ zài xué hàn yǔ",    ja:"私は中国語を学んでいます。" } },
+  { id:"4-2", set:4, idx:3,
+    a:{ hanzi:"他喜欢骑车。",   pinyin:"tā xǐ huān qí chē",    ja:"彼は自転車に乗るのが好きです。" },
+    b:{ hanzi:"他喜欢汽车。",   pinyin:"tā xǐ huān qì chē",    ja:"彼は自動車が好きです。" } },
+  { id:"4-3", set:4, idx:4,
+    a:{ hanzi:"这是一个实验。", pinyin:"zhè shì yí ge shí yàn", ja:"これは一つの実験です。" },
+    b:{ hanzi:"这是一个试验。", pinyin:"zhè shì yí ge shì yàn", ja:"これは一つの試験・テストです。" } },
+
+  // ---- セット5: 2声 ⇄ 3声 ----
+  { id:"5-1", set:5, idx:4,
+    a:{ hanzi:"我喜欢大学。",   pinyin:"wǒ xǐ huān dà xué",    ja:"私は大学が好きです。" },
+    b:{ hanzi:"我喜欢大雪。",   pinyin:"wǒ xǐ huān dà xuě",    ja:"私は大雪が好きです。" } },
+  { id:"5-2", set:5, idx:3,
+    a:{ hanzi:"今天有鱼。",     pinyin:"jīn tiān yǒu yú",      ja:"今日は魚があります。" },
+    b:{ hanzi:"今天有雨。",     pinyin:"jīn tiān yǒu yǔ",      ja:"今日は雨が降ります。" } },
+  { id:"5-3", set:5, idx:3,
+    a:{ hanzi:"这个很圆。",     pinyin:"zhè ge hěn yuán",      ja:"これはとても丸い。" },
+    b:{ hanzi:"这个很远。",     pinyin:"zhè ge hěn yuǎn",      ja:"これはとても遠い。" } },
 ];
 
-/* セット5は対照群。セット1〜4から10文を選び、声調を崩さずそのまま読ませる。
- * ここで「声調ちがい」が出たら、それはモデルの誤検出（偽陽性）。 */
-const CONTROL_IDS = ["1-01","1-03","1-07","2-01","2-05","2-10","3-01","3-05","4-01","4-04"];
+/** その組で問われている声調のペア（例: "3声 ⇄ 4声"）。 */
+function tonePairLabel(p){
+  const t = r => toSyllables(p[r].pinyin)[p.idx].tone;
+  return `${t("a")}声 ⇄ ${t("b")}声`;
+}
 
-const CONTROL_CASES = CONTROL_IDS.map(id => {
-  const src = CASES.find(c => c.id === id);
-  return { ...src, id: "5-" + id, set: 5, control: true,
-           toChar: src.fromChar, toTone: src.fromTone, corrupt: src.hanzi, sourceId: id };
-});
+/** 対象音節の綴り（声調記号なし）。 */
+function pairBase(p){ return toSyllables(p.a.pinyin)[p.idx].base; }
 
 const SETS = [
-  { set:1, title:"セット1: 3声 → 4声", desc:"日本人学習者に最も多い崩れ方。第3声の下降を第4声に振ってしまうケース。" },
-  { set:2, title:"セット2: 4声 → 2声", desc:"下降調を上昇調に取り違えるケース。" },
-  { set:3, title:"セット3: 1声 → 4声", desc:"平らな高音を下降させてしまうケース。" },
-  { set:4, title:"セット4: 2声 → 4声", desc:"上昇調を下降調に取り違えるケース。" },
-  { set:5, title:"セット5: 対照群（崩さない）", desc:"セット1〜4から10文を選び、正しい声調のまま読ませる。ここで声調ちがいが出たら誤検出（偽陽性）。" },
-].map(s => ({ ...s, cases: (s.set === 5 ? CONTROL_CASES : CASES.filter(c => c.set === s.set)) }));
+  { set:1, title:"セット1: 3声 ⇄ 4声", desc:"日本人学習者が最も混同する組み合わせ。" },
+  { set:2, title:"セット2: 1声 ⇄ 4声", desc:"平らな高音と下降調。" },
+  { set:3, title:"セット3: 1声 ⇄ 2声 / 1声 ⇄ 3声", desc:"平らな高音と、上昇・低降の対立。" },
+  { set:4, title:"セット4: 2声 ⇄ 4声", desc:"上昇調と下降調。向きが逆なので本来は最も聞き分けやすいはず。" },
+  { set:5, title:"セット5: 2声 ⇄ 3声", desc:"上昇調と低く沈む調。母語話者でも文脈依存が大きい組み合わせ。" },
+].map(s => ({ ...s, pairs: PAIRS.filter(p => p.set === s.set) }));
