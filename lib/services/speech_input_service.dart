@@ -13,10 +13,18 @@ import 'gemini_service.dart';
 /// [SpeechInputService.stop]の結果（文字起こしテキスト＋トークン使用量）。
 @immutable
 class SpeechInputResult {
-  const SpeechInputResult({required this.text, required this.usage});
+  const SpeechInputResult({
+    required this.text,
+    required this.usage,
+    this.reading,
+  });
 
   /// 文字起こしテキスト
   final String text;
+
+  /// 聞こえたままの声調付きピンイン（中国語のみ。英語では null）。
+  /// [GeminiService.transcribe]の`reading`をそのまま透過する。
+  final String? reading;
 
   /// 文字起こしに使ったトークン数（料金表示用）
   final TokenUsage usage;
@@ -198,12 +206,12 @@ class GeminiSpeechInputService implements SpeechInputService {
       sampleRate: _sampleRate,
       channels: _channels,
     );
-    final (:text, :usage) = await _geminiService.transcribe(
+    final (:text, :reading, :usage) = await _geminiService.transcribe(
       profile: _profile,
       audioBytes: wavBytes,
       mimeType: 'audio/wav',
     );
-    return SpeechInputResult(text: text, usage: usage);
+    return SpeechInputResult(text: text, reading: reading, usage: usage);
   }
 
   @override
