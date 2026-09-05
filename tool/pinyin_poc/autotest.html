@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>声調識別テスト（最小対）— ピンイン声調 POC</title>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
 <div class="wrap">
@@ -114,8 +114,8 @@
 
 </div>
 
-<script src="poc.js"></script>
-<script src="cases.js"></script>
+<script src="poc.js?v=2"></script>
+<script src="cases.js?v=2"></script>
 <script>
 "use strict";
 
@@ -520,11 +520,35 @@ $("clearKey").onclick = () => {
   $("keyState").textContent = "保存を削除しました。";
 };
 
+/** 起動に失敗したら、白紙のまま黙って終わらせずに理由を出す。
+ *
+ * poc.js / cases.js は別ファイルなので、ブラウザが片方だけ古いキャッシュを
+ * 返すと定義が食い違って一覧が丸ごと消える。原因が分からないまま
+ * 「表示が無くなった」となるのが一番たちが悪いので、必ず画面に出す。 */
+function bootFailed(message){
+  document.getElementById("sets").innerHTML =
+    `<div class="card"><h2>読み込みに失敗しました</h2>
+      <div class="err" style="margin:0">${message}</div>
+      <p class="mini" style="margin:12px 0 0">
+        <b>スーパーリロード</b>（Windows: Ctrl+Shift+R / Mac: Cmd+Shift+R）で直ることがほとんどです。
+        poc.js と cases.js のどちらかだけ古いキャッシュが残っていると、この状態になります。
+        直らない場合は <code>git pull</code> で最新になっているか確認してください。</p></div>`;
+}
+
 (function init(){
-  SAVED.forEach(k => { const v = localStorage.getItem("poc_" + k); if (v) $(k).value = v; });
-  if (localStorage.getItem("poc_key")) $("keyState").textContent = "保存済みの設定を読み込みました。";
-  renderSets();
-  renderSummary();
+  try {
+    if (typeof PAIRS === "undefined" || typeof SETS === "undefined")
+      throw new Error("cases.js が読み込めていません（PAIRS が未定義）。");
+    if (typeof toSyllables === "undefined" || typeof retone === "undefined")
+      throw new Error("poc.js が読み込めていないか、古い版です。");
+    SAVED.forEach(k => { const v = localStorage.getItem("poc_" + k); if (v) $(k).value = v; });
+    if (localStorage.getItem("poc_key")) $("keyState").textContent = "保存済みの設定を読み込みました。";
+    renderSets();
+    renderSummary();
+  } catch (e){
+    bootFailed(String(e.message || e));
+    throw e;
+  }
 })();
 </script>
 </body>

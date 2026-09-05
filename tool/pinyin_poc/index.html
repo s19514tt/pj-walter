@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ピンイン声調 POC — 音声 → ピンイン(声調付き) → 漢字</title>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
 <div class="wrap">
@@ -110,7 +110,7 @@
 
 </div>
 
-<script src="poc.js"></script>
+<script src="poc.js?v=2"></script>
 <script>
 "use strict";
 
@@ -361,11 +361,21 @@ document.querySelectorAll("input[name=mode]").forEach(r => r.onchange = () => {
 });
 
 (function init(){
-  const k = localStorage.getItem("poc_key");
-  const m = localStorage.getItem("poc_model");
-  if (k){ $("key").value = k; $("keyState").textContent = "保存済みのキーを読み込みました。"; }
-  if (m) $("model").value = m;
-  render();
+  try {
+    // poc.js が古いキャッシュだと黙って壊れるので、先に存在を確かめる。
+    if (typeof toSyllables === "undefined" || typeof transcribeByMode === "undefined")
+      throw new Error("poc.js が読み込めていないか、古い版です。");
+    const k = localStorage.getItem("poc_key");
+    const m = localStorage.getItem("poc_model");
+    if (k){ $("key").value = k; $("keyState").textContent = "保存済みのキーを読み込みました。"; }
+    if (m) $("model").value = m;
+    render();
+  } catch (e){
+    $("err").innerHTML = `${String(e.message || e)}<br>
+      スーパーリロード（Windows: Ctrl+Shift+R / Mac: Cmd+Shift+R）をお試しください。`;
+    $("err").classList.remove("hidden");
+    throw e;
+  }
 })();
 </script>
 </body>
