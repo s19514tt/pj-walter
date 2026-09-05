@@ -357,7 +357,9 @@ APIキーだけは `flutter_secure_storage`（キー名 `gemini_api_key`）。
 - **Widgetbook**（Flutter版Storybook、`widgetbook` パッケージ。dev_dependencies のみ・本番ビルドには入らない）:
   `flutter run -d chrome -t widgetbook/main.dart` でコンポーネントの各状態をブラウザで一覧できる。
   ビューポート（iPhone 13 / 12 mini / Galaxy S20）・テキストスケールのアドオンあり。
-  `flutter build web -t widgetbook/main.dart` で静的サイトにもできる
+  `flutter build web -t widgetbook/main.dart` で静的サイトにもできる。
+  GitHub Pages に自動配信する（`.github/workflows/widgetbook-pages.yml`: `main` への push で更新、
+  `workflow_dispatch` で任意ブランチから手動デプロイ可。Pages の Source は「GitHub Actions」に設定する）
 - **ゴールデンテスト**（`test/goldens/`）: 同じ状態一覧を1件ずつ描画して PNG と比較し、`flutter test`（CI）で
   レイアウトの崩れを止める。画像は `flutter test --update-goldens test/goldens` で生成し、**CI と同じ Linux で
   生成したものをコミットする**（プラットフォームでレンダリングが変わるため）

@@ -125,6 +125,11 @@ UIの状態（例: 添削画面で声調の気づきが1件ある／儿化があ
 まとめてあり、Widgetbook での目視と `test/goldens/` のゴールデンテスト（CIでの崩れ検出）の両方が
 同じ一覧を使います。新しい状態を足すときは fixtures に1件追加するだけです。
 
+Widgetbook は GitHub Pages にも配信されます（`.github/workflows/widgetbook-pages.yml`）。
+`main` への push で自動更新、Actions の「Widgetbook (GitHub Pages)」→「Run workflow」で任意のブランチから
+手動デプロイもできます。初回だけ Settings → Pages → Source を「GitHub Actions」にしてください。
+公開URLは `https://<owner>.github.io/pj-walter/` です。
+
 ## 中国語教材について
 
 `assets/data/zh/` の教材は、**HSKの公式語彙リストに対して機械的に検証**しています。
