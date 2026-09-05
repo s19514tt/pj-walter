@@ -16,6 +16,24 @@ const ACCENTS = {
   "ê":["e",5],"ü":["v",5]
 };
 
+// 声調番号 → 声調記号つきの母音。retone() が使う。
+const TONE_MARKS = {
+  a:["ā","á","ǎ","à","a"], o:["ō","ó","ǒ","ò","o"], e:["ē","é","ě","è","e"],
+  i:["ī","í","ǐ","ì","i"], u:["ū","ú","ǔ","ù","u"], v:["ǖ","ǘ","ǚ","ǜ","ü"]
+};
+
+/** 声調記号の付いた音節の、声調だけを差し替える（shuǐ + 4 → shuì）。
+ *
+ * 記号の位置は変えずに置き換えるだけなので、元が軽声（記号なし）の音節には
+ * 使えない。声調を崩すテストの対象は必ず1〜4声なので実用上は足りる。 */
+function retone(raw, tone){
+  return [...String(raw).normalize("NFC")].map(ch => {
+    const hit = ACCENTS[ch];
+    if (!hit || hit[1] === 5) return ch;
+    return TONE_MARKS[hit[0]] ? TONE_MARKS[hit[0]][tone-1] : ch;
+  }).join("");
+}
+
 // 声調番号つき表記（wen4 形式）も受け付ける
 function parseSyllable(raw){
   let tone = 5, base = "";

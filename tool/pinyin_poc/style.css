@@ -88,7 +88,6 @@
   .cid{font-family:var(--mono);font-size:11px;color:var(--sub);margin-right:6px}
   .caseChange{flex:0 0 auto;font-size:14px;align-self:center;white-space:nowrap}
   .caseResult:not(:empty){margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
-  .verdictLine{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
   .pyline{word-break:break-word;line-height:2}
   .pyline .target{background:var(--warn-bg);border-radius:5px;padding:1px 6px;font-weight:700}
   .pyline .off{color:var(--bad)}
@@ -98,3 +97,38 @@
   .concl.warn{background:var(--warn-bg);color:#8a5a00}
   .concl .mini{color:inherit;opacity:.85}
   .lead a{color:var(--orange)}
+
+  /* ---- 正/誤の対と結果ブロック ---- */
+  /* 嘘は検出より重い問題なので、検出できたケースでも赤で塗りつぶす */
+  .caseRow.hasLie{border-color:var(--bad);background:var(--bad-bg);box-shadow:inset 4px 0 0 var(--bad)}
+  .pairTable{margin-top:10px}
+  .pairTable th{width:78px;vertical-align:middle;color:var(--sub)}
+  .pairTable td{vertical-align:middle}
+  .pairTable .han{font-size:16px;white-space:nowrap}
+  .pairTable .syl{font-size:13px;white-space:nowrap}
+  .pairTable .audioCell{width:230px}
+  .pairTable audio{width:220px;height:30px;margin:0}
+  .rowRight th{color:var(--good)}
+  .rowWrong th{color:var(--bad)}
+  .rowWrong td{background:var(--bad-bg)}
+  .rowNote td{border-bottom:none;padding-top:6px}
+  .resultBlock{margin-top:12px;padding-top:12px;border-top:1px dashed var(--line);
+    display:flex;flex-direction:column;gap:8px}
+  .resLine{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap}
+  .resKey{flex:0 0 76px;font-size:12px;color:var(--sub)}
+  .resKey.lieKey{color:var(--bad);font-weight:700}
+  .pyline{word-break:break-word;line-height:1.9}
+  .pyline .target{background:var(--warn-bg);border-radius:5px;padding:1px 6px;font-weight:700}
+  .pyline .lie{background:var(--bad-bg);color:var(--bad);border-radius:5px;padding:1px 6px}
+  .pyline .off{color:var(--sub);text-decoration:line-through}
+
+  /* ---- 嘘の総数（総合結果の主役） ---- */
+  .lieBox{display:flex;gap:16px;align-items:center;padding:14px 16px;border-radius:12px;
+    background:var(--page);border:1px solid var(--line)}
+  .lieBox.ok{background:var(--good-bg);border-color:var(--good)}
+  .lieBox.ng{background:var(--bad-bg);border-color:var(--bad)}
+  .lieNum{font:700 40px/1 var(--mono);min-width:70px;text-align:center}
+  .lieBox.ok .lieNum{color:var(--good)}
+  .lieBox.ng .lieNum{color:var(--bad)}
+  .lieTh{color:var(--bad)}
+  .lieRed{color:var(--bad)}
