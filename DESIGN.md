@@ -350,13 +350,41 @@ APIキーだけは `flutter_secure_storage`（キー名 `gemini_api_key`）。
 - 権限拒否・録音失敗時は日本語エラーメッセージ（`SpeechInputException`）を返し、画面側は録り直しの導線を用意する
 - 端末STT（speech_to_text）はPR17で廃止（設定項目も削除）
 
+## Widgetbook とゴールデンテスト（見た目の確認・崩れ検出）
+
+「実機で再現するまで崩れに気づけない」を避けるため、UIの状態一覧を2つの用途で共有する。
+
+- **Widgetbook**（Flutter版Storybook、`widgetbook` パッケージ。dev_dependencies のみ・本番ビルドには入らない）:
+  `flutter run -d chrome -t widgetbook/main.dart` でコンポーネントの各状態をブラウザで一覧できる。
+  ビューポート（iPhone 13 / 12 mini / Galaxy S20）・テキストスケールのアドオンあり。
+  `flutter build web -t widgetbook/main.dart` で静的サイトにもできる
+- **ゴールデンテスト**（`test/goldens/`）: 同じ状態一覧を1件ずつ描画して PNG と比較し、`flutter test`（CI）で
+  レイアウトの崩れを止める。画像は `flutter test --update-goldens test/goldens` で生成し、**CI と同じ Linux で
+  生成したものをコミットする**（プラットフォームでレンダリングが変わるため）
+
+ルール:
+
+- 状態一覧は `widgetbook/fixtures/*.dart` にだけ書く（`Story(name, slug, build)` のリスト）。Widgetbook と
+  ゴールデンの両方がそこから読むので、**新しい状態は fixtures に1件足すだけ**で両方に出る
+- fixtures は `widgetbook` パッケージに依存しない（テストからも読むため）。画面側は Provider や Hive に
+  依存せず引数だけで描けること（`DrillFeedbackView` はそのまま載る）
+- ゴールデンは `AppTheme.build(webFonts: false)` で描く。`AppTheme.light` は Google Fonts をネットワーク取得するため
+  テストでは使えない。既定フォントでは漢字が四角（tofu）で描かれるが、検出したいのは文字の形ではなく
+  位置・サイズ・色の崩れなので問題ない。見た目の確認は Widgetbook で行う
+- 意図して見た目を変えたときだけ `--update-goldens` で画像を更新し、差分を PR で確認する
+
+現在の対象: `DrillFeedbackView`（中国語の声調の気づき1件／なし／語数違い／複数／儿化／ルビ不整合／
+修正版ピンイン記号なし／stage 0・1／時間切れ、英語の差分あり／なし）。共通ウィジェット（`ScoreRing` /
+`CountdownRing`）は Widgetbook のみ。
+
 ## コーディング規約
 
 - `flutter analyze` 警告ゼロ、`dart format` 適用、flutter_lints デフォルト準拠
 - UI文言は日本語ハードコード（i18n しない）。コメントも日本語可
 - 1ファイル400行を目安に分割。ウィジェットの深いネストはメソッド/クラス抽出
 - モデルは immutable（final フィールド＋fromJson/toJson）
-- 新規依存パッケージの追加は原則しない（必要なら PR 説明に理由を書く）
+- 新規依存パッケージの追加は原則しない（必要なら PR 説明に理由を書く）。例外として `widgetbook` は
+  dev_dependencies に入れている（上記「Widgetbook とゴールデンテスト」）
 
 ## Git / PR ワークフロー
 

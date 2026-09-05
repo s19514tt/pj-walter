@@ -114,7 +114,16 @@ flutter analyze         # 静的解析（警告0を維持）
 flutter test             # 全テスト実行
 dart format lib test      # フォーマット
 flutter build web         # Webビルド確認
+
+# UIの状態一覧をブラウザで確認（Widgetbook = Flutter版Storybook）
+flutter run -d chrome -t widgetbook/main.dart
+# 見た目を意図して変えたときだけゴールデン画像を更新（CIと同じLinuxで実行すること）
+flutter test --update-goldens test/goldens
 ```
+
+UIの状態（例: 添削画面で声調の気づきが1件ある／儿化がある／採点待ち）は `widgetbook/fixtures/` に
+まとめてあり、Widgetbook での目視と `test/goldens/` のゴールデンテスト（CIでの崩れ検出）の両方が
+同じ一覧を使います。新しい状態を足すときは fixtures に1件追加するだけです。
 
 ## 中国語教材について
 
