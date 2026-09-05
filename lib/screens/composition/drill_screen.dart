@@ -11,6 +11,7 @@ import '../../services/gemini_service.dart';
 import '../../services/history_service.dart';
 import '../../services/settings_service.dart';
 import '../../services/speech_input_service.dart';
+import '../../services/tts_service.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/app_route.dart';
 import '../../utils/pinyin.dart';
@@ -49,6 +50,7 @@ class DrillScreen extends StatefulWidget {
     required this.theme,
     this.isReview = false,
     this.speechInputService,
+    this.ttsService,
     this.questionSeconds = _questionSeconds,
   });
 
@@ -73,6 +75,10 @@ class DrillScreen extends StatefulWidget {
   /// テスト注入用。省略時は本番用のインスタンスを自動生成する。
   final SpeechInputService? speechInputService;
 
+  /// 添削結果の読み上げに使う音声合成。テスト注入用で、省略時は
+  /// 本番用の[GeminiTtsService]を自動生成する。
+  final TtsService? ttsService;
+
   /// 1問あたりの制限時間（秒）。テスト注入用で、省略時は[_questionSeconds]（30秒）。
   final int questionSeconds;
 
@@ -82,6 +88,7 @@ class DrillScreen extends StatefulWidget {
 
 class _DrillScreenState extends State<DrillScreen> {
   late final SpeechInputService _speechInput;
+  late final TtsService _tts;
   final _entries = <DrillSummaryEntry>[];
 
   int _index = 0;
@@ -109,6 +116,7 @@ class _DrillScreenState extends State<DrillScreen> {
   /// 現在の問で消費したトークン（「もう一度」でやり直した分も加算）
   TokenUsage _transcriptionUsage = TokenUsage.zero;
   TokenUsage _correctionUsage = TokenUsage.zero;
+  TokenUsage _speechUsage = TokenUsage.zero;
 
   Sentence get _current => widget.sentences[_index];
 
@@ -121,6 +129,12 @@ class _DrillScreenState extends State<DrillScreen> {
           geminiService: context.read<GeminiService>(),
           profile: context.read<SettingsService>().languageProfile,
         );
+    _tts =
+        widget.ttsService ??
+        GeminiTtsService(
+          geminiService: context.read<GeminiService>(),
+          profile: context.read<SettingsService>().languageProfile,
+        );
     // カウントダウンは画面表示と同時に開始する（「読む時間」もカウントに
     // 含まれる前提）。録音は「答える」ボタンが押されるまで始めない。
     _startTimer();
@@ -130,6 +144,7 @@ class _DrillScreenState extends State<DrillScreen> {
   void dispose() {
     _timer?.cancel();
     _speechInput.dispose();
+    _tts.dispose();
     super.dispose();
   }
 
@@ -410,6 +425,7 @@ class _DrillScreenState extends State<DrillScreen> {
           usage: DrillQuestionUsage(
             transcription: _transcriptionUsage,
             correction: _correctionUsage,
+            speech: _speechUsage,
           ),
         ),
       );
@@ -445,6 +461,7 @@ class _DrillScreenState extends State<DrillScreen> {
       _level = 0;
       _transcriptionUsage = TokenUsage.zero;
       _correctionUsage = TokenUsage.zero;
+      _speechUsage = TokenUsage.zero;
     });
     // 次の問題もカウントダウンは表示と同時に開始する
     _startTimer();
@@ -508,6 +525,8 @@ class _DrillScreenState extends State<DrillScreen> {
                 feedback: _feedback,
                 onNext: _next,
                 onRetry: _retryCurrent,
+                ttsService: _tts,
+                onSpeechUsage: (usage) => _speechUsage = _speechUsage + usage,
                 isLast: _index >= widget.sentences.length - 1,
               )
             : _buildQuestion(context),

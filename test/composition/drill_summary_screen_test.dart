@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pj_walter/models/token_usage.dart';
 import 'package:pj_walter/screens/composition/drill_summary_screen.dart';
 import 'package:pj_walter/services/gemini_pricing.dart';
+import 'package:pj_walter/services/gemini_service.dart';
 
 void main() {
   testWidgets('用途別・合計のトークン数と、単価から算出したコストが表示される', (tester) async {
@@ -86,5 +87,60 @@ void main() {
     expect(find.text('入力 1,000 · 出力 40 · ${cost(q2)}'), findsOneWidget);
     // 3問目は使用量ゼロなので行を出さない
     expect(find.textContaining('入力 0 · 出力 0 · \$'), findsNothing);
+  });
+
+  testWidgets('読み上げはTTSモデルの単価で別行に出し、合計は用途ごとに足し合わせる', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(400, 1600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    const speech = TokenUsage(promptTokens: 30, candidatesTokens: 1200);
+    const correction = TokenUsage(promptTokens: 400, candidatesTokens: 30);
+    const entries = [
+      DrillSummaryEntry(
+        ja: '例文1',
+        score: 85,
+        usage: DrillQuestionUsage(correction: correction, speech: speech),
+      ),
+    ];
+
+    const pricing = GeminiPricing.introductory;
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: DrillSummaryScreen(
+          level: 700,
+          theme: 'daily',
+          entries: entries,
+          pricing: pricing,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('読み上げ'), findsOneWidget);
+    expect(find.text('入力 30 · 出力 1,200'), findsOneWidget);
+    // 読み上げ行は音声の単価（$1.00 / $20.00）で計算する
+    expect(
+      find.text(formatUsd(GeminiPricing.tts.costUsd(speech))),
+      findsWidgets,
+    );
+    // 合計は「テキスト単価×添削 ＋ 音声単価×読み上げ」。全体に片方の単価を
+    // 掛けると実際の請求とずれるので、用途ごとに計算されていることを確かめる。
+    final expectedTotal =
+        pricing.costUsd(correction) + GeminiPricing.tts.costUsd(speech);
+    expect(find.text(formatUsd(expectedTotal)), findsWidgets);
+    expect(find.textContaining(GeminiService.ttsModelName), findsOneWidget);
+  });
+
+  test('読み上げが無ければ合計コストはテキスト単価だけで決まる', () {
+    const usage = DrillQuestionUsage(
+      transcription: TokenUsage(promptTokens: 600, candidatesTokens: 20),
+      correction: TokenUsage(promptTokens: 400, candidatesTokens: 30),
+    );
+
+    expect(
+      usage.costUsd(GeminiPricing.introductory),
+      GeminiPricing.introductory.costUsd(usage.total),
+    );
   });
 }

@@ -1,12 +1,18 @@
-// DrillFeedbackViewの「あなたの発話 → 修正版」統合差分カードのウィジェットテスト。
+// DrillFeedbackViewの「あなたの発話 → 修正版」統合差分カード・問題文カード・
+// 読み上げボタンのウィジェットテスト。
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pj_walter/models/drill_result.dart';
 import 'package:pj_walter/models/learning_language.dart';
 import 'package:pj_walter/models/sentence.dart';
+import 'package:pj_walter/models/token_usage.dart';
 import 'package:pj_walter/screens/composition/drill_feedback_view.dart';
+import 'package:pj_walter/services/tts_service.dart';
 import 'package:pj_walter/theme/app_theme.dart';
+import 'package:pj_walter/widgets/speak_button.dart';
+
+import '../test_support/fake_tts_service.dart';
 
 Sentence _sentence() => const Sentence(
   id: 's700-001',
@@ -61,6 +67,7 @@ Widget _toneView({
     feedback: feedback,
     onNext: () {},
     onRetry: () {},
+    ttsService: FakeTtsService(),
   ),
 );
 
@@ -82,6 +89,7 @@ void main() {
           feedback: feedback,
           onNext: () {},
           onRetry: () {},
+          ttsService: FakeTtsService(),
         ),
       ),
     );
@@ -113,6 +121,7 @@ void main() {
           feedback: feedback,
           onNext: () {},
           onRetry: () {},
+          ttsService: FakeTtsService(),
         ),
       ),
     );
@@ -142,6 +151,7 @@ void main() {
           feedback: feedback,
           onNext: () {},
           onRetry: () {},
+          ttsService: FakeTtsService(),
         ),
       ),
     );
@@ -167,6 +177,7 @@ void main() {
           feedback: feedback,
           onNext: () {},
           onRetry: () {},
+          ttsService: FakeTtsService(),
         ),
       ),
     );
@@ -178,8 +189,206 @@ void main() {
     expect(find.text('English sentence'), findsOneWidget);
   });
 
+  testWidgets('採点前でも問題文カードに出題された日本語文が表示される', (tester) async {
+    await tester.pumpWidget(
+      _wrap(
+        DrillFeedbackView(
+          sentence: _sentence(),
+          spoken: null,
+          feedback: null,
+          onNext: () {},
+          onRetry: () {},
+          ttsService: FakeTtsService(),
+        ),
+      ),
+    );
+    // スケルトンのシマーは無限アニメーションのためpumpAndSettleは使えない
+    await tester.pump();
+
+    expect(find.text('問題文'), findsOneWidget);
+    expect(find.text('日本語の例文'), findsOneWidget);
+  });
+
+  testWidgets('修正版・模範解答の読み上げボタンでそれぞれの文が読み上げられる', (tester) async {
+    const feedback = CompositionFeedback(
+      score: 85,
+      isAcceptable: true,
+      corrected: 'I had toast this morning.',
+      explanationJa: '解説',
+      comparisonJa: '比較',
+    );
+    final tts = FakeTtsService();
+
+    await tester.pumpWidget(
+      _wrap(
+        DrillFeedbackView(
+          sentence: _sentence(),
+          spoken: 'I eat toast this morning',
+          feedback: feedback,
+          onNext: () {},
+          onRetry: () {},
+          ttsService: tts,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // 修正版・模範解答の2箇所に読み上げボタンが出る
+    expect(find.byType(SpeakButton), findsNWidgets(2));
+
+    await tester.tap(find.byType(SpeakButton).first);
+    await tester.pumpAndSettle();
+    // 模範解答カードは初期表示では画面外にあるのでスクロールしてから押す
+    await tester.ensureVisible(find.byType(SpeakButton).last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(SpeakButton).last);
+    await tester.pumpAndSettle();
+
+    expect(tts.spoken, ['I had toast this morning.', 'English sentence']);
+  });
+
+  testWidgets('読み上げ中はボタンが停止表示になり、押すと読み上げが止まる', (tester) async {
+    const feedback = CompositionFeedback(
+      score: 85,
+      isAcceptable: true,
+      corrected: 'I had toast this morning.',
+      explanationJa: '解説',
+      comparisonJa: '比較',
+    );
+    final tts = FakeTtsService()..pending = true;
+
+    await tester.pumpWidget(
+      _wrap(
+        DrillFeedbackView(
+          sentence: _sentence(),
+          spoken: 'I eat toast this morning',
+          feedback: feedback,
+          onNext: () {},
+          onRetry: () {},
+          ttsService: tts,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(SpeakButton).first);
+    await tester.pumpAndSettle();
+    expect(find.text('停止'), findsOneWidget);
+
+    await tester.tap(find.text('停止'));
+    await tester.pumpAndSettle();
+    expect(tts.stopCount, 1);
+    expect(find.text('停止'), findsNothing);
+    expect(find.text('読み上げ'), findsNWidgets(2));
+  });
+
+  testWidgets('読み上げに失敗した場合はエラー文言をスナックバーで知らせる', (tester) async {
+    const feedback = CompositionFeedback(
+      score: 85,
+      isAcceptable: true,
+      corrected: 'I had toast this morning.',
+      explanationJa: '解説',
+      comparisonJa: '比較',
+    );
+    final tts = FakeTtsService()..error = TtsException('読み上げできませんでした。');
+
+    await tester.pumpWidget(
+      _wrap(
+        DrillFeedbackView(
+          sentence: _sentence(),
+          spoken: 'I eat toast this morning',
+          feedback: feedback,
+          onNext: () {},
+          onRetry: () {},
+          ttsService: tts,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(SpeakButton).first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('読み上げできませんでした。'), findsOneWidget);
+    expect(find.text('停止'), findsNothing);
+  });
+
+  testWidgets('時間切れ（corrected空）でも問題文と模範解答の読み上げは使える', (tester) async {
+    const feedback = CompositionFeedback(
+      score: 0,
+      isAcceptable: false,
+      corrected: '',
+      explanationJa: '時間切れ',
+      comparisonJa: '',
+    );
+    final tts = FakeTtsService();
+
+    await tester.pumpWidget(
+      _wrap(
+        DrillFeedbackView(
+          sentence: _sentence(),
+          spoken: '',
+          feedback: feedback,
+          onNext: () {},
+          onRetry: () {},
+          ttsService: tts,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('日本語の例文'), findsOneWidget);
+    expect(find.byType(SpeakButton), findsOneWidget);
+
+    await tester.tap(find.byType(SpeakButton));
+    await tester.pumpAndSettle();
+    expect(tts.spoken, ['English sentence']);
+  });
+
+  testWidgets('読み上げで消費したトークンが親に通知される', (tester) async {
+    const feedback = CompositionFeedback(
+      score: 85,
+      isAcceptable: true,
+      corrected: 'I had toast this morning.',
+      explanationJa: '解説',
+      comparisonJa: '比較',
+    );
+    // 1回目はGeminiを呼ぶので使用量が返る
+    final tts = FakeTtsService()
+      ..usage = const TokenUsage(promptTokens: 20, candidatesTokens: 900);
+    final reported = <TokenUsage>[];
+
+    await tester.pumpWidget(
+      _wrap(
+        DrillFeedbackView(
+          sentence: _sentence(),
+          spoken: 'I eat toast this morning',
+          feedback: feedback,
+          onNext: () {},
+          onRetry: () {},
+          ttsService: tts,
+          onSpeechUsage: reported.add,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(SpeakButton).first);
+    await tester.pumpAndSettle();
+    expect(reported, [
+      const TokenUsage(promptTokens: 20, candidatesTokens: 900),
+    ]);
+
+    // キャッシュ再生（使用量ゼロ）は通知しない
+    tts.usage = TokenUsage.zero;
+    await tester.tap(find.byType(SpeakButton).first);
+    await tester.pumpAndSettle();
+    expect(reported.length, 1);
+  });
+
   group('気づいた点（声調）カード', () {
     testWidgets('中国語で綴りが一致し声調だけ違う音節があるときだけカードが出る', (tester) async {
+      await _tall(tester);
       await tester.pumpWidget(_toneView());
       await tester.pumpAndSettle();
 
@@ -338,6 +547,7 @@ void main() {
             feedback: _zhFeedback,
             onNext: () {},
             onRetry: () {},
+            ttsService: FakeTtsService(),
           ),
         ),
       );

@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import '../../models/drill_result.dart';
 import '../../models/learning_language.dart';
 import '../../models/sentence.dart';
+import '../../models/token_usage.dart';
 import '../../models/tone_note.dart';
+import '../../services/tts_service.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/pinyin.dart';
 import '../../utils/score_colors.dart';
@@ -14,6 +16,7 @@ import '../../widgets/primary_button.dart';
 import '../../widgets/secondary_button.dart';
 import '../../widgets/skeleton.dart';
 import '../../widgets/score_ring.dart';
+import '../../widgets/speak_button.dart';
 import '../../widgets/stat_badge.dart';
 
 /// 口頭英作文1問分のGemini添削結果の段階表示。
@@ -31,7 +34,13 @@ import '../../widgets/stat_badge.dart';
 /// [spokenReading]の音節列が一致し、かつ声調の食い違いが1件以上あるときだけ
 /// stage 2で「気づいた点」カードを出す（DESIGN.md「声調フィードバック」の
 /// 3つのガード）。それ以外はカードごと出さない（「問題なし」の表示は無い）。
-class DrillFeedbackView extends StatelessWidget {
+///
+/// スコアカードの直下には出題された日本語文（問題文）を常に表示する。採点を
+/// 待っている間も何に答えたのかを見失わないようにするため、段階表示の対象外。
+/// 「修正版」「模範解答」には[SpeakButton]を置き、[ttsService]（Gemini TTS）で
+/// 学習言語の発音を確認できるようにする。読み上げで消費したトークンは
+/// [onSpeechUsage]で親に渡し、まとめ画面のコスト表示に含める。
+class DrillFeedbackView extends StatefulWidget {
   const DrillFeedbackView({
     super.key,
     required this.sentence,
@@ -39,8 +48,10 @@ class DrillFeedbackView extends StatelessWidget {
     required this.feedback,
     required this.onNext,
     required this.onRetry,
+    required this.ttsService,
     this.profile = LanguageProfile.english,
     this.spokenReading,
+    this.onSpeechUsage,
     this.isLast = false,
   });
 
@@ -65,24 +76,71 @@ class DrillFeedbackView extends StatelessWidget {
   /// 「もう一度」タップ時のコールバック（同じ問題を録り直す）
   final VoidCallback onRetry;
 
+  /// 「修正版」「模範解答」の読み上げに使う音声合成
+  final TtsService ttsService;
+
+  /// 読み上げでGeminiが消費したトークンの通知。
+  /// キャッシュから再生した場合は[TokenUsage.zero]なので呼ばれない。
+  final void Function(TokenUsage usage)? onSpeechUsage;
+
   /// 最終問題かどうか（プライマリボタンのラベルに反映）
   final bool isLast;
 
   @override
+  State<DrillFeedbackView> createState() => _DrillFeedbackViewState();
+}
+
+class _DrillFeedbackViewState extends State<DrillFeedbackView> {
+  /// いま読み上げている文。読み上げていなければnull。
+  ///
+  /// 「修正版」「模範解答」のどちらのボタンを停止表示にするかの判定に使う。
+  String? _speaking;
+
+  @override
+  void dispose() {
+    // 画面を離れた後に読み上げが続かないようにする（サービス自体の破棄は
+    // 生成元のDrillScreenが行う）。
+    widget.ttsService.stop();
+    super.dispose();
+  }
+
+  /// [text]の読み上げをトグルする。読み上げ中の文をもう一度押すと停止する。
+  Future<void> _toggleSpeak(String text) async {
+    if (_speaking == text) {
+      await widget.ttsService.stop();
+      if (mounted) setState(() => _speaking = null);
+      return;
+    }
+    setState(() => _speaking = text);
+    try {
+      final (:usage) = await widget.ttsService.speak(text);
+      if (usage != TokenUsage.zero) widget.onSpeechUsage?.call(usage);
+    } on TtsException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
+    } finally {
+      // 別の文の読み上げに切り替わっている場合は、そちらの表示を消さない。
+      if (mounted && _speaking == text) setState(() => _speaking = null);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final feedback = this.feedback;
-    final spoken = this.spoken;
+    final feedback = widget.feedback;
+    final spoken = widget.spoken;
     final timedOut = feedback != null && feedback.corrected.isEmpty;
     // 声調の気づき。null（未判定）または空（指摘なし）ならカードを出さない。
     // 文字起こしが確定した時点（stage 1）から求まるので、採点を待たずにルビに反映する。
     final toneNotes = timedOut
         ? null
         : toneNotesFor(
-            profile: profile,
-            sentence: sentence,
-            spokenReading: spokenReading,
+            profile: widget.profile,
+            sentence: widget.sentence,
+            spokenReading: widget.spokenReading,
           );
-    final withRuby = profile.readingLabel != null;
+    final withRuby = widget.profile.readingLabel != null;
     var delayStep = 0;
     Widget staggered(Widget child) {
       final delay = Duration(milliseconds: 60 * delayStep);
@@ -105,6 +163,9 @@ class DrillFeedbackView extends StatelessWidget {
                   toneNoteCount: toneNotes?.length ?? 0,
                 ),
               const SizedBox(height: 14),
+              // 問題文は採点を待たずに出せるので、段階表示の対象にしない
+              _QuestionCard(ja: widget.sentence.ja),
+              const SizedBox(height: 12),
               // 文字起こしカード:
               //   stage 0 = スケルトン＋認識中バッジ
               //   stage 1 = 素の認識テキストのみ（差分・凡例なし）
@@ -119,7 +180,7 @@ class DrillFeedbackView extends StatelessWidget {
                   _PlainTranscriptCard(
                     spoken: spoken,
                     withRuby: withRuby,
-                    spokenReading: spokenReading,
+                    spokenReading: widget.spokenReading,
                     toneNotes: toneNotes ?? const [],
                   )
                 else
@@ -130,9 +191,13 @@ class DrillFeedbackView extends StatelessWidget {
                       // 中国語: ルビ（聞き取った読み／修正版の標準ピンイン）と
                       // 声調の気づき（赤ルビ）を重ねる
                       withRuby: withRuby,
-                      spokenReading: spokenReading,
+                      spokenReading: widget.spokenReading,
                       correctedReading: feedback.correctedReading,
                       toneNotes: toneNotes ?? const [],
+                      correctedTrailing: SpeakButton(
+                        speaking: _speaking == feedback.corrected,
+                        onPressed: () => _toggleSpeak(feedback.corrected),
+                      ),
                     ),
                   ),
                 const SizedBox(height: 12),
@@ -153,11 +218,15 @@ class DrillFeedbackView extends StatelessWidget {
                   _Section(
                     icon: Icons.menu_book_outlined,
                     title: '模範解答',
-                    content: sentence.target,
+                    content: widget.sentence.target,
                     // 中国語: 模範解答のピンインを漢字ごとのルビにする
-                    reading: withRuby ? sentence.reading : null,
-                    tips: sentence.tips,
+                    reading: withRuby ? widget.sentence.reading : null,
+                    tips: widget.sentence.tips,
                     highlight: timedOut,
+                    trailing: SpeakButton(
+                      speaking: _speaking == widget.sentence.target,
+                      onPressed: () => _toggleSpeak(widget.sentence.target),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -189,14 +258,17 @@ class DrillFeedbackView extends StatelessWidget {
             child: Row(
               children: [
                 Expanded(
-                  child: SecondaryButton(label: 'もう一度', onPressed: onRetry),
+                  child: SecondaryButton(
+                    label: 'もう一度',
+                    onPressed: widget.onRetry,
+                  ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   flex: 2,
                   child: PrimaryButton(
-                    label: isLast ? '結果を見る' : '次の問題へ',
-                    onPressed: onNext,
+                    label: widget.isLast ? '結果を見る' : '次の問題へ',
+                    onPressed: widget.onNext,
                   ),
                 ),
               ],
@@ -389,14 +461,18 @@ class _FadeInCardState extends State<_FadeInCard> {
 }
 
 /// アイコン＋ラベルの小見出し（14px bold、アイコンはオレンジ、8px間隔）。
+///
+/// [trailing]を渡すと行の右端に寄せて並べる（読み上げボタンなど）。
 class _SectionLabel extends StatelessWidget {
-  const _SectionLabel({required this.icon, required this.title});
+  const _SectionLabel({required this.icon, required this.title, this.trailing});
 
   final IconData icon;
   final String title;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
+    final trailing = this.trailing;
     return Row(
       children: [
         Icon(icon, size: 18, color: AppColors.primary),
@@ -409,7 +485,40 @@ class _SectionLabel extends StatelessWidget {
             color: AppColors.textPrimary,
           ),
         ),
+        if (trailing != null) ...[const Spacer(), trailing],
       ],
+    );
+  }
+}
+
+/// 出題された日本語文（問題文）のカード。
+///
+/// 添削結果を見ている間も何に対する回答だったのかが分かるように、
+/// スコアカードのすぐ下に置く。
+class _QuestionCard extends StatelessWidget {
+  const _QuestionCard({required this.ja});
+
+  final String ja;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _SectionLabel(icon: Icons.help_outline, title: '問題文'),
+          const SizedBox(height: 8),
+          Text(
+            ja,
+            style: const TextStyle(
+              fontSize: 16,
+              height: 1.7,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -428,6 +537,7 @@ class _DiffCard extends StatelessWidget {
     this.spokenReading,
     this.correctedReading,
     this.toneNotes = const [],
+    this.correctedTrailing,
   });
 
   final String spoken;
@@ -444,6 +554,10 @@ class _DiffCard extends StatelessWidget {
 
   /// 声調の気づき。該当する漢字のルビを赤にし、下に期待された声調を添える
   final List<ToneNote> toneNotes;
+
+  /// 「修正版」見出しの右端に置くウィジェット（読み上げボタン）。
+  /// 差分が無く修正版セクションを出さない場合は使わない。
+  final Widget? correctedTrailing;
 
   @override
   Widget build(BuildContext context) {
@@ -493,7 +607,11 @@ class _DiffCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const _SectionLabel(icon: Icons.edit, title: '修正版'),
+                  _SectionLabel(
+                    icon: Icons.edit,
+                    title: '修正版',
+                    trailing: correctedTrailing,
+                  ),
                   const SizedBox(height: 8),
                   if (withRuby)
                     _RubyDiffText(
@@ -860,6 +978,7 @@ class _Section extends StatelessWidget {
     this.reading,
     this.tips,
     this.highlight = false,
+    this.trailing,
   });
 
   final IconData icon;
@@ -872,6 +991,9 @@ class _Section extends StatelessWidget {
   final String? tips;
   final bool highlight;
 
+  /// 見出し行の右端に置くウィジェット（読み上げボタン）
+  final Widget? trailing;
+
   @override
   Widget build(BuildContext context) {
     return AppCard(
@@ -879,7 +1001,7 @@ class _Section extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _SectionLabel(icon: icon, title: title),
+          _SectionLabel(icon: icon, title: title, trailing: trailing),
           const SizedBox(height: 8),
           if (reading != null)
             _RubyText(

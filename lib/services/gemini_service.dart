@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
@@ -7,6 +8,7 @@ import '../models/drill_result.dart';
 import '../models/learning_language.dart';
 import '../models/monologue_result.dart';
 import '../models/token_usage.dart';
+import '../utils/wav_builder.dart';
 import 'settings_service.dart';
 
 /// [GeminiService.correctComposition]の結果（添削＋トークン使用量）。
@@ -27,6 +29,9 @@ typedef TranscriptionResult = ({
   String? reading,
   TokenUsage usage,
 });
+
+/// [GeminiService.synthesizeSpeech]の結果（WAV音声＋トークン使用量）。
+typedef SpeechResult = ({Uint8List wavBytes, TokenUsage usage});
 
 /// Gemini API呼び出し失敗時に投げられる例外。
 ///
@@ -58,6 +63,16 @@ class GeminiService {
   /// 使用するGeminiモデル。最新のFlash系1本に固定し、設定画面からは変更できない
   /// （料金計算・動作検証の対象を1モデルに絞るため）。
   static const modelName = 'gemini-3.8-flash';
+
+  /// 読み上げ（TTS）に使うモデル。[modelName]は音声出力に対応していないため、
+  /// 読み上げだけ専用モデルを使う（単価も別。[GeminiPricing.tts]参照）。
+  static const ttsModelName = 'gemini-3.1-flash-tts-preview';
+
+  /// 読み上げに使うプリセット音声。落ち着いた聞き取りやすい声を選んでいる。
+  static const ttsVoiceName = 'Kore';
+
+  /// TTSが返すPCMのサンプリングレート（mimeTypeにrateが無い場合のフォールバック）。
+  static const _ttsFallbackSampleRate = 24000;
 
   /// 思考（thinking）の強さ。Gemini 3系は`thinkingBudget`ではなく
   /// `thinkingLevel`で制御し、完全にオフにはできない。文字起こし・添削は
@@ -250,6 +265,94 @@ ${withReading ? _correctedReadingInstruction : ''}''';
     if (text.contains(noSpeechMarker)) {
       throw GeminiException('音声を聞き取れませんでした。もう一度お試しください。');
     }
+  }
+
+  /// [text]をGeminiに読み上げさせ、再生可能なWAVバイト列を返す。
+  ///
+  /// TTSモデルは生のPCM16（モノラル、mimeTypeの`rate`はふつう24000）を
+  /// base64で返すため、[buildWavBytes]でWAVヘッダーを付けてから返す。
+  /// 読み上げ言語はモデルが入力テキストから自動判定するので明示指定はしない。
+  Future<SpeechResult> synthesizeSpeech({
+    required LanguageProfile profile,
+    required String text,
+  }) async {
+    final apiKey = _requireApiKey();
+    final uri = Uri.parse('$_baseUrl/$ttsModelName:generateContent');
+    final body = jsonEncode({
+      'contents': [
+        {
+          'parts': [
+            {
+              // 学習者が発音を追えるように、速度と明瞭さを指示する。
+              // 指示文と読み上げ対象を1つのpartに入れるのがTTSモデルの作法。
+              'text':
+                  'Read the following ${profile.label} sentence clearly and '
+                  'a little slowly, in a calm teaching voice: $text',
+            },
+          ],
+        },
+      ],
+      'generationConfig': {
+        'responseModalities': ['AUDIO'],
+        'speechConfig': {
+          'voiceConfig': {
+            'prebuiltVoiceConfig': {'voiceName': ttsVoiceName},
+          },
+        },
+      },
+    });
+
+    final response = await _post(uri: uri, apiKey: apiKey, body: body);
+    _checkStatus(response);
+    final Map<String, dynamic> decoded;
+    try {
+      decoded =
+          jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+    } catch (_) {
+      throw GeminiException('Geminiからの応答を解析できませんでした。時間を置いて再度お試しください。');
+    }
+    final audio = _extractInlineAudio(decoded);
+    if (audio == null) {
+      throw GeminiException('読み上げ音声を取得できませんでした。時間を置いて再度お試しください。');
+    }
+    return (
+      wavBytes: buildWavBytes(audio.pcm, sampleRate: audio.sampleRate),
+      usage: _extractUsage(decoded),
+    );
+  }
+
+  /// 音声応答の`inlineData`からPCMデータとサンプリングレートを取り出す。
+  ///
+  /// 音声が入っていない応答（`parts`省略など）はnullを返す。
+  /// mimeTypeは`audio/L16;codec=pcm;rate=24000`の形なので`rate`を読む。
+  ({Uint8List pcm, int sampleRate})? _extractInlineAudio(
+    Map<String, dynamic> decoded,
+  ) {
+    try {
+      final candidates = decoded['candidates'] as List;
+      final content = candidates.first['content'] as Map<String, dynamic>;
+      final parts = content['parts'] as List?;
+      if (parts == null || parts.isEmpty) return null;
+      final inline = parts.first['inlineData'] ?? parts.first['inline_data'];
+      if (inline is! Map) return null;
+      final data = inline['data'] as String?;
+      if (data == null || data.isEmpty) return null;
+      final mimeType = (inline['mimeType'] ?? inline['mime_type']) as String?;
+      return (
+        pcm: base64Decode(data),
+        sampleRate: _sampleRateOf(mimeType) ?? _ttsFallbackSampleRate,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// `audio/L16;codec=pcm;rate=24000`形式のmimeTypeからサンプリングレートを読む。
+  static int? _sampleRateOf(String? mimeType) {
+    if (mimeType == null) return null;
+    final match = RegExp(r'rate=(\d+)').firstMatch(mimeType);
+    if (match == null) return null;
+    return int.tryParse(match.group(1)!);
   }
 
   /// 英語など、発音表記を扱わない言語のプレーンテキスト文字起こし指示。

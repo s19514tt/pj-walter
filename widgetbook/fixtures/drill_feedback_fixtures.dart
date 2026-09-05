@@ -9,7 +9,9 @@ import 'package:flutter/material.dart';
 import 'package:pj_walter/models/drill_result.dart';
 import 'package:pj_walter/models/learning_language.dart';
 import 'package:pj_walter/models/sentence.dart';
+import 'package:pj_walter/models/token_usage.dart';
 import 'package:pj_walter/screens/composition/drill_feedback_view.dart';
+import 'package:pj_walter/services/tts_service.dart';
 
 /// ストーリー1件（名前＋ウィジェットの組み立て）。
 class Story {
@@ -103,7 +105,24 @@ DrillFeedbackView _view({
   feedback: feedback,
   onNext: () {},
   onRetry: () {},
+  ttsService: _SilentTtsService(),
 );
+
+/// 見た目だけを確認するための、何も鳴らさない[TtsService]。
+///
+/// Widgetbook もゴールデンテストも音声は扱わないので、読み上げボタンが
+/// 押されても何もしない実装を渡す（テスト用のフェイクは test/ にあるため
+/// ここからは参照しない）。
+class _SilentTtsService implements TtsService {
+  @override
+  Future<SpeakResult> speak(String text) async => (usage: TokenUsage.zero);
+
+  @override
+  Future<void> stop() async {}
+
+  @override
+  void dispose() {}
+}
 
 /// 添削画面の状態一覧。上から「よく見る順」。
 final drillFeedbackStories = <Story>[
