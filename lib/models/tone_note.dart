@@ -10,6 +10,7 @@ import 'package:flutter/foundation.dart';
 class ToneNote {
   const ToneNote({
     required this.index,
+    required this.spokenIndex,
     required this.expected,
     required this.actual,
     required this.expectedTone,
@@ -17,8 +18,12 @@ class ToneNote {
     this.hanzi,
   });
 
-  /// 文中の音節位置（0始まり）
+  /// 模範解答のピンインでの音節位置（0始まり）
   final int index;
+
+  /// 聞き取られたピンインでの音節位置（0始まり）。語順や語数が模範解答と違うと
+  /// [index]とはずれる（綴りでLCS整列した結果の対応先）
+  final int spokenIndex;
 
   /// 対応する漢字。模範解答の漢字数と音節数が一致しない（儿化など）場合はnull
   final String? hanzi;
@@ -37,6 +42,7 @@ class ToneNote {
 
   factory ToneNote.fromJson(Map<String, dynamic> json) => ToneNote(
     index: (json['index'] as num).toInt(),
+    spokenIndex: ((json['spokenIndex'] ?? json['index']) as num).toInt(),
     hanzi: json['hanzi'] as String?,
     expected: json['expected'] as String,
     actual: json['actual'] as String,
@@ -46,6 +52,7 @@ class ToneNote {
 
   Map<String, dynamic> toJson() => {
     'index': index,
+    'spokenIndex': spokenIndex,
     'hanzi': hanzi,
     'expected': expected,
     'actual': actual,
@@ -59,6 +66,7 @@ class ToneNote {
       other is ToneNote &&
           runtimeType == other.runtimeType &&
           index == other.index &&
+          spokenIndex == other.spokenIndex &&
           hanzi == other.hanzi &&
           expected == other.expected &&
           actual == other.actual &&
@@ -66,8 +74,15 @@ class ToneNote {
           actualTone == other.actualTone;
 
   @override
-  int get hashCode =>
-      Object.hash(index, hanzi, expected, actual, expectedTone, actualTone);
+  int get hashCode => Object.hash(
+    index,
+    spokenIndex,
+    hanzi,
+    expected,
+    actual,
+    expectedTone,
+    actualTone,
+  );
 
   @override
   String toString() =>

@@ -74,13 +74,15 @@ class DrillFeedbackView extends StatelessWidget {
     final spoken = this.spoken;
     final timedOut = feedback != null && feedback.corrected.isEmpty;
     // 声調の気づき。null（未判定）または空（指摘なし）ならカードを出さない。
-    final toneNotes = feedback == null || timedOut
+    // 文字起こしが確定した時点（stage 1）から求まるので、採点を待たずにルビに反映する。
+    final toneNotes = timedOut
         ? null
         : toneNotesFor(
             profile: profile,
             sentence: sentence,
             spokenReading: spokenReading,
           );
+    final withRuby = profile.readingLabel != null;
     var delayStep = 0;
     Widget staggered(Widget child) {
       final delay = Duration(milliseconds: 60 * delayStep);
@@ -98,7 +100,10 @@ class DrillFeedbackView extends StatelessWidget {
               if (feedback == null)
                 const _ScoreSkeletonCard()
               else
-                _ScoreCard(feedback: feedback),
+                _ScoreCard(
+                  feedback: feedback,
+                  toneNoteCount: toneNotes?.length ?? 0,
+                ),
               const SizedBox(height: 14),
               // 文字起こしカード:
               //   stage 0 = スケルトン＋認識中バッジ
@@ -111,16 +116,32 @@ class DrillFeedbackView extends StatelessWidget {
                     badge: '認識中',
                   )
                 else if (feedback == null)
-                  _PlainTranscriptCard(spoken: spoken)
+                  _PlainTranscriptCard(
+                    spoken: spoken,
+                    withRuby: withRuby,
+                    spokenReading: spokenReading,
+                    toneNotes: toneNotes ?? const [],
+                  )
                 else
                   staggered(
-                    _DiffCard(spoken: spoken, corrected: feedback.corrected),
+                    _DiffCard(
+                      spoken: spoken,
+                      corrected: feedback.corrected,
+                      // 中国語: ルビ（聞き取った読み／修正版の標準ピンイン）と
+                      // 声調の気づき（赤ルビ）を重ねる
+                      withRuby: withRuby,
+                      spokenReading: spokenReading,
+                      correctedReading: feedback.correctedReading,
+                      toneNotes: toneNotes ?? const [],
+                    ),
                   ),
                 const SizedBox(height: 12),
               ],
               // 気づいた点（声調）: 指摘が1件以上あるときだけ。0件や未判定では
               // カードごと出さない（「声調OK」と受け取られる見せ方をしない）。
-              if (toneNotes != null && toneNotes.isNotEmpty) ...[
+              if (feedback != null &&
+                  toneNotes != null &&
+                  toneNotes.isNotEmpty) ...[
                 staggered(_ToneNotesCard(notes: toneNotes)),
                 const SizedBox(height: 12),
               ],
@@ -133,6 +154,8 @@ class DrillFeedbackView extends StatelessWidget {
                     icon: Icons.menu_book_outlined,
                     title: '模範解答',
                     content: sentence.target,
+                    // 中国語: 模範解答のピンインを漢字ごとのルビにする
+                    reading: withRuby ? sentence.reading : null,
                     tips: sentence.tips,
                     highlight: timedOut,
                   ),
@@ -186,19 +209,27 @@ class DrillFeedbackView extends StatelessWidget {
 
 /// スコアリング＋判定＋総評のカード（stage 2）。
 class _ScoreCard extends StatelessWidget {
-  const _ScoreCard({required this.feedback});
+  const _ScoreCard({required this.feedback, this.toneNoteCount = 0});
 
   final CompositionFeedback feedback;
+
+  /// 声調の気づきの件数（中国語のみ）。1件以上なら総評の一文で赤ルビへ誘導する
+  final int toneNoteCount;
 
   @override
   Widget build(BuildContext context) {
     final color = scoreColor(feedback.score);
     // デザインの3段階判定。合否ライン（70点・SRS登録条件）はisAcceptableに従う
-    final (verdict, verdictSurface, headline) = feedback.isAcceptable
+    final (verdict, verdictSurface, defaultHeadline) = feedback.isAcceptable
         ? ('合格', AppColors.scoreGoodSurface, 'よくできました。この調子で次へ進みましょう。')
         : feedback.score >= 50
         ? ('あと少し', AppColors.scoreMediumSurface, '惜しい！解説を確認して仕上げましょう。')
         : ('要復習', AppColors.scoreLowSurface, '復習キューに登録されます。模範解答を確認しましょう。');
+    // 声調の気づきがあるときは、デザインの総評と同様に声調へ誘導する一文にする。
+    // 気づきが無いときに「声調は問題ありません」とは言わない（見逃しがそのまま嘘になる）。
+    final headline = toneNoteCount > 0
+        ? '声調が違って聞こえた音節が$toneNoteCountつあります。赤いルビを確認しましょう。'
+        : defaultHeadline;
     return AppCard(
       padding: const EdgeInsets.all(20),
       child: Row(
@@ -260,9 +291,19 @@ class _ScoreSkeletonCard extends StatelessWidget {
 
 /// stage 1の文字起こしカード。素の認識テキストのみ（差分・凡例は出さない）。
 class _PlainTranscriptCard extends StatelessWidget {
-  const _PlainTranscriptCard({required this.spoken});
+  const _PlainTranscriptCard({
+    required this.spoken,
+    this.withRuby = false,
+    this.spokenReading,
+    this.toneNotes = const [],
+  });
 
   final String spoken;
+
+  /// 中国語: 聞き取った読みを漢字ごとのルビにする（声調の気づきは赤ルビ）
+  final bool withRuby;
+  final String? spokenReading;
+  final List<ToneNote> toneNotes;
 
   @override
   Widget build(BuildContext context) {
@@ -286,15 +327,24 @@ class _PlainTranscriptCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          Text(
-            spoken,
-            style: const TextStyle(
-              fontSize: 15,
-              height: 1.8,
-              fontWeight: FontWeight.w500,
-              color: AppColors.textPrimary,
+          if (withRuby)
+            _RubyDiffText(
+              segments: diffWords(spoken, spoken),
+              reading: spokenReading,
+              toneNotes: toneNotes,
+              changedColor: AppColors.scoreLow,
+              changedBackground: AppColors.scoreLowSurface,
+            )
+          else
+            Text(
+              spoken,
+              style: const TextStyle(
+                fontSize: 15,
+                height: 1.8,
+                fontWeight: FontWeight.w500,
+                color: AppColors.textPrimary,
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -371,15 +421,40 @@ class _SectionLabel extends StatelessWidget {
 /// 差分が無い（完全一致）場合は下段の代わりに「修正なし」メッセージを
 /// good色（[AppColors.success]）で表示する。
 class _DiffCard extends StatelessWidget {
-  const _DiffCard({required this.spoken, required this.corrected});
+  const _DiffCard({
+    required this.spoken,
+    required this.corrected,
+    this.withRuby = false,
+    this.spokenReading,
+    this.correctedReading,
+    this.toneNotes = const [],
+  });
 
   final String spoken;
   final String corrected;
+
+  /// 漢字ごとにピンインのルビを付けるか（中国語のみ）
+  final bool withRuby;
+
+  /// 音声認識が聞き取った読み（あなたの発話のルビ。参考値）
+  final String? spokenReading;
+
+  /// 修正版の標準ピンイン（修正版のルビ）
+  final String? correctedReading;
+
+  /// 声調の気づき。該当する漢字のルビを赤にし、下に期待された声調を添える
+  final List<ToneNote> toneNotes;
 
   @override
   Widget build(BuildContext context) {
     final diff = diffWords(spoken, corrected);
     final hasChanges = diff.any((s) => s.type != DiffSegmentType.same);
+    final spokenSegments = diff
+        .where((s) => s.type != DiffSegmentType.added)
+        .toList();
+    final correctedSegments = diff
+        .where((s) => s.type != DiffSegmentType.removed)
+        .toList();
 
     return AppCard(
       child: Column(
@@ -390,12 +465,22 @@ class _DiffCard extends StatelessWidget {
             title: 'あなたの発話',
           ),
           const SizedBox(height: 8),
-          _DiffText(
-            segments: diff.where((s) => s.type != DiffSegmentType.added),
-            changedColor: AppColors.scoreLow,
-            changedBackground: AppColors.scoreLowSurface,
-            changedDecoration: TextDecoration.lineThrough,
-          ),
+          if (withRuby)
+            _RubyDiffText(
+              segments: spokenSegments,
+              reading: spokenReading,
+              toneNotes: toneNotes,
+              changedColor: AppColors.scoreLow,
+              changedBackground: AppColors.scoreLowSurface,
+              changedDecoration: TextDecoration.lineThrough,
+            )
+          else
+            _DiffText(
+              segments: spokenSegments,
+              changedColor: AppColors.scoreLow,
+              changedBackground: AppColors.scoreLowSurface,
+              changedDecoration: TextDecoration.lineThrough,
+            ),
           const SizedBox(height: 16),
           if (hasChanges)
             Container(
@@ -410,14 +495,20 @@ class _DiffCard extends StatelessWidget {
                 children: [
                   const _SectionLabel(icon: Icons.edit, title: '修正版'),
                   const SizedBox(height: 8),
-                  _DiffText(
-                    segments: diff.where(
-                      (s) => s.type != DiffSegmentType.removed,
+                  if (withRuby)
+                    _RubyDiffText(
+                      segments: correctedSegments,
+                      reading: correctedReading,
+                      changedColor: AppColors.scoreGood,
+                      changedBackground: AppColors.scoreGoodSurface,
+                    )
+                  else
+                    _DiffText(
+                      segments: correctedSegments,
+                      changedColor: AppColors.scoreGood,
+                      changedBackground: AppColors.scoreGoodSurface,
+                      changedWeight: FontWeight.bold,
                     ),
-                    changedColor: AppColors.scoreGood,
-                    changedBackground: AppColors.scoreGoodSurface,
-                    changedWeight: FontWeight.bold,
-                  ),
                 ],
               ),
             )
@@ -459,8 +550,214 @@ class _DiffCard extends StatelessWidget {
               ),
             ],
           ),
+          // 声調の気づきがある場合だけ赤ルビの読み方を添える（デザインの注記）。
+          // 「声調OK」のような肯定的な断定は出さない。
+          if (withRuby && toneNotes.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            const Text(
+              '赤字のルビは上＝実際の声調（参考値）／下＝期待された声調',
+              style: TextStyle(
+                fontSize: 11,
+                height: 1.6,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
         ],
       ),
+    );
+  }
+}
+
+/// [DiffSegment]列を、漢字ごとに「ピンインのルビ＋漢字」のセルとして描画する
+/// （中国語用。デザイン `SpeakingApp-Chinese` のルビ表示）。
+///
+/// [reading]の音節を[alignReading]で各漢字に割り当てる。漢字数と音節数が
+/// 合わない場合はルビ無しで漢字だけを並べる（位置のずれたルビを出さない）。
+/// 差分のある文字は[changedColor]／[changedBackground]で強調し、
+/// [toneNotes]に該当する文字はルビを赤にして下段に期待された声調を添える。
+class _RubyDiffText extends StatelessWidget {
+  const _RubyDiffText({
+    required this.segments,
+    required this.reading,
+    required this.changedColor,
+    required this.changedBackground,
+    this.toneNotes = const [],
+    this.changedDecoration,
+  });
+
+  final List<DiffSegment> segments;
+  final String? reading;
+  final Color changedColor;
+  final Color changedBackground;
+  final List<ToneNote> toneNotes;
+  final TextDecoration? changedDecoration;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = segments.map((s) => s.text).toList();
+    final readings = reading == null
+        ? null
+        : alignReading(tokens: tokens, reading: reading!);
+    // あなたの発話のルビは聞き取ったピンインの音節位置（spokenIndex）で引く
+    final notesBySyllable = {for (final n in toneNotes) n.spokenIndex: n};
+
+    return Wrap(
+      spacing: 2,
+      runSpacing: 6,
+      crossAxisAlignment: WrapCrossAlignment.end,
+      children: [
+        for (var i = 0; i < segments.length; i++)
+          _rubyCell(
+            segment: segments[i],
+            ruby: readings?[i],
+            note: readings?[i] == null
+                ? null
+                : notesBySyllable[readings![i]!.syllableIndex],
+          ),
+      ],
+    );
+  }
+
+  Widget _rubyCell({
+    required DiffSegment segment,
+    required TokenReading? ruby,
+    required ToneNote? note,
+  }) {
+    final changed = segment.type != DiffSegmentType.same;
+    // 声調の気づきがある文字: 上のルビ（聞こえた声調）を赤に、下に期待声調
+    final toneMismatch = note != null;
+    final rubyColor = toneMismatch
+        ? AppColors.scoreLow
+        : changed
+        ? changedColor
+        : AppColors.textSecondary;
+    return _RubyCell(
+      text: segment.text,
+      ruby: ruby?.reading,
+      rubyColor: rubyColor,
+      rubyBelow: toneMismatch ? _rubyBelow(note, ruby!) : null,
+      textColor: changed ? changedColor : AppColors.textPrimary,
+      background: changed || toneMismatch
+          ? (toneMismatch ? AppColors.scoreLowSurface : changedBackground)
+          : null,
+      decoration: changed ? changedDecoration : null,
+    );
+  }
+
+  /// 期待された声調のルビ。儿化で「儿」側のセルには `r` のみ表示する。
+  String _rubyBelow(ToneNote note, TokenReading ruby) {
+    if (ruby.reading == 'r') return 'r';
+    final expected = note.expected;
+    // 儿化の本体側（diǎn）には期待側の r を除いた読みを付ける
+    if (ruby.reading.length < note.actual.length &&
+        note.actual.endsWith('r') &&
+        expected.endsWith('r')) {
+      return expected.substring(0, expected.length - 1);
+    }
+    return expected;
+  }
+}
+
+/// ピンインのルビ付き1文字分。ルビ（上）・漢字・期待声調（下、任意）を縦に並べる。
+class _RubyCell extends StatelessWidget {
+  const _RubyCell({
+    required this.text,
+    required this.ruby,
+    required this.rubyColor,
+    required this.textColor,
+    this.rubyBelow,
+    this.background,
+    this.decoration,
+  });
+
+  final String text;
+  final String? ruby;
+  final Color rubyColor;
+  final String? rubyBelow;
+  final Color textColor;
+  final Color? background;
+  final TextDecoration? decoration;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 2),
+      decoration: background == null
+          ? null
+          : BoxDecoration(
+              color: background,
+              borderRadius: BorderRadius.circular(4),
+            ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // ルビの無い文字（句読点など）も高さを揃えるため空行を置く
+          Text(
+            ruby ?? ' ',
+            style: TextStyle(
+              fontSize: 10,
+              height: 1.4,
+              fontWeight: FontWeight.w500,
+              color: rubyColor,
+            ),
+          ),
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: 17,
+              height: 1.3,
+              fontWeight: FontWeight.bold,
+              color: textColor,
+              decoration: decoration,
+              decorationColor: textColor,
+            ),
+          ),
+          if (rubyBelow != null)
+            Text(
+              rubyBelow!,
+              style: const TextStyle(
+                fontSize: 10,
+                height: 1.4,
+                fontWeight: FontWeight.bold,
+                color: AppColors.scoreGood,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 差分の無いテキストを漢字ごとのルビ付きで描画する（模範解答用）。
+class _RubyText extends StatelessWidget {
+  const _RubyText({
+    required this.text,
+    required this.reading,
+    required this.textColor,
+  });
+
+  final String text;
+  final String reading;
+  final Color textColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = diffWords(text, text).map((s) => s.text).toList();
+    final readings = alignReading(tokens: tokens, reading: reading);
+    return Wrap(
+      spacing: 2,
+      runSpacing: 6,
+      crossAxisAlignment: WrapCrossAlignment.end,
+      children: [
+        for (var i = 0; i < tokens.length; i++)
+          _RubyCell(
+            text: tokens[i],
+            ruby: readings?[i]?.reading,
+            rubyColor: AppColors.textSecondary,
+            textColor: textColor,
+          ),
+      ],
     );
   }
 }
@@ -554,6 +851,7 @@ class _Section extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.content,
+    this.reading,
     this.tips,
     this.highlight = false,
   });
@@ -561,6 +859,10 @@ class _Section extends StatelessWidget {
   final IconData icon;
   final String title;
   final String content;
+
+  /// [content]のピンイン（中国語の模範解答）。指定時は漢字ごとのルビ付きで描画する
+  final String? reading;
+
   final String? tips;
   final bool highlight;
 
@@ -573,14 +875,21 @@ class _Section extends StatelessWidget {
         children: [
           _SectionLabel(icon: icon, title: title),
           const SizedBox(height: 8),
-          Text(
-            content,
-            style: TextStyle(
-              fontSize: highlight ? 17 : 15,
-              fontWeight: highlight ? FontWeight.bold : FontWeight.normal,
-              color: highlight ? AppColors.primary : AppColors.textPrimary,
+          if (reading != null)
+            _RubyText(
+              text: content,
+              reading: reading!,
+              textColor: highlight ? AppColors.primary : AppColors.textPrimary,
+            )
+          else
+            Text(
+              content,
+              style: TextStyle(
+                fontSize: highlight ? 17 : 15,
+                fontWeight: highlight ? FontWeight.bold : FontWeight.normal,
+                color: highlight ? AppColors.primary : AppColors.textPrimary,
+              ),
             ),
-          ),
           if (tips != null && tips!.isNotEmpty) ...[
             const SizedBox(height: 10),
             Container(

@@ -14,6 +14,7 @@ class CompositionFeedback {
     required this.corrected,
     required this.explanationJa,
     required this.comparisonJa,
+    this.correctedReading,
   });
 
   /// 伝わりやすさ・正確さの総合スコア（0-100）
@@ -31,6 +32,10 @@ class CompositionFeedback {
   /// 模範解答との違い・どちらでも良い点の解説（日本語）
   final String comparisonJa;
 
+  /// [corrected]の標準的なピンイン（中国語のみ。修正版のルビ表示に使う）。
+  /// 英語や旧データでは null。
+  final String? correctedReading;
+
   factory CompositionFeedback.fromJson(Map<String, dynamic> json) =>
       CompositionFeedback(
         score: (json['score'] as num).toInt(),
@@ -38,6 +43,7 @@ class CompositionFeedback {
         corrected: json['corrected'] as String,
         explanationJa: json['explanation_ja'] as String,
         comparisonJa: json['comparison_ja'] as String,
+        correctedReading: json['corrected_reading'] as String?,
       );
 
   Map<String, dynamic> toJson() => {
@@ -46,6 +52,7 @@ class CompositionFeedback {
     'corrected': corrected,
     'explanation_ja': explanationJa,
     'comparison_ja': comparisonJa,
+    'corrected_reading': correctedReading,
   };
 
   @override
@@ -57,11 +64,18 @@ class CompositionFeedback {
           isAcceptable == other.isAcceptable &&
           corrected == other.corrected &&
           explanationJa == other.explanationJa &&
-          comparisonJa == other.comparisonJa;
+          comparisonJa == other.comparisonJa &&
+          correctedReading == other.correctedReading;
 
   @override
-  int get hashCode =>
-      Object.hash(score, isAcceptable, corrected, explanationJa, comparisonJa);
+  int get hashCode => Object.hash(
+    score,
+    isAcceptable,
+    corrected,
+    explanationJa,
+    comparisonJa,
+    correctedReading,
+  );
 }
 
 /// 口頭英作文1問分の受験結果（発話内容＋Gemini添削結果）。

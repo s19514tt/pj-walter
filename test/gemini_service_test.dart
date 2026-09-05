@@ -277,6 +277,81 @@ void main() {
       expect(parts.first['text'], startsWith('Transcribe this 英語 speech'));
     });
 
+    test('中国語の添削は corrected_reading を追加で要求し、CompositionFeedbackに入れる', () async {
+      Map<String, dynamic>? sentBody;
+      final client = MockClient((request) async {
+        sentBody = jsonDecode(request.body) as Map<String, dynamic>;
+        return _jsonResponse(
+          _geminiEnvelope({
+            'score': 90,
+            'is_acceptable': true,
+            'corrected': '我要水。',
+            'corrected_reading': 'wǒ yào shuǐ',
+            'explanation_ja': '解説',
+            'comparison_ja': '比較',
+          }),
+          200,
+        );
+      });
+      final service = GeminiService(settingsService: settings, client: client);
+
+      final (:feedback, usage: _) = await service.correctComposition(
+        profile: LanguageProfile.chinese,
+        ja: '水がほしい。',
+        modelAnswer: '我要水。',
+        spoken: '我要睡',
+      );
+
+      expect(feedback.correctedReading, 'wǒ yào shuǐ');
+      final schema =
+          (sentBody!['generationConfig'] as Map)['responseSchema'] as Map;
+      expect((schema['properties'] as Map).keys, contains('corrected_reading'));
+      expect(schema['required'], contains('corrected_reading'));
+      final prompt =
+          ((sentBody!['contents'] as List).first['parts'] as List).first['text']
+              as String;
+      expect(prompt, contains('corrected_reading'));
+      // 採点方針の行はそのまま（声調はスコアに含めない）
+      expect(prompt, contains('発音・声調は評価対象に含めません'));
+    });
+
+    test('英語の添削スキーマ・プロンプトに corrected_reading は入らない', () async {
+      Map<String, dynamic>? sentBody;
+      final client = MockClient((request) async {
+        sentBody = jsonDecode(request.body) as Map<String, dynamic>;
+        return _jsonResponse(
+          _geminiEnvelope({
+            'score': 90,
+            'is_acceptable': true,
+            'corrected': 'ok',
+            'explanation_ja': '',
+            'comparison_ja': '',
+          }),
+          200,
+        );
+      });
+      final service = GeminiService(settingsService: settings, client: client);
+
+      final (:feedback, usage: _) = await service.correctComposition(
+        profile: LanguageProfile.english,
+        ja: 'ja',
+        modelAnswer: 'model',
+        spoken: 'spoken',
+      );
+
+      expect(feedback.correctedReading, isNull);
+      final schema =
+          (sentBody!['generationConfig'] as Map)['responseSchema'] as Map;
+      expect(
+        (schema['properties'] as Map).keys,
+        isNot(contains('corrected_reading')),
+      );
+      final prompt =
+          ((sentBody!['contents'] as List).first['parts'] as List).first['text']
+              as String;
+      expect(prompt, isNot(contains('corrected_reading')));
+    });
+
     group('中国語（声調付きピンイン併記）', () {
       test(
         '構造化出力で pinyin→hanzi の順に生成させ、hanziをtext・pinyinをreadingとして返す',

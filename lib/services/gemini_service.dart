@@ -86,6 +86,7 @@ class GeminiService {
     required String spoken,
   }) async {
     final language = profile.label;
+    final withReading = profile.readingLabel != null;
     final prompt =
         '''
 あなたは日本人向けの$languageスピーキング講師です。生徒が日本語文を見て$languageで発話した内容を添削してください。
@@ -112,11 +113,11 @@ class GeminiService {
   その構文のまま正しい形に直すこと（模範解答の構文に置き換えるのはNG。生徒の言い回しを壊すため）。
 - explanation_ja: 誤りの解説を「誤り→なぜ誤りか→どう覚えるか」の順で簡潔に（日本語、2〜3文）
 - comparison_ja: 模範解答との違いや、どちらでも良い点の解説（日本語）
-''';
+${withReading ? _correctedReadingInstruction : ''}''';
 
     final (:json, :usage) = await _generate(
       prompt: prompt,
-      schema: _compositionSchema,
+      schema: withReading ? _compositionSchemaWithReading : _compositionSchema,
     );
     try {
       return (feedback: CompositionFeedback.fromJson(json), usage: usage);
@@ -446,6 +447,32 @@ class GeminiService {
       'comparison_ja',
     ],
   };
+
+  /// 中国語の添削スキーマ。修正版のルビ表示用に標準ピンインを追加で返させる
+  /// （こちらは辞書どおりの読みで良い。声調の判定には使わない）。
+  static const _compositionSchemaWithReading = {
+    'type': 'OBJECT',
+    'properties': {
+      'score': {'type': 'INTEGER'},
+      'is_acceptable': {'type': 'BOOLEAN'},
+      'corrected': {'type': 'STRING'},
+      'corrected_reading': {'type': 'STRING'},
+      'explanation_ja': {'type': 'STRING'},
+      'comparison_ja': {'type': 'STRING'},
+    },
+    'required': [
+      'score',
+      'is_acceptable',
+      'corrected',
+      'corrected_reading',
+      'explanation_ja',
+      'comparison_ja',
+    ],
+  };
+
+  static const _correctedReadingInstruction =
+      '- corrected_reading: corrected の標準的なピンイン。変調（3声の連続・一・不）を実際の発音どおりに適用し、'
+      '音節ごとに半角スペースで区切る。軽声は声調記号なし。句読点は含めない\n';
 
   static const _monologueSchema = {
     'type': 'OBJECT',

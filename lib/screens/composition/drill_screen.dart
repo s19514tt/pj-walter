@@ -472,7 +472,14 @@ class _DrillScreenState extends State<DrillScreen> {
   Widget _buildScaffold(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.isReview ? '復習' : '口頭英作文'),
+        title: Text(
+          widget.isReview
+              ? '復習'
+              : context
+                    .watch<SettingsService>()
+                    .languageProfile
+                    .compositionTitle,
+        ),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16),

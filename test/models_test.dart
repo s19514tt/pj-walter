@@ -80,12 +80,14 @@ void main() {
           score: 90,
           isAcceptable: true,
           corrected: '我要水',
+          correctedReading: 'wǒ yào shuǐ',
           explanationJa: '解説',
           comparisonJa: '比較',
         ),
         toneNotes: const [
           ToneNote(
             index: 2,
+            spokenIndex: 2,
             hanzi: '水',
             expected: 'shuǐ',
             actual: 'shuì',
@@ -98,6 +100,7 @@ void main() {
       final roundTripped = DrillResult.fromJson(drillResult.toJson());
 
       expect(roundTripped, drillResult);
+      expect(roundTripped.feedback.correctedReading, 'wǒ yào shuǐ');
       expect(roundTripped.toneNotes, hasLength(1));
       expect(roundTripped.toneNotes!.single.hanzi, '水');
       // 指摘なし（空リスト）と未判定（null）は区別して保存される
@@ -136,6 +139,7 @@ void main() {
 
       expect(result.language, 'en');
       expect(result.toneNotes, isNull);
+      expect(result.feedback.correctedReading, isNull);
     });
   });
 

@@ -136,18 +136,46 @@ assets/data/
 - `widgets/mic_button.dart` の `MicButton`: ドリル・独り言共通のマイク操作ボタン（直径88px既定）。未録音時はprimaryGradient背景＋オレンジ影（blur16、alpha 0.2）。録音中は外側に広がる半透明オレンジのパルスリングを1.2秒周期で繰り返しアニメーション（無限ループ。テストで`pumpAndSettle()`を使うと収束しないため、明示的に`pump(duration)`で扱う）
 - `utils/app_route.dart` の `appRoute()`: 250msの軽いスライド（右から）＋フェードの`PageRouteBuilder`。主要な画面遷移で`MaterialPageRoute`の代わりに使用
 
-### 口頭中国語作文の「気づいた点」カード（声調フィードバック）
+### 口頭中国語作文の添削画面（ピンインのルビ＋声調フィードバック）
 
-`DrillFeedbackView` は `profile.readingLabel != null` かつ `sentence.reading != null` かつ
-文字起こしの `reading` が模範解答と音節列で一致（ガード1）し、かつ指摘が1件以上あるときだけ、
-採点完了（stage 2）で「気づいた点」カードを他のカードと同じフェードインで出す。それ以外は
-カードごと非表示（「問題なし」の表示は無い）。
+デザイン `SpeakingApp-Chinese.dc.html` に従い、中国語（`profile.readingLabel != null`）の添削画面では
+漢字1文字ごとに「ピンインのルビ（上、10px、textSecondary）＋漢字（17px 太字）」のセルを `Wrap` で並べる
+（`_RubyDiffText` / `_RubyText`）。差分トークンは `utils/word_diff.dart` がCJKを1文字1トークンに切るので、
+そのままセルに対応する。ルビの割り当ては `utils/pinyin.dart` の `alignReading()` で行い、
+漢字数と音節数が合わないときはルビ無しで漢字だけを出す（位置のずれたルビは出さない）。
+儿化は「点」に `diǎn`、「儿」に `r` を付ける。
+
+| カード | ルビの元 |
+|---|---|
+| あなたの発話 | 文字起こしが返した「聞こえたままのピンイン」（`SpeechInputResult.reading`、参考値） |
+| 修正版 | 添削応答の `corrected_reading`（修正版の標準ピンイン） |
+| 模範解答 | `Sentence.reading` |
+
+差分のある文字は既存の差分表示と同じ色（削除＝`scoreLow`＋取り消し線＋`scoreLowSurface`、
+追加＝`scoreGood`＋`scoreGoodSurface`）でセルごと強調する。ルビは文字起こしが確定した stage 1 から出す
+（採点を待たない。声調の気づきも文字起こしだけで決まるので赤ルビは stage 1 から）。
+
+スコアカードの一文は、声調の気づきが1件以上あるときだけ
+「声調が違って聞こえた音節がNつあります。赤いルビを確認しましょう。」に置き換える（デザインの総評に相当）。
+気づきが無いときは英語と同じスコア帯の定型文のまま。デザインにある「声調は問題ありません」は出さない
+（見逃した分がそのまま嘘になる）。ドリル画面の AppBar は `profile.compositionTitle`（中国語では「口頭中国語作文」）。
+
+**声調の気づき（赤ルビ）**: 下記ガードをすべて通った音節だけ、あなたの発話のセルで
+上のルビ（聞こえた声調）を `scoreLow` に、下段に期待された声調（`scoreGood` 太字 10px）を添え、
+セル背景を `scoreLowSurface` にする。1件以上あるときだけ凡例の下に
+「赤字のルビは上＝実際の声調（参考値）／下＝期待された声調」を出す。
+デザインにある総評の「声調は問題ありません」は**出さない**（ガード3）。
+
+**「気づいた点」カード**: 同じ声調の気づきを一覧でも出す。`sentence.reading != null` かつ
+文字起こしが `reading` を返し、かつ指摘が1件以上あるときだけ、
+採点完了（stage 2）で他のカードと同じフェードインで出す。それ以外はカードごと非表示
+（「問題なし」の表示は無い）。
 
 - 見出し: `Icons.hearing` ＋「気づいた点」。「声調チェック」「声調OK」といった語は使わない
 - 補足文（textSecondary 12px）: 「音声認識が聞き取った声調（参考値）が模範解答のピンインと違っていた音節です。聞き取りの誤差も含まれます。」
-- 1件1行: `[3声 → 4声]` のピル（`scoreLowSurface` 背景・`scoreLow` 文字）＋ 対象の漢字（音節数と漢字数が一致するときだけ）
+- 1件1行: `[3声 → 4声]` のピル（`scoreLowSurface` 背景・`scoreLow` 文字）＋ 対象の漢字（`alignReading` で対応が取れるときだけ。儿化は「点儿」）
   ＋ `shuǐ`（模範解答、textPrimary 太字）→ `shuì`（聞こえた音、scoreLow 太字）
-- 英語モード（`readingLabel == null`）ではこのカードに関わる処理は一切走らない
+- 英語モード（`readingLabel == null`）ではルビ・カードに関わる処理は一切走らない
 
 ## データモデル
 
@@ -178,7 +206,7 @@ assets/data/
 | box名 | キー | 内容 |
 |---|---|---|
 | `settings` | 固定キー | 独り言デフォルト秒数など非秘匿設定（旧`modelName`/`sttMode`キーは起動時に削除） |
-| `drill_results` | uuid | DrillResult（sentenceId, spoken, feedback一式, timestamp, toneNotes=声調の気づき。null は未判定＝英語・ピンイン無し・音節列不一致。既存データは null で読める） |
+| `drill_results` | uuid | DrillResult（sentenceId, spoken, feedback一式（中国語は corrected_reading も）, timestamp, toneNotes=声調の気づき。null は未判定＝英語・ピンイン無し。既存データは null で読める） |
 | `monologue_results` | uuid | MonologueResult（topicId, seconds, transcript, feedback一式, timestamp） |
 | `srs_items` | sentenceId | SrsItem（stage, dueDate, lapses, lastResult） |
 | `phrases` | uuid | Phrase（en, ja, source, createdAt） |
@@ -215,6 +243,10 @@ APIキーだけは `flutter_secure_storage`（キー名 `gemini_api_key`）。
 ```
 
 プロンプト方針: 「あなたは日本人向け英語講師。発話は音声認識由来なので大文字小文字・句読点は減点しない。意味が通り文法的に正しければ模範解答と違っても許容」。
+
+中国語（`readingLabel != null`）ではスキーマに `corrected_reading`（`corrected` の標準ピンイン。変調適用、
+音節ごとに半角スペース区切り、軽声は記号なし）を追加し、修正版のルビ表示に使う。これは辞書どおりの読みで
+よく、声調の判定には使わない（`CompositionFeedback.correctedReading`、英語・旧データでは null）。
 
 ### 独り言英会話のフィードバック
 
@@ -282,10 +314,12 @@ APIキーだけは `flutter_secure_storage`（キー名 `gemini_api_key`）。
 **アルゴリズム**（`utils/pinyin.dart`、すべてDart側の決定的処理。Geminiに正誤判定を聞かない）:
 
 1. `Sentence.reading`（模範解答。変調適用済み）と認識ピンインをそれぞれ音節に分割する
-2. **声調記号を外した綴りの列**を比較し、完全一致しなければ打ち切って null（ガード1）
-3. 一致した場合のみ音節ごとに声調番号を比較する
+2. **声調記号を外した綴り**で2つの音節列をLCS整列する（`tool/pinyin_poc` の `alignSyllables` と同じ）
+3. 綴りが対応した音節どうしだけ声調番号を比較する。対応が取れない音節（聞き取りの崩れ・言い回しの違い）には
+   何も言わない（ガード1）
 4. どちらかが軽声（記号なし＝tone 5）の音節はスキップする（ガード2）
-5. 残った不一致だけを `ToneNote`（音節位置・期待/実測のピンイン・声調番号）として返す
+5. 残った不一致だけを `ToneNote`（模範解答側・発話側それぞれの音節位置・対応する漢字・期待/実測のピンイン・
+   声調番号）として返す
 
 音節分割の要件: 語ごとに連結された表記（`Qǐngwèn`）と音節スペース区切り（`qǐng wèn`）の両方／
 声調記号つき母音→素の母音＋声調番号／記号なし＝軽声／j・q・x・yの後ろの ü は u と綴られるため
@@ -293,9 +327,9 @@ APIキーだけは `flutter_secure_storage`（キー名 `gemini_api_key`）。
 
 **ガード（妥協不可）**:
 
-- **ガード1**: 音節列（綴り）が模範解答と一致しないときは声調について一切何も言わない。
-  聞き取り失敗時の巻き添え誤指摘と、模範解答と違う言い回しをしたときの期待ピンイン算出
-  （変調・多音字の解決）をまとめて回避する。v1は「模範解答どおりに言えたときだけ声調を見る」
+- **ガード1**: 綴りが模範解答の音節と対応しない音節については声調について一切何も言わない。
+  聞き取り失敗時の巻き添え誤指摘を避け、模範解答と違う言い回しをしたときも期待ピンインの算出
+  （変調・多音字の解決）を行わない（対応した音節の期待声調は模範解答から引ける）
 - **ガード2**: 軽声がらみの差は絶対に報告しない（喜欢 xǐhuan / xǐhuān のように辞書・話者・TTSで揺れる）
 - **ガード3**: UIで「声調をチェックした」と言わない。見出しは「気づいた点」。「声調OK」等の肯定的な
   断定を出さない。指摘0件のときはカードごと非表示（「問題なし」と出さない）。検出できた誤りだけを

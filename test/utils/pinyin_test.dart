@@ -236,6 +236,7 @@ void main() {
       expect(notes, [
         const ToneNote(
           index: 2,
+          spokenIndex: 2,
           expected: 'shuǐ',
           actual: 'shuì',
           expectedTone: 3,
@@ -271,24 +272,41 @@ void main() {
       );
     });
 
-    test('ガード1: 綴りの列が一致しなければ null（声調について何も言わない）', () {
-      // 音節数が違う
+    test('ガード1: 綴りが対応しない音節には何も言わず、対応した音節だけ声調を比べる', () {
+      // 語数が違っても、綴りが一致した音節は比較する（le は対応先が無いので無視）
       expect(
         compareTones(expected: 'Wǒ yào shuǐ', actual: 'wǒ yào shuǐ le'),
-        isNull,
+        isEmpty,
       );
-      expect(compareTones(expected: 'Wǒ yào shuǐ', actual: 'wǒ shuǐ'), isNull);
-      // 同じ数でも綴りが1音節ずれている（聞き取り崩壊）
+      expect(
+        compareTones(
+          expected: 'Wǒ yào shuǐ',
+          actual: 'wǒ yào shuì le',
+        )!.map((n) => (n.index, n.spokenIndex, n.actual)),
+        [(2, 2, 'shuì')],
+      );
+      // 音節が抜けていても残りは比較する
+      expect(compareTones(expected: 'Wǒ yào shuǐ', actual: 'wǒ shuǐ'), isEmpty);
+      // 綴りが崩れた音節（shǔ）には何も言わない。崩れていない wó の声調差だけ残る
       expect(
         compareTones(expected: 'Wǒ yào shuǐ', actual: 'wǒ yào shǔ'),
-        isNull,
+        isEmpty,
       );
-      // 声調の不一致があっても、別の音節の綴りがずれていれば丸ごと null
+      final notes = compareTones(
+        expected: 'Wǒ yào shuǐ',
+        actual: 'wó yào shǔ',
+      )!;
+      expect(notes.map((n) => n.expected), ['wǒ']);
+      // 語順が違っても、綴りが一致した音節は比較する（スクリーンショットの事例）
+      final reordered = compareTones(
+        expected: 'Zhè ge wǒ yào liǎng ge',
+        actual: 'wǒ yào liàng ge zhè ge',
+      )!;
       expect(
-        compareTones(expected: 'Wǒ yào shuǐ', actual: 'wó yào shǔ'),
-        isNull,
+        reordered.map((n) => (n.index, n.spokenIndex, n.expected, n.actual)),
+        [(4, 2, 'liǎng', 'liàng')],
       );
-      // 空
+      // 空なら判定しない（null）
       expect(compareTones(expected: 'Wǒ yào shuǐ', actual: ''), isNull);
       expect(compareTones(expected: '', actual: 'wǒ'), isNull);
     });
@@ -345,7 +363,7 @@ void main() {
       expect(notes.single.actual, 'shuì');
     });
 
-    test('儿化などで漢字数と音節数が一致しないときは漢字を付けない', () {
+    test('儿化を含む文でも対応する漢字を付ける', () {
       final notes = toneNotesFor(
         profile: LanguageProfile.chinese,
         sentence: _zhSentence(
@@ -356,12 +374,12 @@ void main() {
       );
       expect(notes, hasLength(1));
       expect(notes!.single.index, 3);
-      expect(notes.single.hanzi, isNull);
+      expect(notes.single.hanzi, '回');
       expect(notes.single.expected, 'huí');
       expect(notes.single.actual, 'huì');
     });
 
-    test('指摘なしは空リスト、音節ズレは null', () {
+    test('指摘なしは空リスト。語順が違っても対応する漢字を模範解答側から付ける', () {
       expect(
         toneNotesFor(
           profile: LanguageProfile.chinese,
@@ -370,14 +388,86 @@ void main() {
         ),
         isEmpty,
       );
-      expect(
-        toneNotesFor(
-          profile: LanguageProfile.chinese,
-          sentence: _zhSentence(reading: 'Wǒ yào shuǐ'),
-          spokenReading: 'wǒ yào shuǐ le',
+      final notes = toneNotesFor(
+        profile: LanguageProfile.chinese,
+        sentence: _zhSentence(
+          reading: 'Zhè ge wǒ yào liǎng ge',
+          target: '这个我要两个。',
         ),
+        spokenReading: 'wǒ yào liàng ge zhè ge',
+      )!;
+      expect(notes.single.hanzi, '两');
+      expect(notes.single.spokenIndex, 2);
+    });
+  });
+
+  group('alignReading', () {
+    List<String> tokens(String text) => text.split('');
+
+    test('漢字1文字ずつにルビを割り当て、句読点は null', () {
+      final aligned = alignReading(
+        tokens: tokens('我要水。'),
+        reading: 'Wǒ yào shuǐ',
+      );
+      expect(aligned, [
+        const TokenReading(reading: 'wǒ', syllableIndex: 0),
+        const TokenReading(reading: 'yào', syllableIndex: 1),
+        const TokenReading(reading: 'shuǐ', syllableIndex: 2),
+        null,
+      ]);
+    });
+
+    test('儿化は「点」に diǎn、「儿」に r を付けて同じ音節番号にする', () {
+      final aligned = alignReading(
+        tokens: tokens('你早点儿回家休息吧。'),
+        reading: 'Nǐ zǎo diǎnr huíjiā xiūxi ba',
+      )!;
+      expect(aligned[2], const TokenReading(reading: 'diǎn', syllableIndex: 2));
+      expect(aligned[3], const TokenReading(reading: 'r', syllableIndex: 2));
+      expect(aligned[4], const TokenReading(reading: 'huí', syllableIndex: 3));
+      expect(aligned.last, isNull);
+      // 这儿 / 一会儿
+      final zher = alignReading(
+        tokens: tokens('这儿有人吗'),
+        reading: 'Zhèr yǒurén ma',
+      )!;
+      expect(zher.map((t) => t?.reading), ['zhè', 'r', 'yǒu', 'rén', 'ma']);
+      final huir = alignReading(
+        tokens: tokens('我一会儿看一下'),
+        reading: 'Wǒ yíhuìr kàn yíxià',
+      )!;
+      expect(huir.map((t) => t?.reading), [
+        'wǒ',
+        'yí',
+        'huì',
+        'r',
+        'kàn',
+        'yí',
+        'xià',
+      ]);
+    });
+
+    test('漢字数と音節数が合わないときは null（位置のずれたルビを出さない）', () {
+      expect(alignReading(tokens: tokens('我要水'), reading: 'wǒ yào'), isNull);
+      expect(
+        alignReading(tokens: tokens('我要'), reading: 'wǒ yào shuǐ'),
         isNull,
       );
+      expect(alignReading(tokens: tokens('我要水'), reading: ''), isNull);
+    });
+
+    test('toneNotesFor は儿化を含む文でも対応する漢字（点儿）を付ける', () {
+      final notes = toneNotesFor(
+        profile: LanguageProfile.chinese,
+        sentence: _zhSentence(
+          reading: 'Nǐ zǎo diǎnr huíjiā xiūxi ba',
+          target: '你早点儿回家休息吧。',
+        ),
+        spokenReading: 'nǐ zǎo diànr huíjiā xiūxi ba',
+      )!;
+      expect(notes.single.hanzi, '点儿');
+      expect(notes.single.expected, 'diǎnr');
+      expect(notes.single.actual, 'diànr');
     });
   });
 }

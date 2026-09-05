@@ -68,42 +68,65 @@ List<PinyinSyllable> parsePinyinSyllables(String pinyin) {
 }
 
 /// 模範解答のピンイン[expected]と認識ピンイン[actual]を音節ごとに比較し、
-/// 声調だけが違う音節を返す。
+/// 綴りが同じで声調だけが違う音節を返す。
 ///
-/// - 声調記号を外した綴りの列が完全一致しない場合は null（ガード1:
-///   聞き取り失敗や言い回しの違いに声調の指摘を乗せない）
+/// 2つの音節列を**声調記号を外した綴り**で最長共通部分列（LCS）整列し、
+/// 対応が取れた音節どうしだけ声調を比べる（`tool/pinyin_poc` の
+/// `alignSyllables` と同じ）。語順や語数が模範解答と違っても、綴りが一致した
+/// 音節については声調を見られる。
+///
+/// - 対応が取れない音節（聞き取りの崩れ・言い回しの違い）には何も言わない
+///   （ガード1: 綴りが違う音節に声調の指摘を乗せない）
 /// - どちらかが軽声の音節は比較しない（ガード2: 軽声かどうかは辞書でも
 ///   話者でも揺れる）
-/// - 不一致が無ければ空リスト（呼び出し側はカードを出さない: ガード3）
+/// - どちらかが空なら null（判定していない）。不一致が無ければ空リスト
+///   （呼び出し側はカードを出さない: ガード3）
 List<ToneNote>? compareTones({
   required String expected,
   required String actual,
 }) {
-  final expectedSyllables = parsePinyinSyllables(expected);
-  final actualSyllables = parsePinyinSyllables(actual);
-  if (expectedSyllables.isEmpty ||
-      expectedSyllables.length != actualSyllables.length) {
-    return null;
-  }
-  for (var i = 0; i < expectedSyllables.length; i++) {
-    if (expectedSyllables[i].base != actualSyllables[i].base) return null;
+  final exp = parsePinyinSyllables(expected);
+  final act = parsePinyinSyllables(actual);
+  if (exp.isEmpty || act.isEmpty) return null;
+
+  // dp[i][j] = exp[i..] と act[j..] の綴りのLCS長（utils/word_diff.dart と同じ形）
+  final n = exp.length;
+  final m = act.length;
+  final dp = List.generate(n + 1, (_) => List<int>.filled(m + 1, 0));
+  for (var i = n - 1; i >= 0; i--) {
+    for (var j = m - 1; j >= 0; j--) {
+      dp[i][j] = exp[i].base == act[j].base
+          ? dp[i + 1][j + 1] + 1
+          : (dp[i + 1][j] >= dp[i][j + 1] ? dp[i + 1][j] : dp[i][j + 1]);
+    }
   }
 
   final notes = <ToneNote>[];
-  for (var i = 0; i < expectedSyllables.length; i++) {
-    final exp = expectedSyllables[i];
-    final act = actualSyllables[i];
-    if (exp.isNeutral || act.isNeutral) continue;
-    if (exp.tone == act.tone) continue;
-    notes.add(
-      ToneNote(
-        index: i,
-        expected: exp.raw,
-        actual: act.raw,
-        expectedTone: exp.tone,
-        actualTone: act.tone,
-      ),
-    );
+  var i = 0;
+  var j = 0;
+  while (i < n && j < m) {
+    if (exp[i].base == act[j].base) {
+      final e = exp[i];
+      final a = act[j];
+      if (!e.isNeutral && !a.isNeutral && e.tone != a.tone) {
+        notes.add(
+          ToneNote(
+            index: i,
+            spokenIndex: j,
+            expected: e.raw,
+            actual: a.raw,
+            expectedTone: e.tone,
+            actualTone: a.tone,
+          ),
+        );
+      }
+      i++;
+      j++;
+    } else if (dp[i + 1][j] >= dp[i][j + 1]) {
+      i++;
+    } else {
+      j++;
+    }
   }
   return notes;
 }
@@ -112,8 +135,8 @@ List<ToneNote>? compareTones({
 ///
 /// 中国語（[LanguageProfile.readingLabel]が非null）で、[sentence]にピンインが
 /// あり、文字起こしがピンイン[spokenReading]を返した場合にのみ[compareTones]を
-/// 行う。それ以外（英語・ピンイン無し・音節列不一致）はすべて null で、
-/// 呼び出し側は「判定していない」として何も表示しない。
+/// 行う。それ以外（英語・ピンイン無し）は null で、呼び出し側は
+/// 「判定していない」として何も表示しない。
 ///
 /// 模範解答の漢字数と音節数が一致するときだけ、各指摘に対応する漢字を付ける
 /// （儿化などで一致しない場合は付けない。位置のずれた漢字を出すより無い方が良い）。
@@ -130,13 +153,18 @@ List<ToneNote>? toneNotesFor({
   final notes = compareTones(expected: expected, actual: spokenReading);
   if (notes == null || notes.isEmpty) return notes;
 
-  final hanzi = _cjkCharacters(sentence.target);
-  if (hanzi.length != parsePinyinSyllables(expected).length) return notes;
+  final characters = _cjkCharacters(sentence.target);
+  final aligned = alignReading(tokens: characters, reading: expected);
+  if (aligned == null) return notes;
   return [
     for (final note in notes)
       ToneNote(
         index: note.index,
-        hanzi: hanzi[note.index],
+        spokenIndex: note.spokenIndex,
+        hanzi: [
+          for (var i = 0; i < characters.length; i++)
+            if (aligned[i]?.syllableIndex == note.index) characters[i],
+        ].join(),
         expected: note.expected,
         actual: note.actual,
         expectedTone: note.expectedTone,
@@ -144,6 +172,84 @@ List<ToneNote>? toneNotesFor({
       ),
   ];
 }
+
+/// [alignReading]の結果1件: あるトークン（漢字）に付けるルビ。
+@immutable
+class TokenReading {
+  const TokenReading({required this.reading, required this.syllableIndex});
+
+  /// ルビとして表示するピンイン（声調記号つき）。儿化の「儿」には `r` だけが付く
+  final String reading;
+
+  /// 対応する音節の位置（[parsePinyinSyllables]の添字）。
+  /// 儿化では「点」と「儿」が同じ音節を指す。
+  final int syllableIndex;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is TokenReading &&
+          reading == other.reading &&
+          syllableIndex == other.syllableIndex;
+
+  @override
+  int get hashCode => Object.hash(reading, syllableIndex);
+
+  @override
+  String toString() => 'TokenReading($reading #$syllableIndex)';
+}
+
+/// トークン列（`utils/word_diff.dart` と同じく漢字1文字1トークン）に
+/// ピンイン[reading]の音節をルビとして割り当てる。
+///
+/// 漢字トークンだけが音節を消費し、句読点などは null。儿化（`diǎnr`）は
+/// 「点」に `diǎn`、「儿」に `r` を付けて同じ音節番号にする。
+/// 漢字の数と音節の数が合わない場合は位置のずれたルビを出さず null を返す。
+List<TokenReading?>? alignReading({
+  required List<String> tokens,
+  required String reading,
+}) {
+  final syllables = parsePinyinSyllables(reading);
+  if (syllables.isEmpty) return null;
+  final out = List<TokenReading?>.filled(tokens.length, null);
+  var next = 0;
+  for (var i = 0; i < tokens.length; i++) {
+    if (!isCjkCharacter(tokens[i])) continue;
+    if (next >= syllables.length) return null;
+    final syllable = syllables[next];
+    final following = _nextCjkIndex(tokens, i + 1);
+    if (following != null && tokens[following] == '儿' && _isErhua(syllable)) {
+      out[i] = TokenReading(
+        reading: syllable.raw.substring(0, syllable.raw.length - 1),
+        syllableIndex: next,
+      );
+      out[following] = TokenReading(reading: 'r', syllableIndex: next);
+      i = following;
+    } else {
+      out[i] = TokenReading(reading: syllable.raw, syllableIndex: next);
+    }
+    next++;
+  }
+  if (next != syllables.length) return null;
+  return out;
+}
+
+/// 1文字のCJK漢字かどうか（差分トークンの判定用）。
+bool isCjkCharacter(String token) => _cjkToken.hasMatch(token);
+
+int? _nextCjkIndex(List<String> tokens, int from) {
+  for (var i = from; i < tokens.length; i++) {
+    if (isCjkCharacter(tokens[i])) return i;
+  }
+  return null;
+}
+
+/// 儿化音節（`dianr` / `zher` / `huir`）かどうか。韻母 `er` そのものは除く。
+bool _isErhua(PinyinSyllable syllable) =>
+    syllable.base.length > 2 &&
+    syllable.base != 'er' &&
+    syllable.base.endsWith('r') &&
+    syllable.raw.endsWith('r');
 
 // ---------------------------------------------------------------------------
 // 内部実装
@@ -419,6 +525,7 @@ bool _isDigit(String s) =>
     s.length == 1 && s.codeUnitAt(0) >= 0x31 && s.codeUnitAt(0) <= 0x35;
 
 final _cjk = RegExp(r'[㐀-䶿一-鿿]');
+final _cjkToken = RegExp(r'^[㐀-䶿一-鿿]$');
 
 /// 文中のCJK漢字だけを1文字ずつ取り出す（句読点・数字は除く）。
 List<String> _cjkCharacters(String text) =>

@@ -396,6 +396,7 @@ void main() {
           'score': 90,
           'is_acceptable': true,
           'corrected': '我要水。',
+          'corrected_reading': 'wǒ yào shuǐ',
           'explanation_ja': '解説',
           'comparison_ja': '比較',
         }),
@@ -428,10 +429,16 @@ void main() {
     await tester.pump();
     await tester.pumpAndSettle();
 
+    // 中国語モードのタイトル
+    expect(find.text('口頭中国語作文'), findsOneWidget);
     // 添削結果に加えて「気づいた点」カードが出る（スコアは添削の値のまま）
     expect(find.text('90'), findsOneWidget);
     expect(find.text('気づいた点'), findsOneWidget);
     expect(find.text('3声 → 4声'), findsOneWidget);
+    // 漢字ごとのルビ: あなたの発話は聞こえた読み、修正版・模範解答は標準ピンイン
+    expect(find.text('shuì'), findsWidgets);
+    expect(find.text('shuǐ'), findsWidgets);
+    expect(find.text('赤字のルビは上＝実際の声調（参考値）／下＝期待された声調'), findsOneWidget);
     // 履歴にも声調の気づきが保存される
     final saved = historyService.drillHistory.single;
     expect(saved.language, 'zh');
