@@ -45,6 +45,9 @@ dependencies:
   fl_chart: ^1.2.0
   uuid: ^4.6.0
   google_fonts: ^6.2.1
+  # 添削結果（修正版・模範解答）の読み上げ。端末OSのTTSエンジンを使うため
+  # 追加のAPIコスト・ネットワークが不要で、Android/iOS/Webの3プラットフォームに対応。
+  flutter_tts: ^4.2.5
 
 dev_dependencies:
   flutter_test:

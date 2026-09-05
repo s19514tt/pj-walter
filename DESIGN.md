@@ -21,7 +21,8 @@ LLMに発音を評価させると根拠のない指摘（ハルシネーショ�
 言語で分岐する設定は `models/learning_language.dart` の `LanguageProfile` に集約する。
 言語を増やすときは `LanguageProfile.values` に1件足し、教材アセットを置くだけで済むようにしてある。
 `LanguageProfile` が持つもの: 言語コード / 表示名 / トレーニングの呼び名 / 教材アセットのディレクトリ /
-デッキのレベル一覧 / 発音表記のラベル（中国語のみ「ピンイン」）/ 分かち書きする言語かどうか。
+デッキのレベル一覧 / 発音表記のラベル（中国語のみ「ピンイン」）/ 分かち書きする言語かどうか /
+読み上げ（TTS）のロケール（`en-US` / `zh-CN`）。
 
 「分かち書きするか」は差分表示に効く。`utils/word_diff.dart` は空白分割ではなく
 CJK文字を1文字1トークンとして切るため、中国語でも語レベルに近い差分が出る
@@ -43,6 +44,7 @@ CJK文字を1文字1トークンとして切るため、中国語でも語レベ
 - ローカルDB: `hive` / `hive_flutter`（コード生成なし、`Box<Map>` 相当で Map を格納）
 - APIキー保存: `flutter_secure_storage`
 - 音声認識: `record`（録音→Gemini音声認識）のみ。端末STT（speech_to_text）はPR17で廃止
+- 読み上げ: `flutter_tts`（端末OSのTTSエンジン。添削結果の発音確認に使用）
 - HTTP: `http`
 - グラフ: `fl_chart`
 - その他: `intl`, `uuid`
@@ -66,6 +68,7 @@ lib/
     gemini_service.dart     # Gemini REST クライアント（結果＋TokenUsageを返す）
     gemini_pricing.dart     # gemini-3.8-flash の単価とコスト計算
     speech_input_service.dart # STT/録音の抽象化
+    tts_service.dart        # 読み上げ（TTS）の抽象化
     sentence_repository.dart  # 教材JSONのロード・フィルタ
     history_service.dart    # 履歴・SRS・フレーズ帳・日次統計の永続化（ChangeNotifier）
     drill_question_selector.dart  # 口頭英作文の出題選定ロジック
@@ -92,7 +95,7 @@ lib/
       study_calendar.dart
       history_section.dart
     settings_screen.dart    # APIキー/独り言デフォルト時間（モデル・音声認識方式は固定表示）
-  widgets/                  # 共通ウィジェット（PrimaryButton, SecondaryButton, SectionHeader, AppCard, PillChip 等）
+  widgets/                  # 共通ウィジェット（PrimaryButton, SecondaryButton, SectionHeader, AppCard, PillChip, SpeakButton 等）
   utils/                    # 画面をまたいで使う小さなヘルパー
     review_launcher.dart    # 「今日の復習」開始処理の共通ロジック（ホーム/復習タブ両方から利用）
     score_colors.dart       # スコア(0-100)→表示色の変換
@@ -236,6 +239,20 @@ APIキーだけは `flutter_secure_storage`（キー名 `gemini_api_key`）。
 - 録音中は `onPartial` に「聞き取り中…」の固定文言、`onLevel` に正規化した入力音量を流す
 - 権限拒否・録音失敗時は日本語エラーメッセージ（`SpeechInputException`）を返し、画面側は録り直しの導線を用意する
 - 端末STT（speech_to_text）はPR17で廃止（設定項目も削除）
+
+## 読み上げ（TTS）の抽象化
+
+`TtsService`（抽象）の実装は `FlutterTtsService` のみ:
+- `flutter_tts` に `LanguageProfile.ttsLanguage`（`en-US` / `zh-CN`）を設定して読み上げる
+- 初回 `speak()` で言語・速度・音量をまとめて設定する（`isLanguageAvailable` が false なら
+  「この端末にその言語の音声が無い」旨の `TtsException`）。学習用途なので速度は等速よりやや遅くする
+  （Android/iOS は 0.5 が等速なので 0.45、Web は Web Speech API の 1.0 が等速なので 0.9）
+- `awaitSpeakCompletion(true)` を設定するため `speak()` は読み上げ完了まで待つ。
+  画面側はこれを「読み上げ中」表示（ボタンが「停止」に変わる）にそのまま使える
+- 生成・破棄は画面（`DrillScreen`）が持ち、テストでは `FakeTtsService` に差し替える
+
+添削画面（`drill_feedback_view.dart`）の「修正版」「模範解答」の見出し右端に
+`widgets/speak_button.dart` の `SpeakButton` を置いている。読み上げ中はもう一度押すと止まる。
 
 ## コーディング規約
 

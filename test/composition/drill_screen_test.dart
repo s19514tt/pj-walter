@@ -1,7 +1,7 @@
 // DrillScreenのウィジェットテスト。
 //
-// SpeechInputServiceはフェイクに差し替え、GeminiServiceはhttp.testing.MockClient
-// を注入した実インスタンスを使う（実際の通信は行わない）。
+// SpeechInputService・TtsServiceはフェイクに差し替え、GeminiServiceは
+// http.testing.MockClientを注入した実インスタンスを使う（実際の通信は行わない）。
 
 import 'dart:convert';
 
@@ -21,6 +21,7 @@ import 'package:pj_walter/models/token_usage.dart';
 import 'package:pj_walter/services/speech_input_service.dart';
 import 'package:provider/provider.dart';
 
+import '../test_support/fake_tts_service.dart';
 import '../test_support/hive_test_support.dart';
 
 /// テスト用のフェイク音声入力サービス。
@@ -144,6 +145,7 @@ void main() {
           level: 700,
           theme: 'daily',
           speechInputService: speechInputService,
+          ttsService: FakeTtsService(),
           questionSeconds: questionSeconds,
         ),
       ),
@@ -486,6 +488,7 @@ void main() {
                         level: 700,
                         theme: 'daily',
                         speechInputService: speechInputService,
+                        ttsService: FakeTtsService(),
                       ),
                     ),
                   ),

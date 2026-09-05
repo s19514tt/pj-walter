@@ -291,4 +291,11 @@ void main() {
       expect(restored.language, 'en');
     });
   });
+
+  group('読み上げ（TTS）の言語', () {
+    test('学習言語ごとにBCP-47ロケールが定義されている', () {
+      expect(LanguageProfile.english.ttsLanguage, 'en-US');
+      expect(LanguageProfile.chinese.ttsLanguage, 'zh-CN');
+    });
+  });
 }
