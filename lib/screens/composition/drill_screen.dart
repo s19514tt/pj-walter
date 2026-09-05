@@ -112,7 +112,10 @@ class _DrillScreenState extends State<DrillScreen> {
     super.initState();
     _speechInput =
         widget.speechInputService ??
-        createSpeechInputService(geminiService: context.read<GeminiService>());
+        createSpeechInputService(
+          geminiService: context.read<GeminiService>(),
+          profile: context.read<SettingsService>().languageProfile,
+        );
     // カウントダウンは画面表示と同時に開始する（「読む時間」もカウントに
     // 含まれる前提）。録音は「答える」ボタンが押されるまで始めない。
     _startTimer();
@@ -176,6 +179,7 @@ class _DrillScreenState extends State<DrillScreen> {
     final result = DrillResult(
       id: const Uuid().v4(),
       sentenceId: sentence.id,
+      language: context.read<SettingsService>().languageProfile.code,
       level: sentence.level,
       spoken: '',
       timestamp: DateTime.now(),
@@ -297,15 +301,18 @@ class _DrillScreenState extends State<DrillScreen> {
     final gemini = context.read<GeminiService>();
     final sentence = _current;
     try {
+      final profile = context.read<SettingsService>().languageProfile;
       final correction = await gemini.correctComposition(
+        profile: profile,
         ja: sentence.ja,
-        modelAnswer: sentence.en,
+        modelAnswer: sentence.target,
         spoken: spoken,
       );
       final feedback = correction.feedback;
       final result = DrillResult(
         id: const Uuid().v4(),
         sentenceId: sentence.id,
+        language: profile.code,
         level: sentence.level,
         spoken: spoken,
         timestamp: DateTime.now(),
@@ -485,6 +492,7 @@ class _DrillScreenState extends State<DrillScreen> {
   }
 
   Widget _buildQuestion(BuildContext context) {
+    final profile = context.watch<SettingsService>().languageProfile;
     // pre（録音前）かどうか。円環・ゲージだけ色を落とす（問題文カードは常時アクティブ）
     final pre = !_recording;
     final urgent = !pre && _secondsLeft <= _urgentSeconds;
@@ -526,9 +534,9 @@ class _DrillScreenState extends State<DrillScreen> {
                   ),
                   child: Column(
                     children: [
-                      const Text(
-                        'この日本語を英語で',
-                        style: TextStyle(
+                      Text(
+                        'この日本語を${profile.label}で',
+                        style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 1.1,

@@ -6,13 +6,19 @@ import '../widgets/app_card.dart';
 import '../widgets/section_header.dart';
 import 'composition/deck_select_screen.dart';
 import 'monologue/topic_select_screen.dart';
+import 'package:provider/provider.dart';
+import '../models/learning_language.dart';
+import '../services/settings_service.dart';
 
-/// 学習タブ。「口頭英作文」「独り言英会話」の2つのトレーニングメニューを表示する。
+/// 学習タブ。口頭作文・独り言の2つのトレーニングメニューを表示する。
+///
+/// トレーニングの呼び名と説明文は学習言語（[LanguageProfile]）で変わる。
 class TrainingMenuScreen extends StatelessWidget {
   const TrainingMenuScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final profile = context.watch<SettingsService>().languageProfile;
     return Scaffold(
       appBar: AppBar(title: const Text('学習')),
       body: ListView(
@@ -26,10 +32,10 @@ class TrainingMenuScreen extends StatelessWidget {
                 context,
               ).push(appRoute(builder: (_) => const DeckSelectScreen()));
             },
-            child: const _MenuItem(
+            child: _MenuItem(
               icon: Icons.edit_note,
-              title: '口頭英作文',
-              description: '日本語文を見て制限時間内に英語で発話し、AIが添削します。',
+              title: profile.compositionTitle,
+              description: '日本語文を見て制限時間内に${profile.label}で発話し、AIが添削します。',
             ),
           ),
           const SizedBox(height: 12),
@@ -39,9 +45,9 @@ class TrainingMenuScreen extends StatelessWidget {
                 context,
               ).push(appRoute(builder: (_) => const TopicSelectScreen()));
             },
-            child: const _MenuItem(
+            child: _MenuItem(
               icon: Icons.mic_none,
-              title: '独り言英会話',
+              title: profile.monologueTitle,
               description: 'お題について自由に話し、AIがフィードバックします。',
             ),
           ),

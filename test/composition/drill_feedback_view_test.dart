@@ -9,7 +9,7 @@ import 'package:pj_walter/screens/composition/drill_feedback_view.dart';
 Sentence _sentence() => const Sentence(
   id: 's700-001',
   ja: '日本語の例文',
-  en: 'English sentence',
+  target: 'English sentence',
   theme: 'daily',
   tips: 'tips',
   level: 700,

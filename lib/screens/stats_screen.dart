@@ -53,7 +53,7 @@ class _StatsScreenState extends State<StatsScreen> {
         padding: const EdgeInsets.all(16),
         children: [
           StreakSummary(
-            streak: history.currentStreak,
+            streak: history.currentStreak(),
             totalStats: history.totalStats(),
           ),
           const SizedBox(height: 24),

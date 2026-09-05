@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../models/learning_language.dart';
 import '../models/srs_item.dart';
 import '../services/history_service.dart';
 import '../services/settings_service.dart';
@@ -45,6 +46,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// ドリル・独り言の履歴を新しい順に混ぜて上位3件を返す。
   List<_RecentEntry> _recentEntries(HistoryService history, DateTime now) {
+    // 履歴は言語混在なので、各エントリを記録された言語の呼び名で表示する。
     String when(DateTime t) {
       final days = DateTime(
         now.year,
@@ -61,8 +63,10 @@ class _HomeScreenState extends State<HomeScreen> {
         (
           r.timestamp,
           _RecentEntry(
-            title: '口頭英作文',
-            meta: 'TOEIC ${r.level}点台 · ${r.feedback.score}点',
+            title: LanguageProfile.ofCode(r.language).compositionTitle,
+            meta:
+                '${LanguageProfile.ofCode(r.language).levelLabel(r.level)}'
+                ' · ${r.feedback.score}点',
             when: when(r.timestamp),
             score: r.feedback.score,
           ),
@@ -71,7 +75,7 @@ class _HomeScreenState extends State<HomeScreen> {
         (
           r.timestamp,
           _RecentEntry(
-            title: '独り言英会話',
+            title: LanguageProfile.ofCode(r.language).monologueTitle,
             meta: '${r.seconds}秒 · 流暢さ${r.feedback.fluencyScore}',
             when: when(r.timestamp),
             score: r.feedback.fluencyScore,
@@ -93,7 +97,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final history = context.watch<HistoryService>();
     final settings = context.watch<SettingsService>();
-    final dueItems = history.dueSrsItems;
+    final profile = settings.languageProfile;
+    final dueItems = history.dueSrsItems(language: profile.code);
     final now = DateTime.now();
     final todayStats = history.statsForDate(now);
     // 今週（月〜日）の各曜日に学習があったか。未来の曜日はfalse。
@@ -127,14 +132,14 @@ class _HomeScreenState extends State<HomeScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _GreetingHeader(greeting: _greeting),
+          _GreetingHeader(greeting: _greeting, language: profile.label),
           const SizedBox(height: 16),
           if (!settings.hasApiKey) ...[
             _ApiKeyBanner(onTap: _openSettings),
             const SizedBox(height: 16),
           ],
           _StreakCard(
-            streak: history.currentStreak,
+            streak: history.currentStreak(),
             todayStats: todayStats,
             weekStudied: weekStudied,
           ),
@@ -153,7 +158,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Expanded(
                 child: _TrainingShortcutCard(
                   icon: Icons.edit_note,
-                  title: '口頭英作文',
+                  title: profile.compositionTitle,
                   description: '制限時間内に発話',
                   onTap: () {
                     Navigator.of(
@@ -166,7 +171,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Expanded(
                 child: _TrainingShortcutCard(
                   icon: Icons.forum_outlined,
-                  title: '独り言英会話',
+                  title: profile.monologueTitle,
                   description: 'お題を30秒〜3分',
                   onTap: () {
                     Navigator.of(
@@ -275,9 +280,12 @@ class _RecentHistoryCard extends StatelessWidget {
 }
 
 class _GreetingHeader extends StatelessWidget {
-  const _GreetingHeader({required this.greeting});
+  const _GreetingHeader({required this.greeting, required this.language});
 
   final String greeting;
+
+  /// 学習中の言語名（「今日も◯◯を話そう」に差し込む）
+  final String language;
 
   @override
   Widget build(BuildContext context) {
@@ -293,9 +301,9 @@ class _GreetingHeader extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 2),
-        const Text(
-          '今日も英語を話そう',
-          style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+        Text(
+          '今日も$languageを話そう',
+          style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
         ),
       ],
     );

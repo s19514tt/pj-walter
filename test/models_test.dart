@@ -14,7 +14,7 @@ void main() {
       const topic = Topic(
         id: 't-001',
         ja: '今日の朝ごはんについて話してください',
-        en: 'Talk about what you had for breakfast today',
+        target: 'Talk about what you had for breakfast today',
         theme: 'daily',
       );
 
@@ -29,7 +29,7 @@ void main() {
       const sentence = Sentence(
         id: 's700-001',
         ja: 'この件については後ほど折り返しご連絡します。',
-        en: "I'll get back to you on this matter later.",
+        target: "I'll get back to you on this matter later.",
         theme: 'business',
         tips: 'get back to A on B で「BについてAに折り返す」',
         level: 700,
@@ -46,6 +46,7 @@ void main() {
       final drillResult = DrillResult(
         id: 'd-1',
         sentenceId: 's700-001',
+        language: 'en',
         level: 700,
         spoken: "I'll call you back later about this",
         timestamp: DateTime.utc(2026, 8, 3, 12, 30),
@@ -69,6 +70,7 @@ void main() {
       final monologueResult = MonologueResult(
         id: 'm-1',
         topicId: 't-001',
+        language: 'en',
         seconds: 60,
         transcript: 'I had toast and coffee this morning.',
         timestamp: DateTime.utc(2026, 8, 3, 9),
@@ -83,7 +85,7 @@ void main() {
             ),
           ],
           usefulPhrases: [
-            UsefulPhrase(en: 'It slipped my mind.', ja: 'うっかり忘れていた'),
+            UsefulPhrase(target: 'It slipped my mind.', ja: 'うっかり忘れていた'),
           ],
           overallFeedbackJa: '発話量が十分で内容も明確でした。時制に注意しましょう。',
         ),
@@ -99,6 +101,7 @@ void main() {
     test('fromJson/toJson roundtrip', () {
       final srsItem = SrsItem(
         sentenceId: 's700-001',
+        language: 'en',
         level: 700,
         stage: 2,
         dueDate: DateTime.utc(2026, 8, 10),
@@ -114,6 +117,7 @@ void main() {
     test('copyWith updates only given fields', () {
       final srsItem = SrsItem(
         sentenceId: 's700-001',
+        language: 'en',
         level: 700,
         stage: 0,
         dueDate: DateTime.utc(2026, 8, 4),
@@ -134,7 +138,7 @@ void main() {
     test('fromJson/toJson roundtrip', () {
       final phrase = Phrase(
         id: 'p-1',
-        en: 'It slipped my mind.',
+        target: 'It slipped my mind.',
         ja: 'うっかり忘れていた',
         source: 'monologue',
         createdAt: DateTime.utc(2026, 8, 3),

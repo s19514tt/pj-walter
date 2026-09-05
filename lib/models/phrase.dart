@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 class Phrase {
   const Phrase({
     required this.id,
-    required this.en,
+    required this.target,
     required this.ja,
     required this.source,
     required this.createdAt,
@@ -14,8 +14,8 @@ class Phrase {
   /// エントリのuuid
   final String id;
 
-  /// 英語表現
-  final String en;
+  /// 学習言語での表現
+  final String target;
 
   /// 日本語訳
   final String ja;
@@ -28,7 +28,8 @@ class Phrase {
 
   factory Phrase.fromJson(Map<String, dynamic> json) => Phrase(
     id: json['id'] as String,
-    en: json['en'] as String,
+    // 'en'は学習言語が英語だけだった頃のキー名。保存済みデータのために残す。
+    target: (json['target'] ?? json['en']) as String,
     ja: json['ja'] as String,
     source: json['source'] as String,
     createdAt: DateTime.parse(json['createdAt'] as String),
@@ -36,7 +37,7 @@ class Phrase {
 
   Map<String, dynamic> toJson() => {
     'id': id,
-    'en': en,
+    'target': target,
     'ja': ja,
     'source': source,
     'createdAt': createdAt.toIso8601String(),
@@ -48,11 +49,11 @@ class Phrase {
       other is Phrase &&
           runtimeType == other.runtimeType &&
           id == other.id &&
-          en == other.en &&
+          target == other.target &&
           ja == other.ja &&
           source == other.source &&
           createdAt == other.createdAt;
 
   @override
-  int get hashCode => Object.hash(id, en, ja, source, createdAt);
+  int get hashCode => Object.hash(id, target, ja, source, createdAt);
 }

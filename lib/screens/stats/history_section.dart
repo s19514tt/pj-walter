@@ -11,10 +11,11 @@ import '../../theme/app_theme.dart';
 import '../../utils/score_colors.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/secondary_button.dart';
+import '../../models/learning_language.dart';
 
 const _pageSize = 20;
 
-/// 口頭英作文・独り言英会話の履歴を新しい順に統合表示するセクション。
+/// 口頭作文・独り言の履歴を新しい順に統合表示するセクション。
 ///
 /// 直近[_pageSize]件を表示し、「もっと見る」でさらに表示する。タップすると
 /// 詳細をボトムシートで表示する。
@@ -103,7 +104,7 @@ class _HistorySectionState extends State<HistorySection> {
   }
 }
 
-/// 口頭英作文・独り言英会話のいずれか一方を保持する履歴エントリ。
+/// 口頭作文・独り言のいずれか一方を保持する履歴エントリ。
 class _HistoryEntry {
   _HistoryEntry.drill(DrillResult result)
     : drill = result,
@@ -187,7 +188,7 @@ class _HistoryTile extends StatelessWidget {
   }
 }
 
-/// 口頭英作文の詳細（原文/発話/修正/解説）。
+/// 口頭作文の詳細（原文/発話/修正/解説）。
 class _DrillDetailSheet extends StatelessWidget {
   const _DrillDetailSheet({required this.result, required this.repository});
 
@@ -198,12 +199,15 @@ class _DrillDetailSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     return _DetailSheetScaffold(
       icon: Icons.edit_note,
-      title: '口頭英作文',
+      title: '口頭作文',
       timestamp: result.timestamp,
       score: result.feedback.score,
       children: [
         FutureBuilder<List<Sentence>>(
-          future: repository.sentencesFor(level: result.level),
+          future: repository.sentencesFor(
+            profile: LanguageProfile.ofCode(result.language),
+            level: result.level,
+          ),
           builder: (context, snapshot) {
             final match = snapshot.data?.where(
               (s) => s.id == result.sentenceId,
@@ -230,7 +234,7 @@ class _DrillDetailSheet extends StatelessWidget {
   }
 }
 
-/// 独り言英会話の詳細（お題/トランスクリプト/総評）。
+/// 独り言の詳細（お題/トランスクリプト/総評）。
 class _MonologueDetailSheet extends StatelessWidget {
   const _MonologueDetailSheet({required this.result, required this.repository});
 
@@ -241,12 +245,14 @@ class _MonologueDetailSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     return _DetailSheetScaffold(
       icon: Icons.mic_none,
-      title: '独り言英会話',
+      title: '独り言',
       timestamp: result.timestamp,
       score: result.feedback.fluencyScore,
       children: [
         FutureBuilder<List<Topic>>(
-          future: repository.topics(),
+          future: repository.topics(
+            profile: LanguageProfile.ofCode(result.language),
+          ),
           builder: (context, snapshot) {
             final match = snapshot.data?.where((t) => t.id == result.topicId);
             final ja = (match != null && match.isNotEmpty)
