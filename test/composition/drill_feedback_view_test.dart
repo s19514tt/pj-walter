@@ -213,6 +213,16 @@ void main() {
       // ルビは1文字ずつ漢字と縦に並ぶ（1文字のTextとして描画される）
       expect(find.text('睡'), findsOneWidget);
       expect(find.text('水'), findsNWidgets(3));
+      // 下段（期待声調）が付く「睡」も、他の漢字と縦位置が揃う（横一列）
+      final spokenCard = find.ancestor(
+        of: find.text('睡'),
+        matching: find.byType(Wrap),
+      );
+      final woTop = tester
+          .getTopLeft(find.descendant(of: spokenCard, matching: find.text('我')))
+          .dy;
+      final shuiTop = tester.getTopLeft(find.text('睡')).dy;
+      expect(shuiTop, woTop);
     });
 
     testWidgets('声調の指摘が無いときもルビは付くが、赤ルビの注記は出ない', (tester) async {

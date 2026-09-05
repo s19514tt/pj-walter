@@ -602,10 +602,12 @@ class _RubyDiffText extends StatelessWidget {
     // あなたの発話のルビは聞き取ったピンインの音節位置（spokenIndex）で引く
     final notesBySyllable = {for (final n in toneNotes) n.spokenIndex: n};
 
+    // 上揃え: ルビ行の高さは全セル同じなので漢字が横一列に揃う。
+    // 期待声調の下段があるセルだけ下にぶら下がる（他の漢字を持ち上げない）。
     return Wrap(
       spacing: 2,
       runSpacing: 6,
-      crossAxisAlignment: WrapCrossAlignment.end,
+      crossAxisAlignment: WrapCrossAlignment.start,
       children: [
         for (var i = 0; i < segments.length; i++)
           _rubyCell(
@@ -747,10 +749,12 @@ class _RubyText extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = diffWords(text, text).map((s) => s.text).toList();
     final readings = alignReading(tokens: tokens, reading: reading);
+    // 上揃え: ルビ行の高さは全セル同じなので漢字が横一列に揃う。
+    // 期待声調の下段があるセルだけ下にぶら下がる（他の漢字を持ち上げない）。
     return Wrap(
       spacing: 2,
       runSpacing: 6,
-      crossAxisAlignment: WrapCrossAlignment.end,
+      crossAxisAlignment: WrapCrossAlignment.start,
       children: [
         for (var i = 0; i < tokens.length; i++)
           _RubyCell(
