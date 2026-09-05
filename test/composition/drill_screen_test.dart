@@ -12,6 +12,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:pj_walter/models/learning_language.dart';
 import 'package:pj_walter/models/sentence.dart';
 import 'package:pj_walter/screens/composition/drill_screen.dart';
 import 'package:pj_walter/services/gemini_service.dart';
@@ -29,6 +30,9 @@ import '../test_support/hive_test_support.dart';
 /// あらかじめ設定した[stopResult]（またはエラー）を[stopUsage]付きで返す。
 class FakeSpeechInputService implements SpeechInputService {
   String stopResult = 'this is my spoken answer';
+
+  /// 文字起こしと一緒に返すピンイン（中国語モードのテスト用。既定は英語同様null）
+  String? stopReading;
   Object? stopError;
   bool startCalled = false;
   bool stopCalled = false;
@@ -57,7 +61,11 @@ class FakeSpeechInputService implements SpeechInputService {
     stopCalled = true;
     final error = stopError;
     if (error != null) throw error;
-    return SpeechInputResult(text: stopResult, usage: stopUsage);
+    return SpeechInputResult(
+      text: stopResult,
+      reading: stopReading,
+      usage: stopUsage,
+    );
   }
 
   @override
@@ -361,6 +369,120 @@ void main() {
       historyService.drillHistory.first.spoken,
       'this is my spoken answer',
     );
+  });
+
+  testWidgets('中国語モードでは文字起こしのピンインから声調の気づきを表示し、履歴にも保存する', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(400, 2000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    // Hiveへの書き込み（ファイルI/O）はFakeAsyncゾーンでは完了しないため
+    // runAsync()で実の非同期ゾーンに切り替えて行う。
+    await tester.runAsync(
+      () => settings.setLearningLanguage(LearningLanguage.chinese),
+    );
+    const sentences = [
+      Sentence(
+        id: 'z3-001',
+        ja: '水がほしい。',
+        target: '我要水。',
+        theme: 'daily',
+        tips: '',
+        level: 3,
+        reading: 'Wǒ yào shuǐ',
+      ),
+    ];
+    final client = MockClient((request) async {
+      return _jsonResponse(
+        _geminiEnvelope({
+          'score': 90,
+          'is_acceptable': true,
+          'corrected': '我要水。',
+          'corrected_reading': 'wǒ yào shuǐ',
+          'explanation_ja': '解説',
+          'comparison_ja': '比較',
+        }),
+        200,
+      );
+    });
+    final geminiService = GeminiService(
+      settingsService: settings,
+      client: client,
+    );
+    final speechInputService = FakeSpeechInputService()
+      ..stopResult = '我要睡'
+      ..stopReading = 'wǒ yào shuì';
+
+    await tester.pumpWidget(
+      buildApp(
+        sentences: sentences,
+        geminiService: geminiService,
+        speechInputService: speechInputService,
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.text('答える'));
+    await tester.pump();
+    await tester.runAsync(() async {
+      await tester.tap(find.text('採点する'));
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+    });
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    // 中国語モードのタイトル
+    expect(find.text('口頭中国語作文'), findsOneWidget);
+    // 添削結果に加えて「気づいた点」カードが出る（スコアは添削の値のまま）
+    expect(find.text('90'), findsOneWidget);
+    expect(find.text('気づいた点'), findsOneWidget);
+    expect(find.text('3声 → 4声'), findsOneWidget);
+    // 漢字ごとのルビ: あなたの発話は聞こえた読み、修正版・模範解答は標準ピンイン
+    expect(find.text('shuì'), findsWidgets);
+    expect(find.text('shuǐ'), findsWidgets);
+    expect(find.text('赤字のルビは上＝実際の声調（参考値）／下＝期待された声調'), findsOneWidget);
+    // 履歴にも声調の気づきが保存される
+    final saved = historyService.drillHistory.single;
+    expect(saved.language, 'zh');
+    expect(saved.toneNotes, hasLength(1));
+    expect(saved.toneNotes!.single.expected, 'shuǐ');
+    expect(saved.toneNotes!.single.actual, 'shuì');
+  });
+
+  testWidgets('英語モードでは文字起こしにピンインが無く、履歴の声調の気づきはnullのまま', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(400, 1600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final client = MockClient((request) async {
+      return _jsonResponse(
+        _geminiEnvelope({
+          'score': 90,
+          'is_acceptable': true,
+          'corrected': 'ok',
+          'explanation_ja': '解説',
+          'comparison_ja': '比較',
+        }),
+        200,
+      );
+    });
+    final speechInputService = FakeSpeechInputService();
+
+    await tester.pumpWidget(
+      buildApp(
+        sentences: [_sentence(1)],
+        geminiService: GeminiService(settingsService: settings, client: client),
+        speechInputService: speechInputService,
+      ),
+    );
+    await tester.pump();
+    await tester.tap(find.text('答える'));
+    await tester.pump();
+    await tester.runAsync(() async {
+      await tester.tap(find.text('採点する'));
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+    });
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('気づいた点'), findsNothing);
+    expect(historyService.drillHistory.single.toneNotes, isNull);
   });
 
   testWidgets('GeminiExceptionが発生するとSnackBarとリトライボタンが表示される', (tester) async {

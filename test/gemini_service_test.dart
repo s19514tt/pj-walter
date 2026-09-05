@@ -237,13 +237,15 @@ void main() {
       });
       final service = GeminiService(settingsService: settings, client: client);
 
-      final (:text, :usage) = await service.transcribe(
+      final (:text, :reading, :usage) = await service.transcribe(
         profile: LanguageProfile.english,
         audioBytes: [1, 2, 3],
         mimeType: 'audio/wav',
       );
 
       expect(text, 'This is the transcript.');
+      // 英語ではピンインは返さない
+      expect(reading, isNull);
       expect(
         usage,
         const TokenUsage(
@@ -252,6 +254,265 @@ void main() {
           thoughtsTokens: 2,
         ),
       );
+    });
+
+    test('英語の文字起こしはプレーンテキストのまま（構造化出力にしない）', () async {
+      Map<String, dynamic>? sentBody;
+      final client = MockClient((request) async {
+        sentBody = jsonDecode(request.body) as Map<String, dynamic>;
+        return _jsonResponse(_geminiEnvelope('hello'), 200);
+      });
+      final service = GeminiService(settingsService: settings, client: client);
+
+      await service.transcribe(
+        profile: LanguageProfile.english,
+        audioBytes: [1, 2, 3],
+        mimeType: 'audio/wav',
+      );
+
+      final config = sentBody!['generationConfig'] as Map<String, dynamic>;
+      expect(config.containsKey('responseMimeType'), isFalse);
+      expect(config.containsKey('responseSchema'), isFalse);
+      final parts = (sentBody!['contents'] as List).first['parts'] as List;
+      expect(parts.first['text'], startsWith('Transcribe this 英語 speech'));
+    });
+
+    test('中国語の添削は corrected_reading を追加で要求し、CompositionFeedbackに入れる', () async {
+      Map<String, dynamic>? sentBody;
+      final client = MockClient((request) async {
+        sentBody = jsonDecode(request.body) as Map<String, dynamic>;
+        return _jsonResponse(
+          _geminiEnvelope({
+            'score': 90,
+            'is_acceptable': true,
+            'corrected': '我要水。',
+            'corrected_reading': 'wǒ yào shuǐ',
+            'explanation_ja': '解説',
+            'comparison_ja': '比較',
+          }),
+          200,
+        );
+      });
+      final service = GeminiService(settingsService: settings, client: client);
+
+      final (:feedback, usage: _) = await service.correctComposition(
+        profile: LanguageProfile.chinese,
+        ja: '水がほしい。',
+        modelAnswer: '我要水。',
+        spoken: '我要睡',
+      );
+
+      expect(feedback.correctedReading, 'wǒ yào shuǐ');
+      final schema =
+          (sentBody!['generationConfig'] as Map)['responseSchema'] as Map;
+      expect((schema['properties'] as Map).keys, contains('corrected_reading'));
+      expect(schema['required'], contains('corrected_reading'));
+      final prompt =
+          ((sentBody!['contents'] as List).first['parts'] as List).first['text']
+              as String;
+      expect(prompt, contains('corrected_reading'));
+      // 採点方針の行はそのまま（声調はスコアに含めない）
+      expect(prompt, contains('発音・声調は評価対象に含めません'));
+    });
+
+    test('英語の添削スキーマ・プロンプトに corrected_reading は入らない', () async {
+      Map<String, dynamic>? sentBody;
+      final client = MockClient((request) async {
+        sentBody = jsonDecode(request.body) as Map<String, dynamic>;
+        return _jsonResponse(
+          _geminiEnvelope({
+            'score': 90,
+            'is_acceptable': true,
+            'corrected': 'ok',
+            'explanation_ja': '',
+            'comparison_ja': '',
+          }),
+          200,
+        );
+      });
+      final service = GeminiService(settingsService: settings, client: client);
+
+      final (:feedback, usage: _) = await service.correctComposition(
+        profile: LanguageProfile.english,
+        ja: 'ja',
+        modelAnswer: 'model',
+        spoken: 'spoken',
+      );
+
+      expect(feedback.correctedReading, isNull);
+      final schema =
+          (sentBody!['generationConfig'] as Map)['responseSchema'] as Map;
+      expect(
+        (schema['properties'] as Map).keys,
+        isNot(contains('corrected_reading')),
+      );
+      final prompt =
+          ((sentBody!['contents'] as List).first['parts'] as List).first['text']
+              as String;
+      expect(prompt, isNot(contains('corrected_reading')));
+    });
+
+    group('中国語（声調付きピンイン併記）', () {
+      test(
+        '構造化出力で pinyin→hanzi の順に生成させ、hanziをtext・pinyinをreadingとして返す',
+        () async {
+          Map<String, dynamic>? sentBody;
+          final client = MockClient((request) async {
+            sentBody = jsonDecode(request.body) as Map<String, dynamic>;
+            return _jsonResponse(
+              _geminiEnvelope(
+                {'pinyin': 'wǒ yào shuì', 'hanzi': '我要睡'},
+                usageMetadata: {
+                  'promptTokenCount': 300,
+                  'candidatesTokenCount': 30,
+                },
+              ),
+              200,
+            );
+          });
+          final service = GeminiService(
+            settingsService: settings,
+            client: client,
+          );
+
+          final (:text, :reading, :usage) = await service.transcribe(
+            profile: LanguageProfile.chinese,
+            audioBytes: [1, 2, 3],
+            mimeType: 'audio/wav',
+          );
+
+          expect(text, '我要睡');
+          expect(reading, 'wǒ yào shuì');
+          expect(
+            usage,
+            const TokenUsage(promptTokens: 300, candidatesTokens: 30),
+          );
+
+          final config = sentBody!['generationConfig'] as Map<String, dynamic>;
+          expect(config['responseMimeType'], 'application/json');
+          final schema = config['responseSchema'] as Map<String, dynamic>;
+          // 漢字を先に確定させるとピンインが辞書引きになるため、順序は固定
+          expect(schema['propertyOrdering'], ['pinyin', 'hanzi']);
+          expect(schema['required'], ['pinyin', 'hanzi']);
+          expect(config['thinkingConfig'], {'thinkingLevel': 'low'});
+
+          final parts = (sentBody!['contents'] as List).first['parts'] as List;
+          final prompt = parts.first['text'] as String;
+          expect(prompt, contains('聞こえた'));
+          expect(prompt, contains(GeminiService.noSpeechMarker));
+          // 音声のパートは英語と同じ inline_data
+          expect(parts[1]['inline_data']['mime_type'], 'audio/wav');
+        },
+      );
+
+      test('hanziが無音マーカーなら聞き取れなかった旨のGeminiExceptionになる', () async {
+        var requests = 0;
+        final client = MockClient((request) async {
+          requests++;
+          return _jsonResponse(
+            _geminiEnvelope({
+              'pinyin': '',
+              'hanzi': GeminiService.noSpeechMarker,
+            }),
+            200,
+          );
+        });
+        final service = GeminiService(
+          settingsService: settings,
+          client: client,
+        );
+
+        await expectLater(
+          service.transcribe(
+            profile: LanguageProfile.chinese,
+            audioBytes: [1, 2, 3],
+            mimeType: 'audio/wav',
+          ),
+          throwsA(
+            isA<GeminiException>().having(
+              (e) => e.message,
+              'message',
+              contains('聞き取れませんでした'),
+            ),
+          ),
+        );
+        expect(requests, 1);
+      });
+
+      test('hanziが空文字でも聞き取れなかった扱いにする', () async {
+        final client = MockClient((request) async {
+          return _jsonResponse(
+            _geminiEnvelope({'pinyin': '', 'hanzi': ''}),
+            200,
+          );
+        });
+        final service = GeminiService(
+          settingsService: settings,
+          client: client,
+        );
+
+        await expectLater(
+          service.transcribe(
+            profile: LanguageProfile.chinese,
+            audioBytes: [1, 2, 3],
+            mimeType: 'audio/wav',
+          ),
+          throwsA(
+            isA<GeminiException>().having(
+              (e) => e.message,
+              'message',
+              contains('聞き取れませんでした'),
+            ),
+          ),
+        );
+      });
+
+      test('pinyinが空で hanzi だけ返ってきた場合は reading を null にする', () async {
+        final client = MockClient((request) async {
+          return _jsonResponse(
+            _geminiEnvelope({'pinyin': '', 'hanzi': '我要睡'}),
+            200,
+          );
+        });
+        final service = GeminiService(
+          settingsService: settings,
+          client: client,
+        );
+
+        final (:text, :reading, usage: _) = await service.transcribe(
+          profile: LanguageProfile.chinese,
+          audioBytes: [1, 2, 3],
+          mimeType: 'audio/wav',
+        );
+
+        expect(text, '我要睡');
+        expect(reading, isNull);
+      });
+
+      test('JSONとして解析できない応答は解析失敗のGeminiExceptionになる', () async {
+        final client = MockClient((request) async {
+          return _jsonResponse(_geminiEnvelope('我要睡'), 200);
+        });
+        final service = GeminiService(
+          settingsService: settings,
+          client: client,
+        );
+
+        await expectLater(
+          service.transcribe(
+            profile: LanguageProfile.chinese,
+            audioBytes: [1, 2, 3],
+            mimeType: 'audio/wav',
+          ),
+          throwsA(
+            isA<GeminiException>().having(
+              (e) => e.message,
+              'message',
+              contains('解析できませんでした'),
+            ),
+          ),
+        );
+      });
     });
 
     test('構造化出力でもusageMetadataを読み取り、thoughtsが無ければ0にする', () async {
@@ -356,13 +617,14 @@ void main() {
       });
       final service = GeminiService(settingsService: settings, client: client);
 
-      final (:text, :usage) = await service.transcribe(
+      final (:text, :reading, :usage) = await service.transcribe(
         profile: LanguageProfile.english,
         audioBytes: [1, 2, 3],
         mimeType: 'audio/wav',
       );
 
       expect(text, 'Second try.');
+      expect(reading, isNull);
       expect(bodies, hasLength(2));
       expect(bodies[0], bodies[1]);
       // 再試行分の入力トークンも課金されるため合算される
