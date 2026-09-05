@@ -21,7 +21,14 @@ typedef MonologueReviewResult = ({
 });
 
 /// [GeminiService.transcribe]の結果（文字起こし＋トークン使用量）。
-typedef TranscriptionResult = ({String text, TokenUsage usage});
+///
+/// [reading]は中国語のときだけ入る「聞こえたままの声調付きピンイン」
+/// （DESIGN.md「中国語の文字起こし」参照）。英語では常に null。
+typedef TranscriptionResult = ({
+  String text,
+  String? reading,
+  TokenUsage usage,
+});
 
 /// [GeminiService.synthesizeSpeech]の結果（WAV音声＋トークン使用量）。
 typedef SpeechResult = ({Uint8List wavBytes, TokenUsage usage});
@@ -94,6 +101,7 @@ class GeminiService {
     required String spoken,
   }) async {
     final language = profile.label;
+    final withReading = profile.readingLabel != null;
     final prompt =
         '''
 あなたは日本人向けの$languageスピーキング講師です。生徒が日本語文を見て$languageで発話した内容を添削してください。
@@ -120,11 +128,11 @@ class GeminiService {
   その構文のまま正しい形に直すこと（模範解答の構文に置き換えるのはNG。生徒の言い回しを壊すため）。
 - explanation_ja: 誤りの解説を「誤り→なぜ誤りか→どう覚えるか」の順で簡潔に（日本語、2〜3文）
 - comparison_ja: 模範解答との違いや、どちらでも良い点の解説（日本語）
-''';
+${withReading ? _correctedReadingInstruction : ''}''';
 
     final (:json, :usage) = await _generate(
       prompt: prompt,
-      schema: _compositionSchema,
+      schema: withReading ? _compositionSchemaWithReading : _compositionSchema,
     );
     try {
       return (feedback: CompositionFeedback.fromJson(json), usage: usage);
@@ -180,6 +188,10 @@ class GeminiService {
   }
 
   /// 録音済み音声をGeminiに文字起こしさせる。
+  ///
+  /// 中国語（[LanguageProfile.readingLabel]が非null）のときだけ構造化出力で
+  /// `{pinyin, hanzi}` を受け取り、[TranscriptionResult.reading]に聞こえたままの
+  /// 声調付きピンインを入れる。英語はプレーンテキストのままで一切変えない。
   Future<TranscriptionResult> transcribe({
     required LanguageProfile profile,
     required List<int> audioBytes,
@@ -187,19 +199,15 @@ class GeminiService {
   }) async {
     final apiKey = _requireApiKey();
     final uri = Uri.parse('$_baseUrl/$modelName:generateContent');
+    final withReading = profile.readingLabel != null;
     final body = jsonEncode({
       'contents': [
         {
           'parts': [
             {
-              // 「聞き取れなければマーカーを返す」指示が無いと、無音や壊れた音声を
-              // 渡されたときにモデルがそれらしい英文を捏造して返してしまう。
-              'text':
-                  'Transcribe this ${profile.label} speech verbatim. '
-                  'Return only the transcript. If the audio contains no '
-                  'intelligible ${profile.label} speech, return exactly '
-                  '$noSpeechMarker and nothing else. '
-                  'Never guess or invent words that are not clearly audible.',
+              'text': withReading
+                  ? _readingTranscriptionPrompt
+                  : _plainTranscriptionPrompt(profile),
             },
             {
               'inline_data': {
@@ -211,6 +219,10 @@ class GeminiService {
         },
       ],
       'generationConfig': {
+        if (withReading) ...{
+          'responseMimeType': 'application/json',
+          'responseSchema': _readingTranscriptionSchema,
+        },
         'thinkingConfig': {'thinkingLevel': _thinkingLevel},
       },
     });
@@ -225,12 +237,34 @@ class GeminiService {
     if (text.isEmpty) {
       throw GeminiException('Geminiから文字起こし結果が返ってきませんでした。もう一度お試しください。');
     }
-    // 聞き取れる英語が無い場合はマーカーが返る（プロンプトでそう指示している）。
-    // 空のまま入力欄に反映すると理由が分からないため、明示的に案内する。
+    if (!withReading) {
+      _checkNoSpeech(text);
+      return (text: text, reading: null, usage: usage);
+    }
+
+    final String hanzi;
+    final String pinyin;
+    try {
+      final json = jsonDecode(text) as Map<String, dynamic>;
+      hanzi = ((json['hanzi'] as String?) ?? '').trim();
+      pinyin = ((json['pinyin'] as String?) ?? '').trim();
+    } catch (_) {
+      throw GeminiException('Geminiからの応答を解析できませんでした。時間を置いて再度お試しください。');
+    }
+    // 構造化出力では本文が空でもJSONは返るため、漢字が空なら聞き取れなかった扱い。
+    if (hanzi.isEmpty) {
+      throw GeminiException('音声を聞き取れませんでした。もう一度お試しください。');
+    }
+    _checkNoSpeech(hanzi);
+    return (text: hanzi, reading: pinyin.isEmpty ? null : pinyin, usage: usage);
+  }
+
+  /// 聞き取れる発話が無い場合はマーカーが返る（プロンプトでそう指示している）。
+  /// 空のまま入力欄に反映すると理由が分からないため、明示的に案内する。
+  void _checkNoSpeech(String text) {
     if (text.contains(noSpeechMarker)) {
       throw GeminiException('音声を聞き取れませんでした。もう一度お試しください。');
     }
-    return (text: text, usage: usage);
   }
 
   /// [text]をGeminiに読み上げさせ、再生可能なWAVバイト列を返す。
@@ -320,6 +354,55 @@ class GeminiService {
     if (match == null) return null;
     return int.tryParse(match.group(1)!);
   }
+
+  /// 英語など、発音表記を扱わない言語のプレーンテキスト文字起こし指示。
+  ///
+  /// 「聞き取れなければマーカーを返す」指示が無いと、無音や壊れた音声を
+  /// 渡されたときにモデルがそれらしい英文を捏造して返してしまう。
+  static String _plainTranscriptionPrompt(LanguageProfile profile) =>
+      'Transcribe this ${profile.label} speech verbatim. '
+      'Return only the transcript. If the audio contains no '
+      'intelligible ${profile.label} speech, return exactly '
+      '$noSpeechMarker and nothing else. '
+      'Never guess or invent words that are not clearly audible.';
+
+  /// 中国語の文字起こし指示。聞こえたままの声調付きピンインを漢字と一緒に返させる。
+  ///
+  /// `tool/pinyin_poc`（ブランチ `claude/chinese-hanzi-pinyin-output-n0pzxe`）で
+  /// 実測に使ったものと同じ方針: 語彙的に正しい声調へ直させず、ピッチだけを
+  /// 根拠に書かせる。**模範解答はこの呼び出しに渡さない**（渡すと引っ張られる）。
+  static const _readingTranscriptionPrompt =
+      '''
+あなたは中国語の音声を音声学的に書き起こす専門家です。話者は中国語学習者（日本語母語）で、声調を間違えている可能性があります。
+この音声を書き起こし、pinyin と hanzi の両方を返してください。pinyin を先に、音だけを根拠に確定させてから hanzi を書くこと。
+
+最重要ルール:
+- pinyin は「実際に聞こえた音」をそのまま書くこと。声調記号は聞こえたピッチのとおりに付ける。音節ごとに半角スペースで区切る。
+- 語彙的に正しい声調に直してはいけない。単語として不自然な声調になっても、聞こえたままを書く。
+- 意味や文脈から声調を推測しないこと。ピッチの高さ・変化だけを根拠にする。
+- 声調が判断できない音節は軽声（記号なし）とする。
+- 変調（3声連続・一・不）は実際に発音されたとおりに書く。
+- hanzi は発話をそのまま簡体字で書き起こしたもの。
+- 聞き取れる中国語の発話が無い場合は hanzi に $noSpeechMarker だけを入れ、pinyin は空文字にする。聞こえない語を推測して補ってはいけない。
+''';
+
+  /// 中国語文字起こしの出力スキーマ。
+  ///
+  /// `propertyOrdering` で **必ず pinyin を先に生成させる**。構造化出力は左から
+  /// 順に生成されるため、漢字を先に確定させるとピンインがその辞書引きになり、
+  /// 実際に聞こえた声調が消える。
+  static const _readingTranscriptionSchema = {
+    'type': 'OBJECT',
+    'properties': {
+      'pinyin': {
+        'type': 'STRING',
+        'description': '実際に聞こえたとおりの声調付きピンイン。音節ごとに半角スペース区切り。',
+      },
+      'hanzi': {'type': 'STRING', 'description': '発話の簡体字書き起こし。'},
+    },
+    'required': ['pinyin', 'hanzi'],
+    'propertyOrdering': ['pinyin', 'hanzi'],
+  };
 
   /// 構造化出力（JSON）でGeminiを呼び出し、パース済みのMapとトークン使用量を返す。
   Future<({Map<String, dynamic> json, TokenUsage usage})> _generate({
@@ -467,6 +550,39 @@ class GeminiService {
       'comparison_ja',
     ],
   };
+
+  /// 中国語の添削スキーマ。修正版のルビ表示用に標準ピンインを追加で返させる
+  /// （こちらは辞書どおりの読みで良い。声調の判定には使わない）。
+  static const _compositionSchemaWithReading = {
+    'type': 'OBJECT',
+    'properties': {
+      'score': {'type': 'INTEGER'},
+      'is_acceptable': {'type': 'BOOLEAN'},
+      'corrected': {'type': 'STRING'},
+      'corrected_reading': {
+        'type': 'STRING',
+        'description':
+            'corrected の声調記号付きピンイン（例: wǒ zǒng shì zài tóng yì jiā diàn mǎi）。'
+            '声調番号や記号なしは不可。音節ごとに半角スペース区切り。',
+      },
+      'explanation_ja': {'type': 'STRING'},
+      'comparison_ja': {'type': 'STRING'},
+    },
+    'required': [
+      'score',
+      'is_acceptable',
+      'corrected',
+      'corrected_reading',
+      'explanation_ja',
+      'comparison_ja',
+    ],
+  };
+
+  static const _correctedReadingInstruction =
+      '- corrected_reading: corrected の標準的なピンイン。**必ず声調記号付き**（ā á ǎ à、ü は ǖ ǘ ǚ ǜ）で書き、'
+      '声調番号（wo3）や記号なし（wo）は不可。変調（3声の連続・一・不）を実際の発音どおりに適用し、'
+      '音節ごとに半角スペースで区切る。軽声だけ記号なし。句読点は含めない。'
+      '例: 我总是在同一家店买。→ wǒ zǒng shì zài tóng yì jiā diàn mǎi\n';
 
   static const _monologueSchema = {
     'type': 'OBJECT',

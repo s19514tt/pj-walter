@@ -1,0 +1,62 @@
+# Widgetbook（UIの状態一覧）を GitHub Pages に配信する。
+#
+# - main への push で自動デプロイ
+# - 「Run workflow」（workflow_dispatch）で任意のブランチからも手動デプロイできる
+#   （マージ前の見た目確認用。Pages は1サイトなので、その時点の内容で上書きされる）
+#
+# 初回だけリポジトリ設定が必要: Settings → Pages → Build and deployment → Source を
+# 「GitHub Actions」にする。公開URLは https://<owner>.github.io/<repo>/ 。
+name: Widgetbook (GitHub Pages)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 同時に2つ走ったときは後勝ちにする（途中のデプロイは取り消さない）
+concurrency:
+  group: widgetbook-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.44.8
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      # Pages の公開パスは /<repo>/ なので base-href を合わせる
+      - name: Build Widgetbook for web
+        run: |
+          flutter build web \
+            -t widgetbook/main.dart \
+            --base-href "/${{ github.event.repository.name }}/" \
+            -o build/widgetbook
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/widgetbook
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

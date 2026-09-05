@@ -14,6 +14,7 @@ import '../../services/speech_input_service.dart';
 import '../../services/tts_service.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/app_route.dart';
+import '../../utils/pinyin.dart';
 import '../../widgets/abort_session_dialog.dart';
 import '../../widgets/bottom_cta_bar.dart';
 import '../../widgets/countdown_ring.dart';
@@ -102,6 +103,10 @@ class _DrillScreenState extends State<DrillScreen> {
 
   /// 録音停止時に確定した文字起こし。nullは音声認識の完了待ち（stage 0）。
   String? _stagedSpoken;
+
+  /// 文字起こしと一緒に返った「聞こえたままのピンイン」（中国語のみ。英語はnull）。
+  /// 模範解答のピンインとの声調比較（`toneNotesFor`）に使う。
+  String? _stagedReading;
   bool _grading = false;
   CompositionFeedback? _feedback;
 
@@ -187,6 +192,7 @@ class _DrillScreenState extends State<DrillScreen> {
     setState(() {
       _resultMode = true;
       _stagedSpoken = '';
+      _stagedReading = null;
       _feedback = feedback;
     });
 
@@ -245,6 +251,7 @@ class _DrillScreenState extends State<DrillScreen> {
       if (!mounted) return false;
       setState(() {
         _stagedSpoken = result.text;
+        _stagedReading = result.reading;
         _transcriptionUsage = _transcriptionUsage + result.usage;
         _level = 0;
       });
@@ -266,6 +273,7 @@ class _DrillScreenState extends State<DrillScreen> {
     setState(() {
       _resultMode = false;
       _stagedSpoken = null;
+      _stagedReading = null;
       _feedback = null;
       _recording = false;
       _level = 0;
@@ -332,6 +340,12 @@ class _DrillScreenState extends State<DrillScreen> {
         spoken: spoken,
         timestamp: DateTime.now(),
         feedback: feedback,
+        // 声調の気づき（中国語のみ）。スコア・SRSには一切影響しない。
+        toneNotes: toneNotesFor(
+          profile: profile,
+          sentence: sentence,
+          spokenReading: _stagedReading,
+        ),
       );
       if (!mounted) return;
       final historyService = context.read<HistoryService>();
@@ -441,6 +455,7 @@ class _DrillScreenState extends State<DrillScreen> {
       _index++;
       _resultMode = false;
       _stagedSpoken = null;
+      _stagedReading = null;
       _feedback = null;
       _recording = false;
       _level = 0;
@@ -474,7 +489,14 @@ class _DrillScreenState extends State<DrillScreen> {
   Widget _buildScaffold(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.isReview ? '復習' : '口頭英作文'),
+        title: Text(
+          widget.isReview
+              ? '復習'
+              : context
+                    .watch<SettingsService>()
+                    .languageProfile
+                    .compositionTitle,
+        ),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16),
@@ -497,7 +519,9 @@ class _DrillScreenState extends State<DrillScreen> {
         child: _resultMode
             ? DrillFeedbackView(
                 sentence: _current,
+                profile: context.watch<SettingsService>().languageProfile,
                 spoken: _stagedSpoken,
+                spokenReading: _stagedReading,
                 feedback: _feedback,
                 onNext: _next,
                 onRetry: _retryCurrent,

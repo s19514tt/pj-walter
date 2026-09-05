@@ -75,7 +75,15 @@ abstract final class AppTheme {
   /// CTAボタンの高さ
   static const double buttonHeight = 52;
 
-  static ThemeData get light {
+  static ThemeData get light => build();
+
+  /// アプリのライトテーマを組み立てる。
+  ///
+  /// [webFonts] を false にすると Google Fonts（Noto Sans JP）を使わず
+  /// システムフォントだけで組む。ゴールデンテストや Widgetbook のように
+  /// ネットワークからフォントを取得できない・したくない環境向け。
+  /// 色・余白・コンポーネントテーマはどちらでも同じ。
+  static ThemeData build({bool webFonts = true}) {
     final colorScheme = ColorScheme.fromSeed(
       seedColor: AppColors.primary,
       brightness: Brightness.light,
@@ -85,12 +93,14 @@ abstract final class AppTheme {
     );
 
     // デザイン指定のNoto Sans JP（未取得環境ではシステムフォントにフォールバック）
-    final baseTextTheme = GoogleFonts.notoSansJpTextTheme();
+    final baseTextTheme = webFonts
+        ? GoogleFonts.notoSansJpTextTheme()
+        : const TextTheme();
 
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
-      fontFamily: GoogleFonts.notoSansJp().fontFamily,
+      fontFamily: webFonts ? GoogleFonts.notoSansJp().fontFamily : null,
       fontFamilyFallback: const [
         'Hiragino Sans',
         'Noto Sans CJK JP',

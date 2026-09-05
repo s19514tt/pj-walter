@@ -6,6 +6,7 @@ import 'package:pj_walter/models/monologue_result.dart';
 import 'package:pj_walter/models/phrase.dart';
 import 'package:pj_walter/models/sentence.dart';
 import 'package:pj_walter/models/srs_item.dart';
+import 'package:pj_walter/models/tone_note.dart';
 import 'package:pj_walter/models/topic.dart';
 
 void main() {
@@ -62,6 +63,83 @@ void main() {
       final roundTripped = DrillResult.fromJson(drillResult.toJson());
 
       expect(roundTripped, drillResult);
+      // 英語では声調の気づきは無い（未判定＝null のまま保存・復元される）
+      expect(roundTripped.toneNotes, isNull);
+      expect(drillResult.toJson()['toneNotes'], isNull);
+    });
+
+    test('声調の気づき（toneNotes）を含めてroundtripできる', () {
+      final drillResult = DrillResult(
+        id: 'd-2',
+        sentenceId: 'z3-001',
+        language: 'zh',
+        level: 3,
+        spoken: '我要睡',
+        timestamp: DateTime.utc(2026, 9, 5, 10),
+        feedback: const CompositionFeedback(
+          score: 90,
+          isAcceptable: true,
+          corrected: '我要水',
+          correctedReading: 'wǒ yào shuǐ',
+          explanationJa: '解説',
+          comparisonJa: '比較',
+        ),
+        toneNotes: const [
+          ToneNote(
+            index: 2,
+            spokenIndex: 2,
+            hanzi: '水',
+            expected: 'shuǐ',
+            actual: 'shuì',
+            expectedTone: 3,
+            actualTone: 4,
+          ),
+        ],
+      );
+
+      final roundTripped = DrillResult.fromJson(drillResult.toJson());
+
+      expect(roundTripped, drillResult);
+      expect(roundTripped.feedback.correctedReading, 'wǒ yào shuǐ');
+      expect(roundTripped.toneNotes, hasLength(1));
+      expect(roundTripped.toneNotes!.single.hanzi, '水');
+      // 指摘なし（空リスト）と未判定（null）は区別して保存される
+      final checked = DrillResult.fromJson(
+        DrillResult(
+          id: 'd-3',
+          sentenceId: 'z3-001',
+          language: 'zh',
+          level: 3,
+          spoken: '我要水',
+          timestamp: DateTime.utc(2026, 9, 5, 10),
+          feedback: drillResult.feedback,
+          toneNotes: const [],
+        ).toJson(),
+      );
+      expect(checked.toneNotes, isEmpty);
+    });
+
+    test('toneNotesキーが無い旧データ（中国語対応前）は null として読める', () {
+      final json = {
+        'id': 'd-old',
+        'sentenceId': 's700-001',
+        'level': 700,
+        'spoken': 'old',
+        'timestamp': '2026-01-01T00:00:00.000Z',
+        'feedback': {
+          'score': 70,
+          'is_acceptable': true,
+          'corrected': 'old',
+          'explanation_ja': '',
+          'comparison_ja': '',
+        },
+      };
+
+      final result = DrillResult.fromJson(json);
+
+      expect(result.language, 'en');
+      expect(result.toneNotes, isNull);
+      expect(result.feedback.correctedReading, isNull);
     });
   });
 
