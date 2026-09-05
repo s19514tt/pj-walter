@@ -59,10 +59,9 @@ void main() {
     await tester.pumpWidget(_buildApp(historyService));
     await tester.pump();
 
-    expect(find.text('0日連続'), findsOneWidget);
+    expect(find.text('連続日数'), findsOneWidget);
     expect(find.text('総ドリル数'), findsOneWidget);
-    expect(find.text('総独り言'), findsOneWidget);
-    expect(find.text('総学習時間'), findsOneWidget);
+    expect(find.text('総学習分'), findsOneWidget);
     expect(find.byType(BarChart), findsOneWidget);
     expect(find.text('まだ添削履歴がありません'), findsOneWidget);
 
@@ -81,6 +80,7 @@ void main() {
         DrillResult(
           id: 'd-1',
           sentenceId: 's700-001',
+          language: 'en',
           level: 700,
           spoken: 'this is my spoken answer',
           timestamp: DateTime.now(),
@@ -97,6 +97,7 @@ void main() {
         MonologueResult(
           id: 'm-1',
           topicId: 't-001',
+          language: 'en',
           seconds: 60,
           transcript: 'my monologue transcript',
           timestamp: DateTime.now(),
@@ -114,7 +115,7 @@ void main() {
     await tester.pumpWidget(_buildApp(historyService));
     await tester.pump();
 
-    expect(find.text('1日連続'), findsOneWidget);
+    expect(find.text('連続日数'), findsOneWidget);
     expect(find.text('this is my spoken answer'), findsOneWidget);
     expect(find.text('my monologue transcript'), findsOneWidget);
 

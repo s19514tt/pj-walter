@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 /// pj-walter のデザインシステム（Klook風: 白基調＋オレンジ）で使う色定数。
 ///
@@ -74,7 +75,15 @@ abstract final class AppTheme {
   /// CTAボタンの高さ
   static const double buttonHeight = 52;
 
-  static ThemeData get light {
+  static ThemeData get light => build();
+
+  /// アプリのライトテーマを組み立てる。
+  ///
+  /// [webFonts] を false にすると Google Fonts（Noto Sans JP）を使わず
+  /// システムフォントだけで組む。ゴールデンテストや Widgetbook のように
+  /// ネットワークからフォントを取得できない・したくない環境向け。
+  /// 色・余白・コンポーネントテーマはどちらでも同じ。
+  static ThemeData build({bool webFonts = true}) {
     final colorScheme = ColorScheme.fromSeed(
       seedColor: AppColors.primary,
       brightness: Brightness.light,
@@ -83,9 +92,20 @@ abstract final class AppTheme {
       error: AppColors.error,
     );
 
+    // デザイン指定のNoto Sans JP（未取得環境ではシステムフォントにフォールバック）
+    final baseTextTheme = webFonts
+        ? GoogleFonts.notoSansJpTextTheme()
+        : const TextTheme();
+
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
+      fontFamily: webFonts ? GoogleFonts.notoSansJp().fontFamily : null,
+      fontFamilyFallback: const [
+        'Hiragino Sans',
+        'Noto Sans CJK JP',
+        'sans-serif',
+      ],
       scaffoldBackgroundColor: AppColors.pageBackground,
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.background,
@@ -94,7 +114,7 @@ abstract final class AppTheme {
         centerTitle: false,
         titleTextStyle: TextStyle(
           color: AppColors.textPrimary,
-          fontSize: 20,
+          fontSize: 17,
           fontWeight: FontWeight.bold,
         ),
         iconTheme: IconThemeData(color: AppColors.textPrimary),
@@ -143,16 +163,19 @@ abstract final class AppTheme {
           textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
       ),
-      textTheme: const TextTheme(
-        bodyLarge: TextStyle(color: AppColors.textPrimary, fontSize: 16),
-        bodyMedium: TextStyle(color: AppColors.textPrimary, fontSize: 14),
-        bodySmall: TextStyle(color: AppColors.textSecondary, fontSize: 12),
-        titleLarge: TextStyle(
+      textTheme: baseTextTheme.copyWith(
+        bodyLarge: const TextStyle(color: AppColors.textPrimary, fontSize: 16),
+        bodyMedium: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+        bodySmall: const TextStyle(
+          color: AppColors.textSecondary,
+          fontSize: 12,
+        ),
+        titleLarge: const TextStyle(
           color: AppColors.textPrimary,
           fontSize: 20,
           fontWeight: FontWeight.bold,
         ),
-        titleMedium: TextStyle(
+        titleMedium: const TextStyle(
           color: AppColors.textPrimary,
           fontSize: 18,
           fontWeight: FontWeight.bold,

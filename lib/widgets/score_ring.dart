@@ -41,17 +41,18 @@ class ScoreRing extends StatelessWidget {
                 children: [
                   Text(
                     '${value.round()}',
+                    // 直径に比例したフォントサイズ（基準: 直径160で44px）
                     style: TextStyle(
-                      fontSize: 44,
+                      fontSize: size * 0.275,
                       fontWeight: FontWeight.bold,
                       color: color,
                     ),
                   ),
                   const SizedBox(width: 2),
-                  const Text(
+                  Text(
                     '/100',
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: size * 0.0875,
                       fontWeight: FontWeight.w600,
                       color: AppColors.textSecondary,
                     ),

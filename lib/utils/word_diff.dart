@@ -35,8 +35,12 @@ class DiffSegment {
   String toString() => 'DiffSegment(${type.name}, "$text")';
 }
 
-/// [from]と[to]を空白区切りの単語列とみなし、単語レベルの最長共通部分列
+/// [from]と[to]をトークン列とみなし、トークンレベルの最長共通部分列
 /// (LCS)に基づく差分を計算する。
+///
+/// トークン化は言語を問わず同じ規則で行う（[_tokenize]を参照）。中国語のように
+/// 分かち書きしない言語では漢字1文字が1トークンになるため、空白分割のときの
+/// ように「文全体が1トークン」になって差分が無意味になることがない。
 ///
 /// 比較は大文字小文字を無視して行うが、返される[DiffSegment.text]は元の
 /// 表記（大文字小文字）を保持する。
@@ -95,8 +99,42 @@ List<DiffSegment> diffWords(String from, String to) {
   return segments;
 }
 
+/// CJK文字は1文字を1トークン、それ以外は空白・CJK境界で区切った連続を
+/// 1トークンとして切り出す。
+///
+/// 中国語には語の切れ目を示す空白が無いため、空白分割だけでは文全体が
+/// 1トークンになってしまい差分が「全消し・全追加」になる。漢字を1文字単位で
+/// 扱うことで、英語の挙動を変えずに中国語でも語レベルに近い差分が出る。
+/// 句読点は前後のトークンから独立させ、記号の有無だけで差分が広がるのを防ぐ。
 List<String> _tokenize(String text) {
-  final trimmed = text.trim();
-  if (trimmed.isEmpty) return const [];
-  return trimmed.split(RegExp(r'\s+'));
+  final tokens = <String>[];
+  final buffer = StringBuffer();
+
+  void flush() {
+    if (buffer.isEmpty) return;
+    tokens.add(buffer.toString());
+    buffer.clear();
+  }
+
+  for (final rune in text.runes) {
+    final char = String.fromCharCode(rune);
+    if (_whitespace.hasMatch(char)) {
+      flush();
+    } else if (_standalone.hasMatch(char)) {
+      flush();
+      tokens.add(char);
+    } else {
+      buffer.write(char);
+    }
+  }
+  flush();
+  return tokens;
 }
+
+final _whitespace = RegExp(r'\s');
+
+/// 単独で1トークンにする文字。CJK統合漢字・かな・ハングルと、全角の約物。
+final _standalone = RegExp(
+  r'[぀-ヿ㐀-䶿一-鿿豈-﫿가-힯]'
+  r'|[　-〿！-／：-＠]',
+);

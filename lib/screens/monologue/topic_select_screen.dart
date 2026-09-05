@@ -53,7 +53,10 @@ class _TopicSelectScreenState extends State<TopicSelectScreen> {
   }
 
   Future<List<Topic>> _loadTopics() =>
-      context.read<SentenceRepository>().topics(theme: _theme);
+      context.read<SentenceRepository>().topics(
+        profile: context.read<SettingsService>().languageProfile,
+        theme: _theme,
+      );
 
   void _setTheme(String? theme) {
     setState(() {
@@ -165,7 +168,7 @@ class _TopicSelectScreenState extends State<TopicSelectScreen> {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            topic.en,
+                            topic.target,
                             style: const TextStyle(
                               fontSize: 13,
                               color: AppColors.textSecondary,

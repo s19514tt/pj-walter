@@ -98,4 +98,57 @@ void main() {
       expect(reconstructedTo, 'Corrected answer 1');
     });
   });
+
+  group('diffWords（分かち書きしない言語）', () {
+    test('中国語は漢字1文字ずつトークン化され、全消し全追加にならない', () {
+      final result = diffWords('我昨天去公园', '我今天去公园');
+
+      // 空白分割だと文全体が1トークンになり removed+added の2件になってしまう
+      expect(result.length, greaterThan(2));
+      expect(
+        result.where((s) => s.type == DiffSegmentType.same).map((s) => s.text),
+        containsAll(['我', '天', '去', '公', '园']),
+      );
+      expect(
+        result
+            .where((s) => s.type == DiffSegmentType.removed)
+            .map((s) => s.text),
+        contains('昨'),
+      );
+      expect(
+        result.where((s) => s.type == DiffSegmentType.added).map((s) => s.text),
+        contains('今'),
+      );
+    });
+
+    test('中国語で完全一致なら全てsame', () {
+      final result = diffWords('请把书放在桌子上。', '请把书放在桌子上。');
+
+      expect(result.map((s) => s.type), everyElement(DiffSegmentType.same));
+    });
+
+    test('全角句読点は独立したトークンになる', () {
+      final result = diffWords('我去', '我去。');
+
+      expect(
+        result.last,
+        const DiffSegment(text: '。', type: DiffSegmentType.added),
+      );
+    });
+
+    test('中国語に混ざる英数字はまとまりのまま1トークンになる', () {
+      final result = diffWords('我有100块钱', '我有200块钱');
+
+      expect(
+        result
+            .where((s) => s.type == DiffSegmentType.removed)
+            .map((s) => s.text),
+        ['100'],
+      );
+      expect(
+        result.where((s) => s.type == DiffSegmentType.added).map((s) => s.text),
+        ['200'],
+      );
+    });
+  });
 }

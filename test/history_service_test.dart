@@ -37,6 +37,7 @@ DrillResult _drillResult({
 }) => DrillResult(
   id: 'drill-$sentenceId-$score-${DateTime.now().microsecondsSinceEpoch}',
   sentenceId: sentenceId,
+  language: 'en',
   level: level,
   spoken: 'spoken text',
   timestamp: DateTime.now(),
@@ -52,6 +53,7 @@ DrillResult _drillResult({
 MonologueResult _monologueResult({int seconds = 60}) => MonologueResult(
   id: 'mono-${DateTime.now().microsecondsSinceEpoch}',
   topicId: 't-001',
+  language: 'en',
   seconds: seconds,
   transcript: 'transcript',
   timestamp: DateTime.now(),
@@ -235,7 +237,7 @@ void main() {
         _drillResult(sentenceId: 's700-020', score: 50),
       );
       // dueDateは翌日なので、まだ「今日の復習」には含まれない
-      expect(historyService.dueSrsItems, isEmpty);
+      expect(historyService.dueSrsItems(), isEmpty);
 
       // dueDateを今日に書き換える（内部boxを直接操作してシミュレート）
       final today = _dateOnly(DateTime.now());
@@ -243,8 +245,8 @@ void main() {
       final adjusted = item.copyWith(dueDate: today);
       await Hive.box('srs_items').put(item.sentenceId, adjusted.toJson());
 
-      expect(historyService.dueSrsItems, hasLength(1));
-      expect(historyService.dueSrsItems.first.sentenceId, 's700-020');
+      expect(historyService.dueSrsItems(), hasLength(1));
+      expect(historyService.dueSrsItems().first.sentenceId, 's700-020');
     });
   });
 
@@ -264,7 +266,7 @@ void main() {
       await historyService.addPhrase(
         Phrase(
           id: 'p-1',
-          en: 'first phrase',
+          target: 'first phrase',
           ja: '最初のフレーズ',
           source: 'manual',
           createdAt: DateTime.now(),
@@ -274,7 +276,7 @@ void main() {
       await historyService.addPhrase(
         Phrase(
           id: 'p-2',
-          en: 'second phrase',
+          target: 'second phrase',
           ja: '2番目のフレーズ',
           source: 'manual',
           createdAt: DateTime.now(),
@@ -292,7 +294,7 @@ void main() {
       await historyService.addPhrase(
         Phrase(
           id: 'p-10',
-          en: 'break the ice',
+          target: 'break the ice',
           ja: '緊張をほぐす',
           source: 'manual',
           createdAt: DateTime.now(),
@@ -301,7 +303,7 @@ void main() {
       await historyService.addPhrase(
         Phrase(
           id: 'p-11',
-          en: 'slip my mind',
+          target: 'slip my mind',
           ja: 'うっかり忘れる',
           source: 'manual',
           createdAt: DateTime.now(),
@@ -323,12 +325,12 @@ void main() {
 
   group('currentStreak', () {
     test('学習記録が全くない場合は0', () {
-      expect(historyService.currentStreak, 0);
+      expect(historyService.currentStreak(), 0);
     });
 
     test('今日だけ学習していれば1', () async {
       await _setDailyStats(DateTime.now(), drillCount: 1);
-      expect(historyService.currentStreak, 1);
+      expect(historyService.currentStreak(), 1);
     });
 
     test('今日未学習でも昨日まで連続していればストリークは維持される', () async {
@@ -342,7 +344,7 @@ void main() {
         monologueCount: 1,
       );
 
-      expect(historyService.currentStreak, 2);
+      expect(historyService.currentStreak(), 2);
     });
 
     test('今日も昨日も未学習ならストリークは0（一昨日だけ学習）', () async {
@@ -352,7 +354,7 @@ void main() {
         drillCount: 1,
       );
 
-      expect(historyService.currentStreak, 0);
+      expect(historyService.currentStreak(), 0);
     });
 
     test('飛び日があるとそれより前の連続日はカウントしない', () async {
@@ -368,7 +370,7 @@ void main() {
         drillCount: 1,
       );
 
-      expect(historyService.currentStreak, 2);
+      expect(historyService.currentStreak(), 2);
     });
   });
 

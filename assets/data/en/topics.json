@@ -3,362 +3,362 @@
     {
       "id": "t-001",
       "ja": "今日の朝ごはんについて話してください",
-      "en": "Talk about what you had for breakfast today",
-      "theme": "daily"
+      "theme": "daily",
+      "target": "Talk about what you had for breakfast today"
     },
     {
       "id": "t-002",
       "ja": "あなたの1日のスケジュールを説明してください",
-      "en": "Describe your typical daily schedule",
-      "theme": "daily"
+      "theme": "daily",
+      "target": "Describe your typical daily schedule"
     },
     {
       "id": "t-003",
       "ja": "好きな休日の過ごし方について話してください",
-      "en": "Talk about how you like to spend your holidays",
-      "theme": "daily"
+      "theme": "daily",
+      "target": "Talk about how you like to spend your holidays"
     },
     {
       "id": "t-004",
       "ja": "最近読んだ本や見た映画について話してください",
-      "en": "Talk about a book or movie you recently enjoyed",
-      "theme": "daily"
+      "theme": "daily",
+      "target": "Talk about a book or movie you recently enjoyed"
     },
     {
       "id": "t-005",
       "ja": "あなたの家族について紹介してください",
-      "en": "Introduce your family",
-      "theme": "daily"
+      "theme": "daily",
+      "target": "Introduce your family"
     },
     {
       "id": "t-006",
       "ja": "好きな季節とその理由を話してください",
-      "en": "Talk about your favorite season and why you like it",
-      "theme": "daily"
+      "theme": "daily",
+      "target": "Talk about your favorite season and why you like it"
     },
     {
       "id": "t-007",
       "ja": "最近始めた新しい趣味について話してください",
-      "en": "Talk about a new hobby you recently started",
-      "theme": "daily"
+      "theme": "daily",
+      "target": "Talk about a new hobby you recently started"
     },
     {
       "id": "t-008",
       "ja": "子供の頃の楽しい思い出を話してください",
-      "en": "Talk about a happy memory from your childhood",
-      "theme": "daily"
+      "theme": "daily",
+      "target": "Talk about a happy memory from your childhood"
     },
     {
       "id": "t-009",
       "ja": "あなたの住んでいる街の良いところを紹介してください",
-      "en": "Talk about the good points of the city you live in",
-      "theme": "daily"
+      "theme": "daily",
+      "target": "Talk about the good points of the city you live in"
     },
     {
       "id": "t-010",
       "ja": "健康のために気をつけていることを話してください",
-      "en": "Talk about what you do to stay healthy",
-      "theme": "daily"
+      "theme": "daily",
+      "target": "Talk about what you do to stay healthy"
     },
     {
       "id": "t-011",
       "ja": "好きな食べ物とその理由を説明してください",
-      "en": "Explain your favorite food and why you like it",
-      "theme": "daily"
+      "theme": "daily",
+      "target": "Explain your favorite food and why you like it"
     },
     {
       "id": "t-012",
       "ja": "最近困ったことやハプニングについて話してください",
-      "en": "Talk about a recent problem or unexpected event",
-      "theme": "daily"
+      "theme": "daily",
+      "target": "Talk about a recent problem or unexpected event"
     },
     {
       "id": "t-013",
       "ja": "あなたのペットについて、または飼いたい動物について話してください",
-      "en": "Talk about your pet or an animal you would like to have",
-      "theme": "daily"
+      "theme": "daily",
+      "target": "Talk about your pet or an animal you would like to have"
     },
     {
       "id": "t-014",
       "ja": "週末に一番リラックスできる過ごし方を話してください",
-      "en": "Talk about the most relaxing way you spend your weekends",
-      "theme": "daily"
+      "theme": "daily",
+      "target": "Talk about the most relaxing way you spend your weekends"
     },
     {
       "id": "t-015",
       "ja": "あなたが尊敬する人について話してください",
-      "en": "Talk about someone you respect",
-      "theme": "daily"
+      "theme": "daily",
+      "target": "Talk about someone you respect"
     },
     {
       "id": "t-016",
       "ja": "最近の生活で変わったことについて話してください",
-      "en": "Talk about something that has recently changed in your life",
-      "theme": "daily"
+      "theme": "daily",
+      "target": "Talk about something that has recently changed in your life"
     },
     {
       "id": "t-017",
       "ja": "スマートフォンをどのように使っているか話してください",
-      "en": "Talk about how you use your smartphone in daily life",
-      "theme": "daily"
+      "theme": "daily",
+      "target": "Talk about how you use your smartphone in daily life"
     },
     {
       "id": "t-018",
       "ja": "環境のために日常でできることを話してください",
-      "en": "Talk about what you can do for the environment in daily life",
-      "theme": "daily"
+      "theme": "daily",
+      "target": "Talk about what you can do for the environment in daily life"
     },
     {
       "id": "t-019",
       "ja": "あなたのストレス解消法について話してください",
-      "en": "Talk about how you relieve stress",
-      "theme": "daily"
+      "theme": "daily",
+      "target": "Talk about how you relieve stress"
     },
     {
       "id": "t-020",
       "ja": "将来住んでみたい場所について話してください",
-      "en": "Talk about a place you would like to live in the future",
-      "theme": "daily"
+      "theme": "daily",
+      "target": "Talk about a place you would like to live in the future"
     },
     {
       "id": "t-021",
       "ja": "最近感謝したことについて話してください",
-      "en": "Talk about something you recently felt grateful for",
-      "theme": "daily"
+      "theme": "daily",
+      "target": "Talk about something you recently felt grateful for"
     },
     {
       "id": "t-022",
       "ja": "あなたの朝の習慣について話してください",
-      "en": "Talk about your morning routine",
-      "theme": "daily"
+      "theme": "daily",
+      "target": "Talk about your morning routine"
     },
     {
       "id": "t-023",
       "ja": "最近挑戦した新しいことについて話してください",
-      "en": "Talk about something new you recently tried",
-      "theme": "daily"
+      "theme": "daily",
+      "target": "Talk about something new you recently tried"
     },
     {
       "id": "t-024",
       "ja": "好きな音楽やアーティストについて話してください",
-      "en": "Talk about your favorite music or artist",
-      "theme": "daily"
+      "theme": "daily",
+      "target": "Talk about your favorite music or artist"
     },
     {
       "id": "t-025",
       "ja": "もし一日自由な時間があったら何をするか話してください",
-      "en": "Talk about what you would do if you had a free day",
-      "theme": "daily"
+      "theme": "daily",
+      "target": "Talk about what you would do if you had a free day"
     },
     {
       "id": "t-026",
       "ja": "あなたの仕事内容について説明してください",
-      "en": "Describe what your job involves",
-      "theme": "business"
+      "theme": "business",
+      "target": "Describe what your job involves"
     },
     {
       "id": "t-027",
       "ja": "理想の上司について話してください",
-      "en": "Talk about your ideal boss",
-      "theme": "business"
+      "theme": "business",
+      "target": "Talk about your ideal boss"
     },
     {
       "id": "t-028",
       "ja": "これまでで一番大変だった仕事について話してください",
-      "en": "Talk about the most challenging work experience you've had",
-      "theme": "business"
+      "theme": "business",
+      "target": "Talk about the most challenging work experience you've had"
     },
     {
       "id": "t-029",
       "ja": "リモートワークの利点と欠点について話してください",
-      "en": "Talk about the advantages and disadvantages of remote work",
-      "theme": "business"
+      "theme": "business",
+      "target": "Talk about the advantages and disadvantages of remote work"
     },
     {
       "id": "t-030",
       "ja": "会議を効率的に進める方法について話してください",
-      "en": "Talk about how to run meetings efficiently",
-      "theme": "business"
+      "theme": "business",
+      "target": "Talk about how to run meetings efficiently"
     },
     {
       "id": "t-031",
       "ja": "あなたの職場の雰囲気について紹介してください",
-      "en": "Describe the atmosphere at your workplace",
-      "theme": "business"
+      "theme": "business",
+      "target": "Describe the atmosphere at your workplace"
     },
     {
       "id": "t-032",
       "ja": "仕事で大切にしていることについて話してください",
-      "en": "Talk about what you value most in your work",
-      "theme": "business"
+      "theme": "business",
+      "target": "Talk about what you value most in your work"
     },
     {
       "id": "t-033",
       "ja": "最近の仕事での成功体験について話してください",
-      "en": "Talk about a recent success you had at work",
-      "theme": "business"
+      "theme": "business",
+      "target": "Talk about a recent success you had at work"
     },
     {
       "id": "t-034",
       "ja": "良いチームワークとは何か、あなたの考えを話してください",
-      "en": "Share your opinion on what makes good teamwork",
-      "theme": "business"
+      "theme": "business",
+      "target": "Share your opinion on what makes good teamwork"
     },
     {
       "id": "t-035",
       "ja": "転職を考えるとしたらどんな仕事をしたいか話してください",
-      "en": "Talk about what kind of job you would want if you changed careers",
-      "theme": "business"
+      "theme": "business",
+      "target": "Talk about what kind of job you would want if you changed careers"
     },
     {
       "id": "t-036",
       "ja": "ビジネスメールを書くときに気をつけていることを話してください",
-      "en": "Talk about what you pay attention to when writing business emails",
-      "theme": "business"
+      "theme": "business",
+      "target": "Talk about what you pay attention to when writing business emails"
     },
     {
       "id": "t-037",
       "ja": "仕事とプライベートのバランスについて話してください",
-      "en": "Talk about how you balance work and personal life",
-      "theme": "business"
+      "theme": "business",
+      "target": "Talk about how you balance work and personal life"
     },
     {
       "id": "t-038",
       "ja": "会社で改善してほしいと思う点について話してください",
-      "en": "Talk about something you wish your company would improve",
-      "theme": "business"
+      "theme": "business",
+      "target": "Talk about something you wish your company would improve"
     },
     {
       "id": "t-039",
       "ja": "新しい社員に仕事を教えるときのポイントを話してください",
-      "en": "Talk about key points when training a new employee",
-      "theme": "business"
+      "theme": "business",
+      "target": "Talk about key points when training a new employee"
     },
     {
       "id": "t-040",
       "ja": "リーダーシップについてあなたの考えを話してください",
-      "en": "Share your opinion on leadership",
-      "theme": "business"
+      "theme": "business",
+      "target": "Share your opinion on leadership"
     },
     {
       "id": "t-041",
       "ja": "在宅勤務とオフィス勤務、どちらが好きか理由とともに話してください",
-      "en": "Talk about whether you prefer working from home or the office, and why",
-      "theme": "business"
+      "theme": "business",
+      "target": "Talk about whether you prefer working from home or the office, and why"
     },
     {
       "id": "t-042",
       "ja": "これまでで一番印象に残っているプレゼンについて話してください",
-      "en": "Talk about the most memorable presentation you've ever given or seen",
-      "theme": "business"
+      "theme": "business",
+      "target": "Talk about the most memorable presentation you've ever given or seen"
     },
     {
       "id": "t-043",
       "ja": "仕事のモチベーションを保つ方法について話してください",
-      "en": "Talk about how you stay motivated at work",
-      "theme": "business"
+      "theme": "business",
+      "target": "Talk about how you stay motivated at work"
     },
     {
       "id": "t-044",
       "ja": "AIが仕事に与える影響についてあなたの考えを話してください",
-      "en": "Share your opinion on how AI is affecting the workplace",
-      "theme": "business"
+      "theme": "business",
+      "target": "Share your opinion on how AI is affecting the workplace"
     },
     {
       "id": "t-045",
       "ja": "これから身につけたいビジネススキルについて話してください",
-      "en": "Talk about a business skill you want to develop in the future",
-      "theme": "business"
+      "theme": "business",
+      "target": "Talk about a business skill you want to develop in the future"
     },
     {
       "id": "t-046",
       "ja": "これまでで一番良かった旅行先について話してください",
-      "en": "Talk about the best place you have ever traveled to",
-      "theme": "travel"
+      "theme": "travel",
+      "target": "Talk about the best place you have ever traveled to"
     },
     {
       "id": "t-047",
       "ja": "次に行ってみたい国について話してください",
-      "en": "Talk about a country you would like to visit next",
-      "theme": "travel"
+      "theme": "travel",
+      "target": "Talk about a country you would like to visit next"
     },
     {
       "id": "t-048",
       "ja": "旅行中に起きたハプニングについて話してください",
-      "en": "Talk about something unexpected that happened during a trip",
-      "theme": "travel"
+      "theme": "travel",
+      "target": "Talk about something unexpected that happened during a trip"
     },
     {
       "id": "t-049",
       "ja": "あなたの好きな旅行のスタイルについて話してください",
-      "en": "Talk about your favorite style of traveling",
-      "theme": "travel"
+      "theme": "travel",
+      "target": "Talk about your favorite style of traveling"
     },
     {
       "id": "t-050",
       "ja": "海外旅行と国内旅行、どちらが好きか理由とともに話してください",
-      "en": "Talk about whether you prefer traveling abroad or domestically, and why",
-      "theme": "travel"
+      "theme": "travel",
+      "target": "Talk about whether you prefer traveling abroad or domestically, and why"
     },
     {
       "id": "t-051",
       "ja": "旅行の荷造りで気をつけていることを話してください",
-      "en": "Talk about what you pay attention to when packing for a trip",
-      "theme": "travel"
+      "theme": "travel",
+      "target": "Talk about what you pay attention to when packing for a trip"
     },
     {
       "id": "t-052",
       "ja": "旅先で食べた印象的な料理について話してください",
-      "en": "Talk about a memorable dish you had while traveling",
-      "theme": "travel"
+      "theme": "travel",
+      "target": "Talk about a memorable dish you had while traveling"
     },
     {
       "id": "t-053",
       "ja": "一人旅とグループ旅行、どちらが好きか話してください",
-      "en": "Talk about whether you prefer traveling alone or in a group",
-      "theme": "travel"
+      "theme": "travel",
+      "target": "Talk about whether you prefer traveling alone or in a group"
     },
     {
       "id": "t-054",
       "ja": "旅行の計画を立てるときに大切にしていることを話してください",
-      "en": "Talk about what you value when planning a trip",
-      "theme": "travel"
+      "theme": "travel",
+      "target": "Talk about what you value when planning a trip"
     },
     {
       "id": "t-055",
       "ja": "これまでで一番印象に残っている観光地について話してください",
-      "en": "Talk about the most memorable tourist spot you've visited",
-      "theme": "travel"
+      "theme": "travel",
+      "target": "Talk about the most memorable tourist spot you've visited"
     },
     {
       "id": "t-056",
       "ja": "旅行先でのコミュニケーションで困ったことについて話してください",
-      "en": "Talk about a communication difficulty you had while traveling",
-      "theme": "travel"
+      "theme": "travel",
+      "target": "Talk about a communication difficulty you had while traveling"
     },
     {
       "id": "t-057",
       "ja": "理想の旅行プランを1つ考えて話してください",
-      "en": "Describe your ideal travel plan",
-      "theme": "travel"
+      "theme": "travel",
+      "target": "Describe your ideal travel plan"
     },
     {
       "id": "t-058",
       "ja": "旅行が人に与える良い影響について話してください",
-      "en": "Talk about the positive effects traveling can have on people",
-      "theme": "travel"
+      "theme": "travel",
+      "target": "Talk about the positive effects traveling can have on people"
     },
     {
       "id": "t-059",
       "ja": "飛行機と電車、旅行するならどちらが好きか話してください",
-      "en": "Talk about whether you prefer traveling by plane or by train",
-      "theme": "travel"
+      "theme": "travel",
+      "target": "Talk about whether you prefer traveling by plane or by train"
     },
     {
       "id": "t-060",
       "ja": "もし1年間好きな国に住めるとしたら、どこで何をしたいか話してください",
-      "en": "Talk about where you would live and what you would do if you could spend a year in any country",
-      "theme": "travel"
+      "theme": "travel",
+      "target": "Talk about where you would live and what you would do if you could spend a year in any country"
     }
   ]
 }

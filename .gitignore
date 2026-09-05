@@ -43,3 +43,10 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# ローカルビルド成果物（IPA等）
+/output/
+
+# HSK語彙リスト（tool/hsk/README.md の手順で取得する。リポジトリには含めない）
+tool/hsk/old_*.json
+tool/hsk/new_*.json

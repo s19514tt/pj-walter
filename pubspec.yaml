@@ -37,7 +37,6 @@ dependencies:
   provider: ^6.1.5+1
   http: ^1.6.0
   flutter_secure_storage: ^10.3.1
-  speech_to_text: ^7.4.0
   record: ^7.1.1
   hive: ^2.2.3
   hive_flutter: ^1.1.0
@@ -45,6 +44,7 @@ dependencies:
   intl: ^0.20.3
   fl_chart: ^1.2.0
   uuid: ^4.6.0
+  google_fonts: ^6.2.1
 
 dev_dependencies:
   flutter_test:
@@ -60,6 +60,7 @@ dev_dependencies:
   # 使うために直接依存として宣言する（元は推移的依存）。GeminiService/SettingsServiceの
   # テストでAPIキーの読み書きをインメモリ化するために使用。
   flutter_secure_storage_platform_interface: ^2.0.2
+  widgetbook: ^3.25.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -77,9 +78,8 @@ flutter:
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
   assets:
-    - assets/data/sentences_700.json
-    - assets/data/sentences_800.json
-    - assets/data/topics.json
+    - assets/data/en/
+    - assets/data/zh/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

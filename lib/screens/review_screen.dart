@@ -8,8 +8,9 @@ import '../services/history_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/review_launcher.dart';
 import '../widgets/app_card.dart';
-import '../widgets/primary_button.dart';
 import '../widgets/section_header.dart';
+import '../services/settings_service.dart';
+import '../models/learning_language.dart';
 
 /// 復習予定一覧で全件を個別表示する上限。超えた分は件数表示のみにする。
 const _upcomingListLimit = 8;
@@ -56,7 +57,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
     return phrases
         .where(
           (p) =>
-              p.en.toLowerCase().contains(query) ||
+              p.target.toLowerCase().contains(query) ||
               p.ja.toLowerCase().contains(query),
         )
         .toList();
@@ -65,7 +66,10 @@ class _ReviewScreenState extends State<ReviewScreen> {
   @override
   Widget build(BuildContext context) {
     final history = context.watch<HistoryService>();
-    final dueItems = history.dueSrsItems;
+    final profile = context.watch<SettingsService>().languageProfile;
+    // 復習は現在の学習言語だけを対象にする（別言語の文が現在の言語の
+    // プロンプトで採点されるのを防ぐ）。
+    final dueItems = history.dueSrsItems(language: profile.code);
     final allItems = history.allSrsItems;
     final phrases = _filteredPhrases(history.phrases);
 
@@ -74,17 +78,24 @@ class _ReviewScreenState extends State<ReviewScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const SectionHeader(title: '今日の復習'),
-          const SizedBox(height: 12),
-          _buildTodayReview(dueItems),
+          _buildTodayReview(dueItems, allItems),
           const SizedBox(height: 24),
           const SectionHeader(title: '復習予定'),
           const SizedBox(height: 12),
           _buildUpcoming(allItems),
           const SizedBox(height: 24),
-          const SectionHeader(title: 'フレーズ帳'),
+          SectionHeader(
+            title: 'フレーズ帳',
+            trailing: Text(
+              '${history.phrases.length}件',
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ),
           const SizedBox(height: 12),
-          _buildSearchField(),
+          _buildSearchField(profile.label),
           const SizedBox(height: 12),
           _buildPhrases(history, phrases),
         ],
@@ -92,44 +103,110 @@ class _ReviewScreenState extends State<ReviewScreen> {
     );
   }
 
-  Widget _buildTodayReview(List<SrsItem> dueItems) {
-    if (dueItems.isEmpty) {
-      return const AppCard(
-        child: Center(
-          child: Text(
-            '今日の復習はありません🎉',
-            style: TextStyle(color: AppColors.textSecondary, fontSize: 15),
-          ),
-        ),
-      );
+  Widget _buildTodayReview(List<SrsItem> dueItems, List<SrsItem> allItems) {
+    // stage 0-4を「1日→3日→7日→14日→30日」の各間隔として件数表示する
+    const stageLabels = ['1日', '3日', '7日', '14日', '30日'];
+    final stageCounts = List<int>.filled(stageLabels.length, 0);
+    for (final item in allItems) {
+      if (item.stage >= 0 && item.stage < stageLabels.length) {
+        stageCounts[item.stage]++;
+      }
     }
-    return AppCard(
-      child: Row(
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: AppColors.primaryGradient,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '${dueItems.length}',
-            style: const TextStyle(
-              fontSize: 32,
+          const Text(
+            '今日の復習',
+            style: TextStyle(
+              fontSize: 14,
               fontWeight: FontWeight.bold,
-              color: AppColors.primary,
+              color: Colors.white,
             ),
           ),
-          const SizedBox(width: 6),
-          const Expanded(
-            child: Text(
-              '件の復習があります',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
+          const SizedBox(height: 4),
+          Text(
+            '1日→3日→7日→14日→30日の間隔で再出題されます',
+            style: TextStyle(
+              fontSize: 12,
+              height: 1.7,
+              color: Colors.white.withValues(alpha: 0.93),
+            ),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              for (var i = 0; i < stageLabels.length; i++) ...[
+                if (i > 0) const SizedBox(width: 8),
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          '${stageCounts[i]}',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                          ),
+                        ),
+                        Text(
+                          stageLabels[i],
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.white.withValues(alpha: 0.9),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: FilledButton(
+              onPressed: dueItems.isEmpty || _startingReview
+                  ? null
+                  : () => _startReview(dueItems),
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.white,
+                disabledBackgroundColor: Colors.white.withValues(alpha: 0.6),
+                foregroundColor: AppColors.primary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
+              child: _startingReview
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2.5),
+                    )
+                  : Text(
+                      dueItems.isEmpty
+                          ? '今日の復習はありません🎉'
+                          : '${dueItems.length}件を一括で開始',
+                    ),
             ),
-          ),
-          PrimaryButton(
-            label: '復習を始める',
-            loading: _startingReview,
-            onPressed: () => _startReview(dueItems),
-            compact: true,
           ),
         ],
       ),
@@ -171,7 +248,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                 children: [
                   Expanded(
                     child: Text(
-                      'TOEIC ${item.level}点台の文',
+                      '${LanguageProfile.ofCode(item.language).levelLabel(item.level)}の文',
                       style: const TextStyle(color: AppColors.textPrimary),
                     ),
                   ),
@@ -201,14 +278,14 @@ class _ReviewScreenState extends State<ReviewScreen> {
     );
   }
 
-  Widget _buildSearchField() {
+  Widget _buildSearchField(String language) {
     return TextField(
       controller: _searchController,
       onChanged: (value) => setState(() => _query = value),
-      decoration: const InputDecoration(
-        hintText: '英語・日本語で検索',
-        prefixIcon: Icon(Icons.search),
-        border: OutlineInputBorder(),
+      decoration: InputDecoration(
+        hintText: '$language・日本語で検索',
+        prefixIcon: const Icon(Icons.search),
+        border: const OutlineInputBorder(),
       ),
     );
   }
@@ -235,7 +312,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        phrase.en,
+                        phrase.target,
                         style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
