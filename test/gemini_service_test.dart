@@ -290,9 +290,14 @@ void main() {
       expect(usage.totalTokens, 190);
     });
 
-    test('空の応答は聞き取れなかった旨のGeminiExceptionになる', () async {
+    test('無音マーカーの応答は聞き取れなかった旨のGeminiExceptionになる', () async {
+      var requests = 0;
       final client = MockClient((request) async {
-        return _jsonResponse(_geminiEnvelope('   '), 200);
+        requests++;
+        return _jsonResponse(
+          _geminiEnvelope(' ${GeminiService.noSpeechMarker}\n'),
+          200,
+        );
       });
       final service = GeminiService(settingsService: settings, client: client);
 
@@ -310,17 +315,65 @@ void main() {
           ),
         ),
       );
+      // 無音はモデルの明示的な判断なので送り直さない
+      expect(requests, 1);
     });
 
-    test('partsが省略された応答でも解析エラーにせず聞き取れなかった扱いにする', () async {
+    test('文字起こしプロンプトは無音時にマーカーを返すよう指示している', () async {
+      String? sentPrompt;
       final client = MockClient((request) async {
-        return _jsonResponse({
-          'candidates': [
-            {
-              'content': {'role': 'model'},
-            },
-          ],
-        }, 200);
+        final body = jsonDecode(request.body) as Map<String, dynamic>;
+        final parts = (body['contents'] as List).first['parts'] as List;
+        sentPrompt = parts.first['text'] as String;
+        return _jsonResponse(_geminiEnvelope('hello'), 200);
+      });
+      final service = GeminiService(settingsService: settings, client: client);
+
+      await service.transcribe(
+        profile: LanguageProfile.english,
+        audioBytes: [1, 2, 3],
+        mimeType: 'audio/wav',
+      );
+
+      expect(sentPrompt, contains(GeminiService.noSpeechMarker));
+      expect(sentPrompt, isNot(contains('empty string')));
+    });
+
+    test('本文が空の応答（content: {}）は同じリクエストを送り直して成功させる', () async {
+      final bodies = <String>[];
+      final client = MockClient((request) async {
+        bodies.add(request.body);
+        if (bodies.length == 1) {
+          return _jsonResponse(_emptyContentEnvelope, 200);
+        }
+        return _jsonResponse(
+          _geminiEnvelope(
+            'Second try.',
+            usageMetadata: {'promptTokenCount': 203, 'candidatesTokenCount': 4},
+          ),
+          200,
+        );
+      });
+      final service = GeminiService(settingsService: settings, client: client);
+
+      final (:text, :usage) = await service.transcribe(
+        profile: LanguageProfile.english,
+        audioBytes: [1, 2, 3],
+        mimeType: 'audio/wav',
+      );
+
+      expect(text, 'Second try.');
+      expect(bodies, hasLength(2));
+      expect(bodies[0], bodies[1]);
+      // 再試行分の入力トークンも課金されるため合算される
+      expect(usage, const TokenUsage(promptTokens: 406, candidatesTokens: 4));
+    });
+
+    test('本文が空の応答が3回続いたら送り直しを促すGeminiExceptionになる', () async {
+      var requests = 0;
+      final client = MockClient((request) async {
+        requests++;
+        return _jsonResponse(_emptyContentEnvelope, 200);
       });
       final service = GeminiService(settingsService: settings, client: client);
 
@@ -334,10 +387,61 @@ void main() {
           isA<GeminiException>().having(
             (e) => e.message,
             'message',
-            contains('聞き取れませんでした'),
+            allOf(
+              contains('文字起こし結果が返ってきませんでした'),
+              isNot(contains('聞き取れませんでした')),
+            ),
           ),
         ),
       );
+      expect(requests, 3);
+    });
+
+    test('添削でも本文が空の応答は送り直す', () async {
+      var requests = 0;
+      final client = MockClient((request) async {
+        requests++;
+        if (requests == 1) return _jsonResponse(_emptyContentEnvelope, 200);
+        return _jsonResponse(
+          _geminiEnvelope({
+            'score': 90,
+            'is_acceptable': true,
+            'corrected': 'ok',
+            'explanation_ja': '',
+            'comparison_ja': '',
+          }),
+          200,
+        );
+      });
+      final service = GeminiService(settingsService: settings, client: client);
+
+      final (:feedback, usage: _) = await service.correctComposition(
+        profile: LanguageProfile.english,
+        ja: 'ja',
+        modelAnswer: 'model',
+        spoken: 'spoken',
+      );
+
+      expect(feedback.score, 90);
+      expect(requests, 2);
     });
   });
 }
+
+/// 出力トークンが0で`parts`ごと省略された応答（実際にGeminiが返したもの）。
+const _emptyContentEnvelope = {
+  'candidates': [
+    {'content': <String, dynamic>{}, 'finishReason': 'STOP', 'index': 0},
+  ],
+  'usageMetadata': {
+    'promptTokenCount': 203,
+    'totalTokenCount': 203,
+    'promptTokensDetails': [
+      {'modality': 'TEXT', 'tokenCount': 39},
+      {'modality': 'AUDIO', 'tokenCount': 164},
+    ],
+    'serviceTier': 'standard',
+  },
+  'modelVersion': 'gemini-3.8-flash',
+  'responseId': 'BNSaarXZIpzCvr0P4Or_mAc',
+};
