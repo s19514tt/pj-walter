@@ -81,6 +81,7 @@ NEUTRAL_TONE = {
     "记得": "jì de",
     "觉得": "jué de",
     "太阳": "tài yáng",
+    "清楚": "qīng chu",
 }
 
 # (文脈パターン, パターン内で直す文字, 正しい音節)
@@ -92,13 +93,14 @@ CONTEXT_FIXES = [
     ("天假", "假", "jià"),       # 请两天假（休暇の假は第4声）
     ("请假", "假", "jià"),
     ("睡不着", "着", "zháo"),    # 可能補語
-    ("看一下行李", "看", "kān"), # 「番をする」の看は第1声
+    ("看一下我的包", "看", "kān"),  # 「番をする」の看は第1声
+    ("帮你看着", "看", "kān"),
     ("喂，", "喂", "wéi"),       # 電話の呼びかけ
 ]
 
 # 公式リストに単独項目が無いために分かち書きで割れてしまうが、
 # 1語として読ませたい単位。拼音の見た目だけの調整で、語彙検証には影響しない。
-GROUPING_EXTRA = {"一下", "行李", "一天天", "一起", "什么样"}
+GROUPING_EXTRA = {"一下", "行李", "一天天", "一起", "什么样", "不好意思"}
 
 TONE_MARKS = {
     "ā": 1, "ē": 1, "ī": 1, "ō": 1, "ū": 1, "ǖ": 1,
@@ -208,8 +210,19 @@ def group_by_word(chars, syllables, allowed, primary):
     先に音節をまとめると文字数と音節数がずれて対応が崩れるため、
     語のまとまりを決めてから 儿 を直前の音節に吸収させる。
     """
+    tokens = [token for token, _ in tokenize("".join(chars), allowed, primary)]
+
+    # 重ね型（看看・好好・慢慢）は 1 語として続けて書く。分かち書き器は
+    # 同じ字が並んでいるだけと見て 2 トークンに割るので、ここで繋ぎ直す。
+    merged_tokens = []
+    for token in tokens:
+        if merged_tokens and len(token) == 1 and merged_tokens[-1] == token:
+            merged_tokens[-1] += token
+        else:
+            merged_tokens.append(token)
+
     grouped, index = [], 0
-    for token, _ in tokenize("".join(chars), allowed, primary):
+    for token in merged_tokens:
         taken = syllables[index:index + len(token)]
         index += len(token)
         if not taken:

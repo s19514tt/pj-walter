@@ -43,6 +43,37 @@ def _load(prefix, levels):
 SUPPLEMENT_MAX = {3: 2, 4: 3}
 
 
+def load_all_known():
+    """全級の語彙（HSK2.0 L1-6 / HSK3.0 L1-7）。上位級語の混入検出に使う。"""
+    known = set()
+    for prefix, levels in (("old", range(1, 7)), ("new", range(1, 8))):
+        for n in levels:
+            path = HERE / f"{prefix}_{n}.json"
+            if not path.exists():
+                continue
+            for w in json.load(open(path)):
+                known.add(w["simplified"])
+    return known
+
+
+def find_level_leaks(text, allowed, known):
+    """構成字への分解ですり抜けた上位級の語を拾う。
+
+    許容語彙に無い単漢字でも、それが許容語の構成字なら「未知語ではない」として
+    通している。その副作用として、级外の2〜4字語（准时・确认・名片など）が
+    「許容字の並び」として素通りしてしまう。ここでは文中の2〜4字の窓を走査し、
+    「上位級の実在語だが許容語彙には無い」ものを警告として返す。
+    """
+    body = "".join(c for c in text if not (c in PUNCT or c.isspace() or c.isascii()))
+    leaks = []
+    for size in (4, 3, 2):
+        for i in range(len(body) - size + 1):
+            window = body[i:i + size]
+            if window in known and window not in allowed:
+                leaks.append(window)
+    return leaks
+
+
 def build_allowed(max_level):
     """許容語彙 -> ({語: 拼音}, 主制約の語集合, 補完集合の語集合)"""
     primary = _load("old", range(1, max_level + 1))
@@ -116,10 +147,13 @@ def main():
     data = json.load(open(path))
     sentences = data["sentences"]
 
+    known = load_all_known()
     ids = [s["id"] for s in sentences]
     dupes = {i for i in ids if ids.count(i) > 1}
-    violations, used_supplement = [], {}
+    violations, used_supplement, leaks = [], {}, []
     for s in sentences:
+        for leak in find_level_leaks(s["target"], allowed, known):
+            leaks.append((s["id"], s["target"], leak))
         bad = [t for t, ok in tokenize(s["target"], allowed, primary) if not ok]
         if bad:
             violations.append((s["id"], s["target"], bad))
@@ -139,10 +173,19 @@ def main():
     print(f"  HSK2.0 L1-{max_level} 外から使った語 ({len(used_supplement)}種、HSK3.0 L1-{SUPPLEMENT_MAX[max_level]}収録):")
     print("    " + "  ".join(f"{w}({len(ids)})" for w, ids in sorted(used_supplement.items())))
 
+    if leaks:
+        # 語境界をまたぐ誤検出（「三天才看完」→「天才」など）が避けられないため、
+        # ここは失敗にせず警告として出し、人が実際の切れ目を見て判断する。
+        print(f"\n⚠️ 上位級の語が構成字への分解ですり抜けている可能性 {len(leaks)}件:")
+        for sid, tgt, leak in leaks:
+            print(f"  {sid}: {tgt}  ← {leak}")
+
     if violations:
         print(f"\n❌ どちらの公式リストにも無い語 {len(violations)}文:")
         for sid, tgt, bad in violations:
             print(f"  {sid}: {tgt}  ← {' '.join(bad)}")
+
+    if violations:
         return 1
 
     print("  ✅ 全文が公式リスト内の語彙のみ")
