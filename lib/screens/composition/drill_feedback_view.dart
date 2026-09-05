@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../../models/drill_result.dart';
+import '../../models/learning_language.dart';
 import '../../models/sentence.dart';
+import '../../models/tone_note.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/pinyin.dart';
 import '../../utils/score_colors.dart';
 import '../../utils/word_diff.dart';
 import '../../widgets/app_card.dart';
@@ -23,6 +26,11 @@ import '../../widgets/stat_badge.dart';
 ///
 /// feedbackの`corrected`が空文字（時間切れで回答できなかった場合）は
 /// 「あなたの発話」差分カードを非表示にし、模範解答＋tipsを主役として表示する。
+///
+/// 中国語（[LanguageProfile.readingLabel]が非null）では、模範解答のピンインと
+/// [spokenReading]の音節列が一致し、かつ声調の食い違いが1件以上あるときだけ
+/// stage 2で「気づいた点」カードを出す（DESIGN.md「声調フィードバック」の
+/// 3つのガード）。それ以外はカードごと出さない（「問題なし」の表示は無い）。
 class DrillFeedbackView extends StatelessWidget {
   const DrillFeedbackView({
     super.key,
@@ -31,14 +39,22 @@ class DrillFeedbackView extends StatelessWidget {
     required this.feedback,
     required this.onNext,
     required this.onRetry,
+    this.profile = LanguageProfile.english,
+    this.spokenReading,
     this.isLast = false,
   });
 
   /// 出題されたSentence
   final Sentence sentence;
 
+  /// 学習言語。英語（`readingLabel == null`）では声調に関わる処理は一切走らない。
+  final LanguageProfile profile;
+
   /// ユーザーの発話の文字起こし。nullは音声認識の完了待ち（stage 0）。
   final String? spoken;
+
+  /// 文字起こしと一緒に返った「聞こえたままの声調付きピンイン」（中国語のみ）。
+  final String? spokenReading;
 
   /// Geminiによる添削結果。nullは採点待ち（stage 0〜1）。
   final CompositionFeedback? feedback;
@@ -57,6 +73,14 @@ class DrillFeedbackView extends StatelessWidget {
     final feedback = this.feedback;
     final spoken = this.spoken;
     final timedOut = feedback != null && feedback.corrected.isEmpty;
+    // 声調の気づき。null（未判定）または空（指摘なし）ならカードを出さない。
+    final toneNotes = feedback == null || timedOut
+        ? null
+        : toneNotesFor(
+            profile: profile,
+            sentence: sentence,
+            spokenReading: spokenReading,
+          );
     var delayStep = 0;
     Widget staggered(Widget child) {
       final delay = Duration(milliseconds: 60 * delayStep);
@@ -92,6 +116,12 @@ class DrillFeedbackView extends StatelessWidget {
                   staggered(
                     _DiffCard(spoken: spoken, corrected: feedback.corrected),
                   ),
+                const SizedBox(height: 12),
+              ],
+              // 気づいた点（声調）: 指摘が1件以上あるときだけ。0件や未判定では
+              // カードごと出さない（「声調OK」と受け取られる見せ方をしない）。
+              if (toneNotes != null && toneNotes.isNotEmpty) ...[
+                staggered(_ToneNotesCard(notes: toneNotes)),
                 const SizedBox(height: 12),
               ],
               // 模範解答・添削コメント: 採点完了までスケルトン＋AI採点中バッジ
@@ -580,6 +610,113 @@ class _Section extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+/// 「気づいた点」カード（口頭中国語作文のみ、stage 2）。
+///
+/// 模範解答のピンインと綴りは同じで声調だけが違った音節を控えめに列挙する。
+/// 「声調チェック」「声調OK」といった断定的な語は使わない。音声認識の聞き取り
+/// 誤差も混ざるため、参考値であることを補足文で明示する。
+class _ToneNotesCard extends StatelessWidget {
+  const _ToneNotesCard({required this.notes});
+
+  final List<ToneNote> notes;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _SectionLabel(icon: Icons.hearing, title: '気づいた点'),
+          const SizedBox(height: 8),
+          const Text(
+            '音声認識が聞き取った声調（参考値）が模範解答のピンインと違っていた音節です。聞き取りの誤差も含まれます。',
+            style: TextStyle(
+              fontSize: 12,
+              height: 1.6,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 12),
+          for (var i = 0; i < notes.length; i++) ...[
+            if (i > 0) const SizedBox(height: 8),
+            _ToneNoteRow(note: notes[i]),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// 気づいた点1件分の行: `[3声 → 4声]` ピル＋（漢字）＋ 模範解答の音節 → 聞こえた音節。
+class _ToneNoteRow extends StatelessWidget {
+  const _ToneNoteRow({required this.note});
+
+  final ToneNote note;
+
+  @override
+  Widget build(BuildContext context) {
+    final hanzi = note.hanzi;
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: AppColors.scoreLowSurface,
+            borderRadius: BorderRadius.circular(AppTheme.pillRadius),
+          ),
+          child: Text(
+            '${note.expectedTone}声 → ${note.actualTone}声',
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: AppColors.scoreLow,
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        if (hanzi != null) ...[
+          Text(
+            hanzi,
+            style: const TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(width: 8),
+        ],
+        Expanded(
+          child: Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: note.expected,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const TextSpan(
+                  text: '  →  ',
+                  style: TextStyle(color: AppColors.textSecondary),
+                ),
+                TextSpan(
+                  text: note.actual,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.scoreLow,
+                  ),
+                ),
+              ],
+            ),
+            style: const TextStyle(fontSize: 15),
+          ),
+        ),
+      ],
     );
   }
 }
