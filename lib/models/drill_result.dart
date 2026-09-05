@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import 'tone_note.dart';
+
 /// 口頭英作文1問分のGemini添削結果。
 ///
 /// JSONキーはGemini APIのレスポンススキーマ（DESIGN.md参照）に合わせて
@@ -73,6 +75,7 @@ class DrillResult {
     required this.spoken,
     required this.timestamp,
     required this.feedback,
+    this.toneNotes,
   });
 
   /// 結果のuuid
@@ -96,6 +99,13 @@ class DrillResult {
   /// Geminiによる添削結果
   final CompositionFeedback feedback;
 
+  /// 声調の「気づいた点」（中国語のみ。DESIGN.md「声調フィードバック」参照）。
+  ///
+  /// null は判定していない（英語・模範解答にピンインが無い・音節列が模範解答と
+  /// 一致しなかった）。空リストは判定したが指摘なし。中国語対応より前に保存された
+  /// 結果もキーが無いため null で読める。スコアには一切影響しない。
+  final List<ToneNote>? toneNotes;
+
   factory DrillResult.fromJson(Map<String, dynamic> json) => DrillResult(
     id: json['id'] as String,
     sentenceId: json['sentenceId'] as String,
@@ -107,6 +117,9 @@ class DrillResult {
     feedback: CompositionFeedback.fromJson(
       Map<String, dynamic>.from(json['feedback'] as Map),
     ),
+    toneNotes: (json['toneNotes'] as List?)
+        ?.map((e) => ToneNote.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList(),
   );
 
   Map<String, dynamic> toJson() => {
@@ -117,6 +130,7 @@ class DrillResult {
     'spoken': spoken,
     'timestamp': timestamp.toIso8601String(),
     'feedback': feedback.toJson(),
+    'toneNotes': toneNotes?.map((note) => note.toJson()).toList(),
   };
 
   @override
@@ -130,9 +144,18 @@ class DrillResult {
           level == other.level &&
           spoken == other.spoken &&
           timestamp == other.timestamp &&
-          feedback == other.feedback;
+          feedback == other.feedback &&
+          listEquals(toneNotes, other.toneNotes);
 
   @override
-  int get hashCode =>
-      Object.hash(id, sentenceId, language, level, spoken, timestamp, feedback);
+  int get hashCode => Object.hash(
+    id,
+    sentenceId,
+    language,
+    level,
+    spoken,
+    timestamp,
+    feedback,
+    toneNotes == null ? null : Object.hashAll(toneNotes!),
+  );
 }
