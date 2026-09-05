@@ -456,7 +456,12 @@ ${withReading ? _correctedReadingInstruction : ''}''';
       'score': {'type': 'INTEGER'},
       'is_acceptable': {'type': 'BOOLEAN'},
       'corrected': {'type': 'STRING'},
-      'corrected_reading': {'type': 'STRING'},
+      'corrected_reading': {
+        'type': 'STRING',
+        'description':
+            'corrected の声調記号付きピンイン（例: wǒ zǒng shì zài tóng yì jiā diàn mǎi）。'
+            '声調番号や記号なしは不可。音節ごとに半角スペース区切り。',
+      },
       'explanation_ja': {'type': 'STRING'},
       'comparison_ja': {'type': 'STRING'},
     },
@@ -471,8 +476,10 @@ ${withReading ? _correctedReadingInstruction : ''}''';
   };
 
   static const _correctedReadingInstruction =
-      '- corrected_reading: corrected の標準的なピンイン。変調（3声の連続・一・不）を実際の発音どおりに適用し、'
-      '音節ごとに半角スペースで区切る。軽声は声調記号なし。句読点は含めない\n';
+      '- corrected_reading: corrected の標準的なピンイン。**必ず声調記号付き**（ā á ǎ à、ü は ǖ ǘ ǚ ǜ）で書き、'
+      '声調番号（wo3）や記号なし（wo）は不可。変調（3声の連続・一・不）を実際の発音どおりに適用し、'
+      '音節ごとに半角スペースで区切る。軽声だけ記号なし。句読点は含めない。'
+      '例: 我总是在同一家店买。→ wǒ zǒng shì zài tóng yì jiā diàn mǎi\n';
 
   static const _monologueSchema = {
     'type': 'OBJECT',

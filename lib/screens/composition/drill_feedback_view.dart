@@ -624,7 +624,9 @@ class _RubyDiffText extends StatelessWidget {
     required TokenReading? ruby,
     required ToneNote? note,
   }) {
-    final changed = segment.type != DiffSegmentType.same;
+    // 句読点だけのセル（「。」など）は差分があっても強調しない（空の色セルになるため）
+    final changed =
+        segment.type != DiffSegmentType.same && isCjkCharacter(segment.text);
     // 声調の気づきがある文字: 上のルビ（聞こえた声調）を赤に、下に期待声調
     final toneMismatch = note != null;
     final rubyColor = toneMismatch

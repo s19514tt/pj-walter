@@ -32,7 +32,8 @@ class PinyinSyllable {
   /// 声調番号（1〜4）。記号が無ければ[neutralTone]
   final int tone;
 
-  /// 元の表記（声調記号つき、小文字化済み。表示用）
+  /// 表示用の表記（声調記号つき、小文字化済み）。
+  /// 声調番号表記（`wo3`）で入力された音節は記号付き（`wǒ`）に直してある
   final String raw;
 
   /// 軽声（声調記号なし）かどうか
@@ -518,7 +519,46 @@ PinyinSyllable? _toSyllable(List<_Char> chars) {
     if (c.tone != null) tone = c.tone!;
   }
   if (base.isEmpty) return null;
-  return PinyinSyllable(base: base.toString(), tone: tone, raw: raw.toString());
+  final baseText = base.toString();
+  final hasDigit = chars.any((c) => _isDigit(c.plain));
+  return PinyinSyllable(
+    base: baseText,
+    tone: tone,
+    // 番号表記は表示用に記号付きへ直す（ルビに「wo3」を出さない）
+    raw: hasDigit ? toneMarked(baseText, tone) : raw.toString(),
+  );
+}
+
+/// 声調記号を付ける母音の候補（声調番号→記号）。
+const _toneMarks = <String, List<String>>{
+  'a': ['ā', 'á', 'ǎ', 'à'],
+  'o': ['ō', 'ó', 'ǒ', 'ò'],
+  'e': ['ē', 'é', 'ě', 'è'],
+  'i': ['ī', 'í', 'ǐ', 'ì'],
+  'u': ['ū', 'ú', 'ǔ', 'ù'],
+  'v': ['ǖ', 'ǘ', 'ǚ', 'ǜ'],
+};
+
+/// 素の綴り[base]（`v` は ü）に声調番号[tone]の記号を付けた表記を返す。
+///
+/// 記号の位置は標準の規則: a・e があればそこ、`ou` なら o、それ以外は最後の母音。
+/// 軽声（[neutralTone]）は記号なし。
+String toneMarked(String base, int tone) {
+  final plain = base.replaceAll('v', 'ü');
+  if (tone < 1 || tone > 4) return plain;
+  int at;
+  if (base.contains('a')) {
+    at = base.indexOf('a');
+  } else if (base.contains('e')) {
+    at = base.indexOf('e');
+  } else if (base.contains('ou')) {
+    at = base.indexOf('o');
+  } else {
+    at = base.lastIndexOf(RegExp('[iouv]'));
+  }
+  if (at < 0) return plain;
+  final marked = _toneMarks[base[at]]![tone - 1];
+  return '${plain.substring(0, at)}$marked${plain.substring(at + 1)}';
 }
 
 bool _isDigit(String s) =>

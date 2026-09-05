@@ -184,6 +184,25 @@ void main() {
     test('声調番号表記（wen4）と結合文字（NFD）の声調記号も読める', () {
       expect(_bases('wo3 yao4 shui3'), ['wo', 'yao', 'shui']);
       expect(_tones('wo3 yao4 shui3'), [3, 4, 3]);
+      // 番号表記は表示用（raw）に記号付きへ直す
+      expect(
+        parsePinyinSyllables(
+          'wo3 zong3 shi4 zai4 tong2 yi4 jia1 dian4 mai3 lv4 ma5',
+        ).map((s) => s.raw),
+        [
+          'wǒ',
+          'zǒng',
+          'shì',
+          'zài',
+          'tóng',
+          'yì',
+          'jiā',
+          'diàn',
+          'mǎi',
+          'lǜ',
+          'ma',
+        ],
+      );
       // u + 結合ウムラウト + 結合caron = ǚ
       expect(_bases('nǚ'), ['nv']);
       expect(_tones('nǚ'), [3]);
@@ -468,6 +487,21 @@ void main() {
       expect(notes.single.hanzi, '点儿');
       expect(notes.single.expected, 'diǎnr');
       expect(notes.single.actual, 'diànr');
+    });
+  });
+
+  group('toneMarked', () {
+    test('a・e 優先、ou は o、それ以外は最後の母音に記号を付ける', () {
+      expect(toneMarked('xiao', 3), 'xiǎo');
+      expect(toneMarked('xie', 4), 'xiè');
+      expect(toneMarked('dou', 1), 'dōu');
+      expect(toneMarked('hui', 2), 'huí');
+      expect(toneMarked('liu', 2), 'liú');
+      expect(toneMarked('nv', 3), 'nǚ');
+      expect(toneMarked('lve', 4), 'lüè');
+      expect(toneMarked('dianr', 3), 'diǎnr');
+      expect(toneMarked('er', 4), 'èr');
+      expect(toneMarked('ma', neutralTone), 'ma');
     });
   });
 }
