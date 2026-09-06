@@ -11,10 +11,11 @@ import '../widgets/primary_button.dart';
 import '../widgets/secondary_button.dart';
 import '../widgets/section_header.dart';
 
-/// 設定画面。Gemini APIキー・独り言デフォルト時間を管理する。
+/// 設定画面。Gemini APIキー・Cloud TTS APIキー・独り言デフォルト時間を管理する。
 ///
-/// 使用モデルは[GeminiService.modelName]に固定、音声認識はGemini録音方式のみ
-/// のため、どちらも選択UIは持たず情報表示のみ行う。
+/// 使用モデルは[GeminiService.modelName]に固定、音声認識はGemini録音方式のみ、
+/// 読み上げ音声は[LanguageProfile.ttsVoiceName]に固定のため、いずれも選択UIは
+/// 持たず情報表示のみ行う。
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -31,11 +32,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
   };
 
   final _apiKeyController = TextEditingController();
+  final _ttsApiKeyController = TextEditingController();
   bool _obscureApiKey = true;
+  bool _obscureTtsApiKey = true;
 
   @override
   void dispose() {
     _apiKeyController.dispose();
+    _ttsApiKeyController.dispose();
     super.dispose();
   }
 
@@ -77,6 +81,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ScaffoldMessenger.of(
                   context,
                 ).showSnackBar(const SnackBar(content: Text('APIキーを削除しました')));
+              }
+            },
+          ),
+          const SizedBox(height: 24),
+          const SectionHeader(title: '読み上げ（Cloud TTS）APIキー'),
+          const SizedBox(height: 12),
+          _CloudTtsKeySection(
+            settings: settings,
+            controller: _ttsApiKeyController,
+            obscure: _obscureTtsApiKey,
+            onToggleObscure: () =>
+                setState(() => _obscureTtsApiKey = !_obscureTtsApiKey),
+            onSave: () async {
+              final key = _ttsApiKeyController.text.trim();
+              if (key.isEmpty) return;
+              await settings.setCloudTtsApiKey(key);
+              _ttsApiKeyController.clear();
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('読み上げ用のAPIキーを保存しました')),
+                );
+              }
+            },
+            onDelete: () async {
+              await settings.deleteCloudTtsApiKey();
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('読み上げ用のAPIキーを削除しました')),
+                );
               }
             },
           ),
@@ -247,6 +280,92 @@ class _LanguageOption extends StatelessWidget {
   }
 }
 
+/// 読み上げ（Cloud TTS）用のAPIキー欄。
+///
+/// 未登録でもGeminiのキーを流用するため、必須ではない旨を明記する。
+class _CloudTtsKeySection extends StatelessWidget {
+  const _CloudTtsKeySection({
+    required this.settings,
+    required this.controller,
+    required this.obscure,
+    required this.onToggleObscure,
+    required this.onSave,
+    required this.onDelete,
+  });
+
+  final SettingsService settings;
+  final TextEditingController controller;
+  final bool obscure;
+  final VoidCallback onToggleObscure;
+  final VoidCallback onSave;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            '添削結果の読み上げは Cloud Text-to-Speech を使います。Google Cloud で '
+            'Cloud Text-to-Speech API を有効化したプロジェクトのAPIキーを入力して'
+            'ください。上のGemini APIキーが同じプロジェクトのものなら、ここは'
+            '未入力のままで構いません。',
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+          ),
+          const SizedBox(height: 12),
+          if (settings.hasCloudTtsApiKey) ...[
+            const Row(
+              children: [
+                Icon(Icons.check_circle, color: AppColors.success, size: 20),
+                SizedBox(width: 8),
+                Text(
+                  '読み上げ用のAPIキーは設定済みです',
+                  style: TextStyle(color: AppColors.textPrimary),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            SecondaryButton(label: '読み上げ用のAPIキーを削除', onPressed: onDelete),
+          ] else ...[
+            const Row(
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  color: AppColors.textSecondary,
+                  size: 20,
+                ),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '未設定のためGemini APIキーを流用します',
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              obscureText: obscure,
+              decoration: InputDecoration(
+                hintText: '読み上げ用のAPIキーを入力（任意）',
+                border: const OutlineInputBorder(),
+                suffixIcon: IconButton(
+                  icon: Icon(obscure ? Icons.visibility_off : Icons.visibility),
+                  onPressed: onToggleObscure,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            PrimaryButton(label: '保存', onPressed: onSave),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 class _ModelInfoSection extends StatelessWidget {
   const _ModelInfoSection();
 
@@ -260,8 +379,11 @@ class _ModelInfoSection extends StatelessWidget {
           SizedBox(height: 8),
           _InfoRow(label: '音声認識', value: '話した音声をGeminiに送信して文字起こし'),
           SizedBox(height: 8),
+          _InfoRow(label: '読み上げ', value: 'Cloud Text-to-Speech（WaveNet音声）'),
+          SizedBox(height: 8),
           Text(
-            '添削・文字起こしは全てこのモデルで行い、APIキーの利用量を消費します。',
+            '添削・文字起こしは全てこのモデルで行い、APIキーの利用量を消費します。'
+            '読み上げは別APIで、文字数課金（月100万文字まで無料）です。',
             style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
           ),
         ],

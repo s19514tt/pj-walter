@@ -394,7 +394,7 @@ void main() {
     expect(tts.spoken, ['English sentence', 'English sentence']);
   });
 
-  testWidgets('押してから鳴り始めるまでは準備中表示になる', (tester) async {
+  testWidgets('押してから鳴り始めるまでは生成中表示になる', (tester) async {
     const feedback = CompositionFeedback(
       score: 85,
       isAcceptable: true,
@@ -402,7 +402,7 @@ void main() {
       explanationJa: '解説',
       comparisonJa: '比較',
     );
-    // 鳴り始めの通知を手動にして、準備中の状態で止められるようにする
+    // 鳴り始めの通知を手動にして、生成中の状態で止められるようにする
     final tts = FakeTtsService()
       ..pending = true
       ..startImmediately = false;
@@ -424,13 +424,13 @@ void main() {
     await tester.tap(find.byType(SpeakButton).first);
     // 準備中のスピナーは無限アニメーションなのでpumpAndSettleは使えない
     await tester.pump();
-    expect(find.text('準備中'), findsOneWidget);
+    expect(find.text('生成中'), findsOneWidget);
     expect(find.text('停止'), findsNothing);
 
     // 実際に鳴り始めたら「停止」に変わる
     tts.startSpeaking();
     await tester.pump();
-    expect(find.text('準備中'), findsNothing);
+    expect(find.text('生成中'), findsNothing);
     expect(find.text('停止'), findsOneWidget);
 
     // 読み上げが終わると待機表示に戻る
@@ -439,7 +439,7 @@ void main() {
     expect(find.text('読み上げ'), findsNWidgets(2));
   });
 
-  testWidgets('準備中に同じボタンを押すと読み上げを取りやめる', (tester) async {
+  testWidgets('生成中に同じボタンを押すと読み上げを取りやめる', (tester) async {
     const feedback = CompositionFeedback(
       score: 85,
       isAcceptable: true,
@@ -467,9 +467,9 @@ void main() {
 
     await tester.tap(find.byType(SpeakButton).first);
     await tester.pump();
-    expect(find.text('準備中'), findsOneWidget);
+    expect(find.text('生成中'), findsOneWidget);
 
-    await tester.tap(find.text('準備中'));
+    await tester.tap(find.text('生成中'));
     await tester.pumpAndSettle();
     expect(tts.stopCount, 1);
     expect(find.text('読み上げ'), findsNWidgets(2));

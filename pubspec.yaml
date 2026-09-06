@@ -45,9 +45,9 @@ dependencies:
   fl_chart: ^1.2.0
   uuid: ^4.6.0
   google_fonts: ^6.2.1
-  # 添削結果（修正版・模範解答）の読み上げ。端末OSのTTSエンジンを使うため
-  # APIコスト・生成待ちが無く、押してすぐ鳴る。Android/iOS/Webに対応。
-  flutter_tts: ^4.2.5
+  # 添削結果（修正版・模範解答）の読み上げ。Cloud TTS が返すMP3の再生に使う。
+  # Swift Package Manager 対応なのでiOSビルドに CocoaPods を必要としない。
+  audioplayers: ^6.8.1
 dev_dependencies:
   flutter_test:
     sdk: flutter

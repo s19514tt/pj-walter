@@ -36,8 +36,8 @@ import '../../widgets/stat_badge.dart';
 ///
 /// スコアカードの直下には出題された日本語文（問題文）を常に表示する。採点を
 /// 待っている間も何に答えたのかを見失わないようにするため、段階表示の対象外。
-/// 「修正版」「模範解答」には[SpeakButton]を置き、[ttsService]（端末OSの
-/// 音声エンジン）で学習言語の発音を確認できるようにする。2つのボタンは
+/// 「修正版」「模範解答」には[SpeakButton]を置き、[ttsService]（Cloud TTS）
+/// で学習言語の発音を確認できるようにする。2つのボタンは
 /// 読み上げる文が一致することがある（修正不要だった場合は修正版＝模範解答）
 /// ため、状態は文ではなくボタン（[_SpeechSlot]）ごとに持つ。
 class DrillFeedbackView extends StatefulWidget {
@@ -92,7 +92,7 @@ class _DrillFeedbackViewState extends State<DrillFeedbackView> {
   /// 2つのボタンが同時に反応してしまうため、ボタンの識別子で持つ。
   _SpeechSlot? _activeSlot;
 
-  /// [_activeSlot]のボタンの状態（準備中→読み上げ中）
+  /// [_activeSlot]のボタンの状態（生成中→読み上げ中）
   SpeakButtonState _speakState = SpeakButtonState.idle;
 
   @override
@@ -117,7 +117,7 @@ class _DrillFeedbackViewState extends State<DrillFeedbackView> {
     try {
       await widget.ttsService.speak(
         text,
-        // 実際に鳴り始めた時点で「準備中」→「停止」に切り替える。
+        // 実際に鳴り始めた時点で「生成中」→「停止」に切り替える。
         onSpeakingStarted: () {
           if (mounted && _activeSlot == slot) {
             setState(() => _setSlot(slot, SpeakButtonState.speaking));

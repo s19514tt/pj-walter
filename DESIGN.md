@@ -48,7 +48,7 @@ CJK文字を1文字1トークンとして切るため、中国語でも語レベ
 - ローカルDB: `hive` / `hive_flutter`（コード生成なし、`Box<Map>` 相当で Map を格納）
 - APIキー保存: `flutter_secure_storage`
 - 音声認識: `record`（録音→Gemini音声認識）のみ。端末STT（speech_to_text）はPR17で廃止
-- 読み上げ: 端末OSのTTSエンジン（`flutter_tts`）。Gemini TTS はPR26で廃止（生成待ちが長かったため）
+- 読み上げ: Google Cloud Text-to-Speech（WaveNet音声）で音声生成し、`audioplayers` で再生。Gemini TTS はPR26で廃止（生成待ちが長かったため）
 - HTTP: `http`
 - グラフ: `fl_chart`
 - その他: `intl`, `uuid`
@@ -270,7 +270,9 @@ APIキーだけは `flutter_secure_storage`（キー名 `gemini_api_key`）。
   - 2026-12-31まで: 入力 $0.75 / 出力 $3.75 per 1M tokens（導入価格）
   - 2027-01-01から: 入力 $1.50 / 出力 $7.50 per 1M tokens（標準価格）
   - 音声入力も入力単価をそのまま適用（このモデルでは音声の別単価なし）。コンテキストキャッシュ・Batchは未使用
-- 読み上げは端末のTTSエンジンで行うためAPIコストは発生しない（PR26以降。それ以前はGemini TTS）
+- 読み上げは Cloud TTS（別API・**文字数課金**）なので、トークン課金のこの表には含めない。
+  $16 / 100万文字（WaveNet）で月100万文字まで無料。教材の平均は英語64文字・中国語10文字なので、
+  無料枠だけで月1.5万回読める。まとめ画面の使用量カードは文字起こしと添削だけを出す
 - 口頭英作文の `DrillScreen` は問ごとに文字起こしと添削の `TokenUsage` を `DrillSummaryEntry.usage`（`DrillQuestionUsage`）に積み（「もう一度」のやり直し分も加算）、全問終了後の `DrillSummaryScreen` で
   - 「APIトークン使用量」カード: 文字起こし／添削／合計の入力・出力トークンとコスト（USD、小数4桁）、思考トークン数、適用単価
   - 問ごとの行: `入力 N · 出力 M · $X.XXXX`（使用量ゼロの問は非表示）
@@ -355,18 +357,44 @@ APIキーだけは `flutter_secure_storage`（キー名 `gemini_api_key`）。
 
 ## 読み上げ（TTS）の抽象化
 
-`TtsService`（抽象）の実装は `FlutterTtsService`（端末OSのTTSエンジン）のみ。
-Gemini TTS は音声の生成待ちが長く、押してから鳴るまでが遅かったのでPR26で戻した
-（端末のボイスに依存する代わりに、APIコストもネットワーク待ちも無い）:
-- 言語は `LanguageProfile.ttsLanguage`（`en-US` / `zh-CN`）。学習言語のボイスが端末に
-  入っていない場合は `TtsException` を投げ、画面側でその旨を出す
-- 読み上げ速度は標準よりやや遅く固定（学習用途）。Android/iOS は 0.45、Web は 0.9
-  （Web Speech API はスケールが違い 1.0 が等速）
-- `speak()` は読み上げ完了（または `stop()` による中断）まで待つので、画面側はこれを
-  そのままボタンの「読み上げ中」表示に使える。中断で完了イベントを流さない
-  プラットフォームがあるため、`stop()` 側でも `Completer` を解いて待ちを残さない
+`TtsService`（抽象）の実装は `CloudTtsService`（Google Cloud Text-to-Speech）のみ。
+
+**なぜ Cloud TTS か（PR26）**: Gemini TTS はLLMが音声トークンを生成するため、押してから
+鳴るまでが長かった。Cloud TTS は専用の合成エンジンで速い。端末OSのTTS（`flutter_tts`）も
+検討したが、端末に学習言語のボイスが無いと読めない（特に中国語）ため採らなかった。
+
+音声タイプの比較（レイテンシは[BOTfriends 2025計測](https://botfriends.de/en/blog/tts-latency-benchmark-2025-google-vs-microsoft-voices-fuer-phonebots/)、独語での値）:
+
+| 音声 | 短文 | 長文 | 単価/100万文字 | 月間無料枠 | 中国語 |
+|---|---|---|---|---|---|
+| Neural2 | 101ms | 134ms | $16 | 100万文字 | **無し（使えない）** |
+| Standard | 160ms | 469ms | $4 | 400万文字 | あり |
+| **WaveNet（採用）** | 324ms | 951ms | $16 | 100万文字 | あり |
+| Chirp 3: HD | 614ms | 3,437ms | $30 | 100万文字 | あり |
+
+最速の Neural2 は **cmn-CN の音声が存在しない**ので不可。Chirp 3: HD は声は最も自然だが
+Cloud TTS の中で最も遅く、速度改善という目的に反する。声の自然さと速度の釣り合いから
+WaveNet を選んだ。
+
+実装:
+- `POST https://texttospeech.googleapis.com/v1/text:synthesize`。APIキーはURLではなく
+  `x-goog-api-key` ヘッダーで送る（URLに載せるとログ・履歴に残るため）
+- 音声は `LanguageProfile.ttsLanguageCode` / `ttsVoiceName`（`en-US-Wavenet-F` /
+  `cmn-CN-Wavenet-A`）。**中国語のコードは教材側の `zh` ではなく Cloud TTS 表記の `cmn-CN`**
+- `audioEncoding: MP3`。WAVより転送量が小さく鳴り始めが速い。`speakingRate: 0.85`
+  （学習用途なので等速よりやや遅く。Cloud TTS の受付範囲は 0.25〜4.0）
+- 同じ文の2回目以降はメモリ上のキャッシュから再生してAPIを呼ばない
+- `speak()` は再生完了（または `stop()` による中断）まで待つので、画面側はこれを
+  そのままボタンの「読み上げ中」表示に使える。`audioplayers` は `stop()` では
+  `onPlayerComplete` を流さないため、完了通知と停止の両方で `Completer` を解いている
 - `speak()` の `onSpeakingStarted` は**実際に音が鳴り始めた**時点で呼ばれる。
-  押してから鳴るまでのエンジンの準備時間を「準備中」として出し分けるために使う
+  押してから鳴るまでの生成・取得の時間を「生成中」として出し分けるために使う
+- Cloud TTS は Gemini とは別APIなので、キーが有効でも **API未有効化だけで403** が返る。
+  403のメッセージは「キーが無効」ではなく有効化手順を案内する
+- APIキーは `SettingsService.ttsApiKey`。Cloud TTS 専用キーが未登録なら Gemini のキーを
+  流用する（同じGoogle Cloudプロジェクトなら1つで足りるため）
+- `AudioPlayer` の生成はプラットフォームチャンネルに触るので、実際に鳴らすまで遅延させる
+  （音声合成だけを試すテストでは生成されない）
 - 生成・破棄は画面（`DrillScreen`）が持ち、テストでは `FakeTtsService` に差し替える
 
 添削画面（`drill_feedback_view.dart`）の「修正版」「模範解答」の見出し右端に
@@ -375,7 +403,7 @@ Gemini TTS は音声の生成待ちが長く、押してから鳴るまでが遅
 | 状態 | 見た目 | 押すと |
 |---|---|---|
 | 待機（`idle`） | 白地・スピーカー・「読み上げ」 | 読み上げを始める |
-| 準備中（`preparing`） | 薄オレンジ・スピナー・「準備中」 | 取りやめる |
+| 生成中（`preparing`） | 薄オレンジ・スピナー・「生成中」 | 取りやめる |
 | 読み上げ中（`speaking`） | 薄オレンジ・停止アイコン・「停止」 | 止める |
 
 **ボタンの状態は「読み上げている文」ではなくボタンごと（`_SpeechSlot`）に持つこと。**

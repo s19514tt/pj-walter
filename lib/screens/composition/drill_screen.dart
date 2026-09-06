@@ -76,7 +76,7 @@ class DrillScreen extends StatefulWidget {
   final SpeechInputService? speechInputService;
 
   /// 添削結果の読み上げに使う音声合成。テスト注入用で、省略時は
-  /// 本番用の[FlutterTtsService]を自動生成する。
+  /// 本番用の[CloudTtsService]を自動生成する。
   final TtsService? ttsService;
 
   /// 1問あたりの制限時間（秒）。テスト注入用で、省略時は[_questionSeconds]（30秒）。
@@ -130,7 +130,8 @@ class _DrillScreenState extends State<DrillScreen> {
         );
     _tts =
         widget.ttsService ??
-        FlutterTtsService(
+        CloudTtsService(
+          settingsService: context.read<SettingsService>(),
           profile: context.read<SettingsService>().languageProfile,
         );
     // カウントダウンは画面表示と同時に開始する（「読む時間」もカウントに

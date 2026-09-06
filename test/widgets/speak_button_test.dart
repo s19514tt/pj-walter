@@ -34,10 +34,10 @@ void main() {
     expect(_background(tester), AppColors.background);
   });
 
-  testWidgets('準備中はスピナーと「準備中」', (tester) async {
+  testWidgets('生成中はスピナーと「生成中」', (tester) async {
     await tester.pumpWidget(_wrap(SpeakButtonState.preparing));
 
-    expect(find.text('準備中'), findsOneWidget);
+    expect(find.text('生成中'), findsOneWidget);
     // 押したのに無音の間もスピナーで反応が見えるようにする
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
     expect(find.byIcon(Icons.volume_up), findsNothing);
@@ -54,7 +54,7 @@ void main() {
     expect(_background(tester), AppColors.primarySurface);
   });
 
-  testWidgets('どの状態でも押せる（準備中・読み上げ中は停止に使う）', (tester) async {
+  testWidgets('どの状態でも押せる（生成中・読み上げ中は停止に使う）', (tester) async {
     for (final state in SpeakButtonState.values) {
       var taps = 0;
       await tester.pumpWidget(_wrap(state, onPressed: () => taps++));
