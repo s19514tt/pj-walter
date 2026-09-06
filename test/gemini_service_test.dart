@@ -12,6 +12,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:pj_walter/models/drill_result.dart';
 import 'package:pj_walter/models/token_usage.dart';
 import 'package:pj_walter/services/gemini_service.dart';
 import 'package:pj_walter/services/settings_service.dart';
@@ -278,7 +279,7 @@ void main() {
       expect(parts.first['text'], startsWith('Transcribe this 英語 speech'));
     });
 
-    test('中国語の添削は corrected_reading を追加で要求し、CompositionFeedbackに入れる', () async {
+    test('中国語の添削は語区切りを追加で要求し、CompositionFeedbackに入れる', () async {
       Map<String, dynamic>? sentBody;
       final client = MockClient((request) async {
         sentBody = jsonDecode(request.body) as Map<String, dynamic>;
@@ -287,7 +288,13 @@ void main() {
             'score': 90,
             'is_acceptable': true,
             'corrected': '我要水。',
-            'corrected_reading': 'wǒ yào shuǐ',
+            'corrected_words': [
+              {'hanzi': '我', 'pinyin': 'wǒ'},
+              {'hanzi': '要', 'pinyin': 'yào'},
+              {'hanzi': '水', 'pinyin': 'shuǐ'},
+              {'hanzi': '。', 'pinyin': ''},
+            ],
+            'spoken_words': ['我', '要', '睡'],
             'explanation_ja': '解説',
             'comparison_ja': '比較',
           }),
@@ -303,20 +310,34 @@ void main() {
         spoken: '我要睡',
       );
 
+      expect(feedback.correctedWords, [
+        const WordUnit(text: '我', reading: 'wǒ'),
+        const WordUnit(text: '要', reading: 'yào'),
+        const WordUnit(text: '水', reading: 'shuǐ'),
+        const WordUnit(text: '。', reading: ''),
+      ]);
+      expect(feedback.spokenWords, [
+        const WordUnit(text: '我'),
+        const WordUnit(text: '要'),
+        const WordUnit(text: '睡'),
+      ]);
+      // 語ごとのピンインは繋いで修正版の読みとしても持つ（履歴・フォールバック用）
       expect(feedback.correctedReading, 'wǒ yào shuǐ');
       final schema =
           (sentBody!['generationConfig'] as Map)['responseSchema'] as Map;
-      expect((schema['properties'] as Map).keys, contains('corrected_reading'));
-      expect(schema['required'], contains('corrected_reading'));
+      expect((schema['properties'] as Map).keys, contains('corrected_words'));
+      expect((schema['properties'] as Map).keys, contains('spoken_words'));
+      expect(schema['required'], contains('corrected_words'));
       final prompt =
           ((sentBody!['contents'] as List).first['parts'] as List).first['text']
               as String;
-      expect(prompt, contains('corrected_reading'));
+      expect(prompt, contains('corrected_words'));
+      expect(prompt, contains('spoken_words'));
       // 採点方針の行はそのまま（声調はスコアに含めない）
       expect(prompt, contains('発音・声調は評価対象に含めません'));
     });
 
-    test('英語の添削スキーマ・プロンプトに corrected_reading は入らない', () async {
+    test('英語の添削スキーマ・プロンプトに語区切りは入らない', () async {
       Map<String, dynamic>? sentBody;
       final client = MockClient((request) async {
         sentBody = jsonDecode(request.body) as Map<String, dynamic>;
@@ -341,16 +362,17 @@ void main() {
       );
 
       expect(feedback.correctedReading, isNull);
+      expect(feedback.correctedWords, isNull);
       final schema =
           (sentBody!['generationConfig'] as Map)['responseSchema'] as Map;
       expect(
         (schema['properties'] as Map).keys,
-        isNot(contains('corrected_reading')),
+        isNot(contains('corrected_words')),
       );
       final prompt =
           ((sentBody!['contents'] as List).first['parts'] as List).first['text']
               as String;
-      expect(prompt, isNot(contains('corrected_reading')));
+      expect(prompt, isNot(contains('corrected_words')));
     });
 
     group('中国語（声調付きピンイン併記）', () {
