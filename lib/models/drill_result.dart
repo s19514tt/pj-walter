@@ -2,6 +2,42 @@ import 'package:flutter/foundation.dart';
 
 import 'tone_note.dart';
 
+/// 語区切り1件（中国語の添削応答が返す「単語」）。
+///
+/// 差分表示のハイライトを1文字ずつではなく単語ずつの箱にするために使う。
+/// [reading]は修正版のみ（その語のピンイン）で、発話側は null。
+@immutable
+class WordUnit {
+  const WordUnit({required this.text, this.reading});
+
+  /// 語の表記（句読点だけの語もある）
+  final String text;
+
+  /// その語の標準的なピンイン（音節ごとに半角スペース区切り）。発話側は null
+  final String? reading;
+
+  factory WordUnit.fromJson(Map<String, dynamic> json) => WordUnit(
+    text: json['hanzi'] as String,
+    reading: json['pinyin'] as String?,
+  );
+
+  Map<String, dynamic> toJson() => {
+    'hanzi': text,
+    if (reading != null) 'pinyin': reading,
+  };
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WordUnit && text == other.text && reading == other.reading;
+
+  @override
+  int get hashCode => Object.hash(text, reading);
+
+  @override
+  String toString() => 'WordUnit($text${reading == null ? '' : ' / $reading'})';
+}
+
 /// 口頭英作文1問分のGemini添削結果。
 ///
 /// JSONキーはGemini APIのレスポンススキーマ（DESIGN.md参照）に合わせて
@@ -15,6 +51,8 @@ class CompositionFeedback {
     required this.explanationJa,
     required this.comparisonJa,
     this.correctedReading,
+    this.correctedWords,
+    this.spokenWords,
   });
 
   /// 伝わりやすさ・正確さの総合スコア（0-100）
@@ -33,8 +71,17 @@ class CompositionFeedback {
   final String comparisonJa;
 
   /// [corrected]の標準的なピンイン（中国語のみ。修正版のルビ表示に使う）。
-  /// 英語や旧データでは null。
+  /// 英語や旧データでは null。[correctedWords]があるときはそれを繋いだもの。
   final String? correctedReading;
+
+  /// [corrected]の語区切り＋語ごとのピンイン（中国語のみ。英語や旧データでは null）。
+  ///
+  /// 差分のハイライトを単語ずつの箱にするのと、ルビを語ごとに割り当てるのに使う
+  /// （語ごとなら音節数が合わない語だけルビを落とせる）。
+  final List<WordUnit>? correctedWords;
+
+  /// 生徒の発話（文字起こし）の語区切り（中国語のみ。ピンインは持たない）。
+  final List<WordUnit>? spokenWords;
 
   factory CompositionFeedback.fromJson(Map<String, dynamic> json) =>
       CompositionFeedback(
@@ -43,8 +90,36 @@ class CompositionFeedback {
         corrected: json['corrected'] as String,
         explanationJa: json['explanation_ja'] as String,
         comparisonJa: json['comparison_ja'] as String,
-        correctedReading: json['corrected_reading'] as String?,
+        correctedReading:
+            json['corrected_reading'] as String? ??
+            _joinReadings(_wordUnits(json['corrected_words'])),
+        correctedWords: _wordUnits(json['corrected_words']),
+        spokenWords: _wordUnits(json['spoken_words']),
       );
+
+  /// 語区切りの配列を読む。修正版は`{hanzi, pinyin}`のオブジェクト、
+  /// 発話側は文字列だけの配列で返る（どちらの形も読めるようにしておく）。
+  static List<WordUnit>? _wordUnits(Object? raw) {
+    if (raw is! List || raw.isEmpty) return null;
+    return [
+      for (final e in raw)
+        if (e is String)
+          WordUnit(text: e)
+        else
+          WordUnit.fromJson(Map<String, dynamic>.from(e as Map)),
+    ];
+  }
+
+  /// 語ごとのピンインを1つの文字列に繋ぐ（ピンインの無い語＝句読点は飛ばす）。
+  static String? _joinReadings(List<WordUnit>? words) {
+    if (words == null) return null;
+    final readings = [
+      for (final word in words)
+        if (word.reading != null && word.reading!.trim().isNotEmpty)
+          word.reading!.trim(),
+    ];
+    return readings.isEmpty ? null : readings.join(' ');
+  }
 
   Map<String, dynamic> toJson() => {
     'score': score,
@@ -53,6 +128,8 @@ class CompositionFeedback {
     'explanation_ja': explanationJa,
     'comparison_ja': comparisonJa,
     'corrected_reading': correctedReading,
+    'corrected_words': correctedWords?.map((w) => w.toJson()).toList(),
+    'spoken_words': spokenWords?.map((w) => w.text).toList(),
   };
 
   @override
@@ -65,7 +142,9 @@ class CompositionFeedback {
           corrected == other.corrected &&
           explanationJa == other.explanationJa &&
           comparisonJa == other.comparisonJa &&
-          correctedReading == other.correctedReading;
+          correctedReading == other.correctedReading &&
+          listEquals(correctedWords, other.correctedWords) &&
+          listEquals(spokenWords, other.spokenWords);
 
   @override
   int get hashCode => Object.hash(
@@ -75,6 +154,8 @@ class CompositionFeedback {
     explanationJa,
     comparisonJa,
     correctedReading,
+    correctedWords == null ? null : Object.hashAll(correctedWords!),
+    spokenWords == null ? null : Object.hashAll(spokenWords!),
   );
 }
 

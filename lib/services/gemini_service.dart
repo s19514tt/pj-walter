@@ -104,14 +104,15 @@ class GeminiService {
     final withReading = profile.readingLabel != null;
     final prompt =
         '''
-あなたは日本人向けの$languageスピーキング講師です。生徒が日本語文を見て$languageで発話した内容を添削してください。
+日本人向けの$languageスピーキング講師として、学習者が日本語文を見て$languageで発話した内容を添削してください。
+日本語の解説では学習者本人に語りかける形で書き、学習者を指すときは「あなた」と呼んでください。「生徒」という呼び方は使わないでください。
 発話内容は音声認識によって文字起こしされたものなので、大文字・小文字の違いや句読点の有無は減点しないでください。
 意味が通り文法的に正しい$languageの文であれば、模範解答と表現が異なっていても許容し、正当に評価してください。
 発音・声調は評価対象に含めません（音声認識を経ているため判定できません）。文法・語彙・語順のみを見てください。
 
 日本語原文: $ja
 模範解答: $modelAnswer
-生徒の発話（文字起こし）: $spoken
+学習者の発話（文字起こし）: $spoken
 
 以下のJSONスキーマに従って評価結果を出力してください。
 
@@ -123,12 +124,12 @@ class GeminiService {
   - 30-49: 部分的にしか伝わらない
   - 0-29: ほぼ伝わらない
 - is_acceptable: scoreが70以上なら合格(true)
-- corrected: 生徒の発話を最小限の編集で正しくした$languageの文にすること。模範解答を丸写しするのではなく、
-  生徒が選んだ語彙・構文をできる限りそのまま活かして修正する。生徒が模範解答と違う構文を選んでいても、
-  その構文のまま正しい形に直すこと（模範解答の構文に置き換えるのはNG。生徒の言い回しを壊すため）。
+- corrected: 学習者の発話を最小限の編集で正しくした$languageの文にすること。模範解答を丸写しするのではなく、
+  学習者が選んだ語彙・構文をできる限りそのまま活かして修正する。学習者が模範解答と違う構文を選んでいても、
+  その構文のまま正しい形に直すこと（模範解答の構文に置き換えるのはNG。学習者の言い回しを壊すため）。
 - explanation_ja: 誤りの解説を「誤り→なぜ誤りか→どう覚えるか」の順で簡潔に（日本語、2〜3文）
 - comparison_ja: 模範解答との違いや、どちらでも良い点の解説（日本語）
-${withReading ? _correctedReadingInstruction : ''}''';
+${withReading ? _correctedWordsInstruction : ''}''';
 
     final (:json, :usage) = await _generate(
       prompt: prompt,
@@ -152,7 +153,8 @@ ${withReading ? _correctedReadingInstruction : ''}''';
     final language = profile.label;
     final prompt =
         '''
-あなたは日本人向けの$languageスピーキング講師です。生徒が下記のお題について$languageで$seconds秒間話した内容を添削してください。
+日本人向けの$languageスピーキング講師として、学習者が下記のお題について$languageで$seconds秒間話した内容を添削してください。
+日本語の解説では学習者本人に語りかける形で書き、学習者を指すときは「あなた」と呼んでください。「生徒」という呼び方は使わないでください。
 発話内容は音声認識によって文字起こしされたものなので、大文字・小文字の違いや句読点の有無は減点しないでください。
 発音・声調は評価対象に含めません（音声認識を経ているため判定できません）。文法・語彙・語順のみを見てください。
 
@@ -170,7 +172,7 @@ ${withReading ? _correctedReadingInstruction : ''}''';
   - 30-49: 部分的にしか伝わらない
   - 0-29: ほぼ伝わらない
 - corrected_transcript: 発話全文を、発話の流れ・語彙選択をできる限り保った最小限の修正で自然な$languageに
-  直したもの（模範解答的な書き直しではなく、生徒自身の言い回しを活かすこと）
+  直したもの（模範解答的な書き直しではなく、学習者自身の言い回しを活かすこと）
 - corrections: 個別の修正点（original: 元の表現, corrected: 修正後, reason_ja: 理由を日本語で）
 - useful_phrases: 次回使える表現を3〜5個（target: $languageの表現, ja: 日本語訳）
 - overall_feedback_ja: 良かった点と改善点を含む総評（日本語、3〜4文）
@@ -551,19 +553,38 @@ ${withReading ? _correctedReadingInstruction : ''}''';
     ],
   };
 
-  /// 中国語の添削スキーマ。修正版のルビ表示用に標準ピンインを追加で返させる
-  /// （こちらは辞書どおりの読みで良い。声調の判定には使わない）。
+  /// 中国語の添削スキーマ。修正版・発話それぞれの語区切りを追加で返させる。
+  ///
+  /// 修正版は語ごとにピンイン付き（辞書どおりの読みで良い。声調の判定には
+  /// 使わない）で、ルビの割り当てと差分ハイライトの単位に使う
+  /// （DESIGN.md「口頭中国語作文の添削画面」参照）。
   static const _compositionSchemaWithReading = {
     'type': 'OBJECT',
     'properties': {
       'score': {'type': 'INTEGER'},
       'is_acceptable': {'type': 'BOOLEAN'},
       'corrected': {'type': 'STRING'},
-      'corrected_reading': {
-        'type': 'STRING',
-        'description':
-            'corrected の声調記号付きピンイン（例: wǒ zǒng shì zài tóng yì jiā diàn mǎi）。'
-            '声調番号や記号なしは不可。音節ごとに半角スペース区切り。',
+      'corrected_words': {
+        'type': 'ARRAY',
+        'description': 'corrected を単語ごとに区切ったもの。hanzi を順に連結すると corrected と一致する。',
+        'items': {
+          'type': 'OBJECT',
+          'properties': {
+            'hanzi': {'type': 'STRING', 'description': 'その単語の漢字（句読点だけの要素もある）。'},
+            'pinyin': {
+              'type': 'STRING',
+              'description':
+                  'その単語の声調記号付きピンイン（例: zǒng shì）。声調番号や記号なしは不可。'
+                  '音節ごとに半角スペース区切り。句読点だけの要素は空文字。',
+            },
+          },
+          'required': ['hanzi', 'pinyin'],
+        },
+      },
+      'spoken_words': {
+        'type': 'ARRAY',
+        'description': '生徒の発話を単語ごとに区切ったもの。順に連結すると発話と一致する。',
+        'items': {'type': 'STRING'},
       },
       'explanation_ja': {'type': 'STRING'},
       'comparison_ja': {'type': 'STRING'},
@@ -572,17 +593,26 @@ ${withReading ? _correctedReadingInstruction : ''}''';
       'score',
       'is_acceptable',
       'corrected',
-      'corrected_reading',
+      'corrected_words',
+      'spoken_words',
       'explanation_ja',
       'comparison_ja',
     ],
   };
 
-  static const _correctedReadingInstruction =
-      '- corrected_reading: corrected の標準的なピンイン。**必ず声調記号付き**（ā á ǎ à、ü は ǖ ǘ ǚ ǜ）で書き、'
+  static const _correctedWordsInstruction =
+      '- corrected_words: corrected を中国語の単語（語彙）単位で区切った配列。「建筑物」「前面」のように'
+      'ひとまとまりの語は分割しない。hanzi を順に連結したとき corrected と1文字も違わないこと'
+      '（句読点も1要素として残す）。\n'
+      '  pinyin はその単語の標準的なピンイン。**必ず声調記号付き**（ā á ǎ à、ü は ǖ ǘ ǚ ǜ）で書き、'
       '声調番号（wo3）や記号なし（wo）は不可。変調（3声の連続・一・不）を実際の発音どおりに適用し、'
-      '音節ごとに半角スペースで区切る。軽声だけ記号なし。句読点は含めない。'
-      '例: 我总是在同一家店买。→ wǒ zǒng shì zài tóng yì jiā diàn mǎi\n';
+      '音節ごとに半角スペースで区切る。軽声だけ記号なし。句読点だけの要素は pinyin を空文字にする。'
+      '例: 我总是在同一家店买。→ '
+      '[{"hanzi":"我","pinyin":"wǒ"},{"hanzi":"总是","pinyin":"zǒng shì"},{"hanzi":"在","pinyin":"zài"},'
+      '{"hanzi":"同一","pinyin":"tóng yì"},{"hanzi":"家","pinyin":"jiā"},{"hanzi":"店","pinyin":"diàn"},'
+      '{"hanzi":"买","pinyin":"mǎi"},{"hanzi":"。","pinyin":""}]\n'
+      '- spoken_words: 生徒の発話（文字起こし）を同じ規則で単語に区切った文字列の配列。'
+      '順に連結したとき発話と1文字も違わないこと。聞き取りが崩れていても直さず、そのまま区切る。\n';
 
   static const _monologueSchema = {
     'type': 'OBJECT',

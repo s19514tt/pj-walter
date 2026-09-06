@@ -151,4 +151,64 @@ void main() {
       );
     });
   });
+
+  group('groupDiffSegments', () {
+    List<DiffSegment> correctedSide(String spoken, String corrected) =>
+        diffWords(
+          spoken,
+          corrected,
+        ).where((s) => s.type != DiffSegmentType.removed).toList();
+
+    test('語区切りが無ければ連続する差分を1つのまとまりにする', () {
+      // 句読点も追加された差分なので同じまとまりに入る（描画側で色は付けない）
+      final groups = groupDiffSegments(correctedSide('我要', '我要喝水。'));
+
+      expect(groups.map((g) => g.text), ['我', '要', '喝水。']);
+      expect(groups.map((g) => g.changed), [false, false, true]);
+    });
+
+    test('語区切りがあれば単語ごとにまとまりを切る', () {
+      final groups = groupDiffSegments(
+        correctedSide('我们爬桥边', '我们在建筑物前面拍吧'),
+        words: const ['我们', '在', '建筑物', '前面', '拍', '吧'],
+      );
+
+      expect(groups.where((g) => g.changed).map((g) => g.text), [
+        '在',
+        '建筑物',
+        '前面',
+        '拍',
+        '吧',
+      ]);
+    });
+
+    test('差分の無いセグメントは1つずつのまとまりのまま', () {
+      final groups = groupDiffSegments(
+        correctedSide('我要水', '我要水'),
+        words: const ['我', '要水'],
+      );
+
+      expect(groups.map((g) => g.text), ['我', '要', '水']);
+    });
+
+    test('語区切りが文と一致しなければ使わない（ずれた位置で切らない）', () {
+      final groups = groupDiffSegments(
+        correctedSide('我要', '我要喝水。'),
+        words: const ['我', '要', '喝', '水'], // 「。」が足りない
+      );
+
+      expect(groups.map((g) => g.text), ['我', '要', '喝水。']);
+    });
+
+    test('英語では単語がそのままトークンなので連続する差分がまとまる', () {
+      final groups = groupDiffSegments(
+        diffWords(
+          'I eat toast',
+          'I had toast',
+        ).where((s) => s.type != DiffSegmentType.removed).toList(),
+      );
+
+      expect(groups.map((g) => g.text), ['I', 'had', 'toast']);
+    });
+  });
 }

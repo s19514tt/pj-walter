@@ -65,19 +65,46 @@ const _enSentence = Sentence(
   level: 700,
 );
 
-const _zhPerfect = CompositionFeedback(
+/// 発話の語区切り（ピンインは持たない）。
+List<WordUnit> _spokenWords(List<String> words) => [
+  for (final word in words) WordUnit(text: word),
+];
+
+/// 修正版の語区切り（語とその語のピンインの組）。
+List<WordUnit> _correctedWords(List<(String, String)> words) => [
+  for (final (text, reading) in words) WordUnit(text: text, reading: reading),
+];
+
+/// 添削応答は発話ごとに語区切りが変わるため、発話の語を引数で受ける。
+CompositionFeedback _zhPerfect(List<String> spokenWords) => CompositionFeedback(
   score: 100,
   isAcceptable: true,
   corrected: '我要水。',
+  correctedWords: _correctedWords([
+    ('我', 'wǒ'),
+    ('要', 'yào'),
+    ('水', 'shuǐ'),
+    ('。', ''),
+  ]),
+  spokenWords: _spokenWords(spokenWords),
   correctedReading: 'wǒ yào shuǐ',
   explanationJa: '文法的な誤りはありません。',
   comparisonJa: '模範解答と同じです。',
 );
 
-const _zhFixed = CompositionFeedback(
+CompositionFeedback _zhFixed(List<String> spokenWords) => CompositionFeedback(
   score: 72,
   isAcceptable: true,
   corrected: '请重新说明一下好吗？',
+  correctedWords: _correctedWords([
+    ('请', 'qǐng'),
+    ('重新', 'chóng xīn'),
+    ('说明', 'shuō míng'),
+    ('一下', 'yí xià'),
+    ('好吗', 'hǎo ma'),
+    ('？', ''),
+  ]),
+  spokenWords: _spokenWords(spokenWords),
   correctedReading: 'qǐng chóngxīn shuōmíng yíxià hǎo ma',
   explanationJa: '文末の「好吗」を付けると依頼の口調になります。',
   comparisonJa: '模範解答と同じ形に直しました。',
@@ -136,7 +163,7 @@ final drillFeedbackStories = <Story>[
       profile: LanguageProfile.chinese,
       spoken: '我要睡',
       spokenReading: 'wǒ yào shuì',
-      feedback: _zhPerfect,
+      feedback: _zhPerfect(const ['我', '要', '睡']),
     ),
   ),
   Story(
@@ -147,7 +174,7 @@ final drillFeedbackStories = <Story>[
       profile: LanguageProfile.chinese,
       spoken: '我要水',
       spokenReading: 'wǒ yào shuǐ',
-      feedback: _zhPerfect,
+      feedback: _zhPerfect(const ['我', '要', '水']),
     ),
   ),
   Story(
@@ -158,7 +185,7 @@ final drillFeedbackStories = <Story>[
       profile: LanguageProfile.chinese,
       spoken: '请重新说明一下',
       spokenReading: 'qǐng chóng xīn shuō míng yī xià',
-      feedback: _zhFixed,
+      feedback: _zhFixed(const ['请', '重新', '说明', '一下']),
     ),
   ),
   Story(
@@ -169,7 +196,7 @@ final drillFeedbackStories = <Story>[
       profile: LanguageProfile.chinese,
       spoken: '请重新说明一下好吗',
       spokenReading: 'qíng chóng xīn shuō míng yī xià hǎo ma',
-      feedback: _zhFixed,
+      feedback: _zhFixed(const ['请', '重新', '说明', '一下', '好吗']),
     ),
   ),
   Story(
@@ -180,10 +207,19 @@ final drillFeedbackStories = <Story>[
       profile: LanguageProfile.chinese,
       spoken: '你早点儿回家休息吧',
       spokenReading: 'nǐ zǎo diànr huíjiā xiūxi ba',
-      feedback: const CompositionFeedback(
+      feedback: CompositionFeedback(
         score: 100,
         isAcceptable: true,
         corrected: '你早点儿回家休息吧。',
+        correctedWords: _correctedWords(const [
+          ('你', 'nǐ'),
+          ('早点儿', 'zǎo diǎnr'),
+          ('回家', 'huí jiā'),
+          ('休息', 'xiū xi'),
+          ('吧', 'ba'),
+          ('。', ''),
+        ]),
+        spokenWords: _spokenWords(const ['你', '早点儿', '回家', '休息', '吧']),
         correctedReading: 'nǐ zǎo diǎnr huíjiā xiūxi ba',
         explanationJa: '問題ありません。',
         comparisonJa: '',
@@ -198,11 +234,38 @@ final drillFeedbackStories = <Story>[
       profile: LanguageProfile.chinese,
       spoken: '我要水',
       spokenReading: 'wǒ yào',
-      feedback: _zhPerfect,
+      feedback: _zhPerfect(const ['我', '要', '水']),
     ),
   ),
   Story(
-    name: '中国語: 修正版のピンインが記号なしで返った',
+    name: '中国語: 修正版のピンインが1語だけ合わない（その語だけルビなし）',
+    slug: 'zh-word-reading-partial',
+    build: () => _view(
+      sentence: _zhLongSentence,
+      profile: LanguageProfile.chinese,
+      spoken: '请重新说明一下',
+      spokenReading: 'qǐng chóng xīn shuō míng yī xià',
+      feedback: CompositionFeedback(
+        score: 72,
+        isAcceptable: true,
+        corrected: '请重新说明一下好吗？',
+        // 「说明」だけ音節数が合わない。ほかの語のルビは残る
+        correctedWords: _correctedWords(const [
+          ('请', 'qǐng'),
+          ('重新', 'chóng xīn'),
+          ('说明', 'shuō míng bái'),
+          ('一下', 'yí xià'),
+          ('好吗', 'hǎo ma'),
+          ('？', ''),
+        ]),
+        spokenWords: _spokenWords(const ['请', '重新', '说明', '一下']),
+        explanationJa: '文末の「好吗」を付けると依頼の口調になります。',
+        comparisonJa: '模範解答と同じ形に直しました。',
+      ),
+    ),
+  ),
+  Story(
+    name: '中国語: 語区切りが無い旧データ＋修正版のピンインが記号なし',
     slug: 'zh-corrected-reading-toneless',
     build: () => _view(
       sentence: _zhSentence,
