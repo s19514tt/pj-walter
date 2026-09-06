@@ -184,8 +184,10 @@ UI・Store・UseCase はインタフェースだけを見ているので、差�
   取り出して Store のコンストラクタへ渡す
 - アプリ寿命のもの（Repository、`GeminiClient`）は get_it のシングルトン。
   画面寿命の Store はシングルトンにせず、画面が生成・破棄する（下記ライフサイクル）
-- テストは `GetIt.asNewInstance()` にフェイクを登録し、`GetItStoreFactory` を `AppScope` に渡す
-  （`test/test_support/test_app.dart`）
+- テストは `GetIt.asNewInstance()` にフェイクを登録し、`GetItStoreFactory` を `AppScope` に渡す。
+  組み立ては `test/test_support/test_dependencies.dart` の `TestDependencies.create(...)`
+  （一時ディレクトリの Hive box に本物の Hive Repository を載せ、Gemini・録音・再生だけフェイクにする）、
+  画面のラップは `test/test_support/test_app.dart` の `scopedApp` / `localizedApp`
 
 ### signals のライフサイクル規約（全 Store で守る）
 
