@@ -660,53 +660,65 @@ class _DrillScreenState extends State<DrillScreen> {
 /// 「わからないので飛ばす」導線（下線付きのテキストリンク）。
 ///
 /// 主ボタン（答える／採点する）より弱く見せるため、グレー文字＋薄いグレーの
-/// 下線にしている。
+/// 下線にしている。hoverでは背景を敷かず、デザインどおり文字と下線が濃くなる
+/// だけにする（面で光ると主ボタンのように見えてしまうため）。
 ///
 /// 下線は[TextDecoration.underline]ではなく下ボーダーで引く。デザインは
 /// `text-underline-offset:4px`で文字から離した下線（ベースラインの約6px下）
 /// だが、Flutterの下線はフォントの下線位置に密着し、オフセットを指定できないため。
-class _SkipQuestionButton extends StatelessWidget {
+class _SkipQuestionButton extends StatefulWidget {
   const _SkipQuestionButton({required this.onPressed});
-
-  /// 文字色。押下時のオーバーレイもこの色を薄めて使う。
-  static const _labelColor = Color(0xFF5F6368);
 
   final VoidCallback onPressed;
 
   @override
+  State<_SkipQuestionButton> createState() => _SkipQuestionButtonState();
+}
+
+class _SkipQuestionButtonState extends State<_SkipQuestionButton> {
+  static const _label = Color(0xFF5F6368);
+  static const _labelHovered = Color(0xFF212121);
+  static const _line = Color(0xFFB9BDC4);
+  static const _lineHovered = Color(0xFF757575);
+
+  bool _hovered = false;
+
+  @override
   Widget build(BuildContext context) {
-    return TextButton(
-      onPressed: onPressed,
-      style:
-          TextButton.styleFrom(
-            foregroundColor: _labelColor,
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: TextButton(
+        onPressed: widget.onPressed,
+        style:
+            TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ).copyWith(
+              // 背景のハイライトは一切出さない。stateごとにnullを返すと
+              // InkWellがテーマ既定のhighlightColorにフォールバックして
+              // 背景が出てしまうので、明示的に透明を渡す。
+              overlayColor: const WidgetStatePropertyAll(Colors.transparent),
             ),
-          ).copyWith(
-            // hover・フォーカスの背景ハイライトは出さない（テキストリンクとして
-            // 見せたいので、面で光ると主ボタンのように見えてしまう）。
-            // 押下時だけ薄く反応させるのは他のボタンテーマと同じ。
-            overlayColor: WidgetStateProperty.resolveWith(
-              (states) => states.contains(WidgetState.pressed)
-                  ? _labelColor.withValues(alpha: 0.1)
-                  : null,
+        child: Container(
+          // 文字ボックス（fontSize 13・height 1 なので高さ13）の下端から4px下に
+          // 1pxの線。ブラウザで`text-underline-offset:4px`と重ねて実測した値。
+          padding: const EdgeInsets.only(bottom: 4),
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(color: _hovered ? _lineHovered : _line),
             ),
           ),
-      child: Container(
-        // 文字ボックス（fontSize 13・height 1 なので高さ13）の下端から4px下に
-        // 1pxの線。ブラウザで`text-underline-offset:4px`と重ねて実測した値。
-        padding: const EdgeInsets.only(bottom: 4),
-        decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: Color(0xFFB9BDC4))),
-        ),
-        child: const Text(
-          'わからないので飛ばす',
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.bold,
-            height: 1,
+          child: Text(
+            'わからないので飛ばす',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              height: 1,
+              color: _hovered ? _labelHovered : _label,
+            ),
           ),
         ),
       ),

@@ -5,6 +5,7 @@
 
 import 'dart:convert';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/test/test_flutter_secure_storage_platform.dart';
 import 'package:flutter_secure_storage_platform_interface/flutter_secure_storage_platform_interface.dart';
@@ -695,6 +696,62 @@ void main() {
     expect(speechInputService.stopCalled, isFalse);
     expect(find.text('未採点'), findsOneWidget);
     expect(historyService.drillHistory, hasLength(1));
+  });
+
+  testWidgets('飛ばす導線はhoverで背景を敷かず、文字と下線だけ濃くなる', (tester) async {
+    final client = MockClient((request) async {
+      fail('この検証では通信しない');
+    });
+    final geminiService = GeminiService(
+      settingsService: settings,
+      client: client,
+    );
+
+    await tester.pumpWidget(
+      buildApp(
+        sentences: [_sentence(1)],
+        geminiService: geminiService,
+        speechInputService: FakeSpeechInputService(),
+      ),
+    );
+    await tester.pump();
+
+    final label = find.text('わからないので飛ばす');
+    // 下線は下ボーダーで引いているので、文字を包むContainerの装飾から色を読む。
+    Color underlineColor() {
+      final decorated = tester.widget<Container>(
+        find.ancestor(of: label, matching: find.byType(Container)).first,
+      );
+      final border = (decorated.decoration! as BoxDecoration).border!;
+      return border.bottom.color;
+    }
+
+    expect(tester.widget<Text>(label).style!.color, const Color(0xFF5F6368));
+    expect(underlineColor(), const Color(0xFFB9BDC4));
+
+    // ボタンのoverlayは全state透明（テーマ既定のhighlightへフォールバックさせない）
+    final style = tester
+        .widget<TextButton>(
+          find.ancestor(of: label, matching: find.byType(TextButton)),
+        )
+        .style!;
+    for (final state in [
+      WidgetState.hovered,
+      WidgetState.focused,
+      WidgetState.pressed,
+    ]) {
+      expect(style.overlayColor!.resolve({state}), Colors.transparent);
+    }
+
+    // マウスを載せると文字・下線だけが濃くなる
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    await mouse.addPointer(location: Offset.zero);
+    addTearDown(mouse.removePointer);
+    await mouse.moveTo(tester.getCenter(label));
+    await tester.pump();
+
+    expect(tester.widget<Text>(label).style!.color, const Color(0xFF212121));
+    expect(underlineColor(), const Color(0xFF757575));
   });
 
   testWidgets('セッション中に戻ると中断確認ダイアログが出る', (tester) async {
