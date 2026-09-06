@@ -193,6 +193,10 @@ class _DrillFeedbackViewState extends State<DrillFeedbackView> {
                       withRuby: withRuby,
                       spokenReading: widget.spokenReading,
                       correctedReading: feedback.correctedReading,
+                      // 語区切り（添削応答）。差分のハイライトを1文字ずつでは
+                      // なく単語ずつの箱にする
+                      spokenWords: feedback.spokenWords,
+                      correctedWords: feedback.correctedWords,
                       toneNotes: toneNotes ?? const [],
                       correctedTrailing: SpeakButton(
                         speaking: _speaking == feedback.corrected,
@@ -536,6 +540,8 @@ class _DiffCard extends StatelessWidget {
     this.withRuby = false,
     this.spokenReading,
     this.correctedReading,
+    this.spokenWords,
+    this.correctedWords,
     this.toneNotes = const [],
     this.correctedTrailing,
   });
@@ -551,6 +557,12 @@ class _DiffCard extends StatelessWidget {
 
   /// 修正版の標準ピンイン（修正版のルビ）
   final String? correctedReading;
+
+  /// あなたの発話の語区切り（差分のハイライトを単語ずつの箱にする）
+  final List<WordUnit>? spokenWords;
+
+  /// 修正版の語区切り＋語ごとのピンイン（箱を単語ずつにし、ルビも語ごとに割り当てる）
+  final List<WordUnit>? correctedWords;
 
   /// 声調の気づき。該当する漢字のルビを赤にし、下に期待された声調を添える
   final List<ToneNote> toneNotes;
@@ -583,6 +595,7 @@ class _DiffCard extends StatelessWidget {
             _RubyDiffText(
               segments: spokenSegments,
               reading: spokenReading,
+              words: spokenWords,
               toneNotes: toneNotes,
               changedColor: AppColors.scoreLow,
               changedBackground: AppColors.scoreLowSurface,
@@ -617,6 +630,7 @@ class _DiffCard extends StatelessWidget {
                     _RubyDiffText(
                       segments: correctedSegments,
                       reading: correctedReading,
+                      words: correctedWords,
                       changedColor: AppColors.scoreGood,
                       changedBackground: AppColors.scoreGoodSurface,
                     )
@@ -690,22 +704,32 @@ class _DiffCard extends StatelessWidget {
 /// [DiffSegment]列を、漢字ごとに「ピンインのルビ＋漢字」のセルとして描画する
 /// （中国語用。デザイン `SpeakingApp-Chinese` のルビ表示）。
 ///
-/// [reading]の音節を[alignReading]で各漢字に割り当てる。漢字数と音節数が
-/// 合わない場合はルビ無しで漢字だけを並べる（位置のずれたルビを出さない）。
-/// 差分のある文字は[changedColor]／[changedBackground]で強調し、
-/// [toneNotes]に該当する文字はルビを赤にして下段に期待された声調を添える。
+/// ルビは[words]（語ごとのピンイン）があれば語ごとに、無ければ[reading]を
+/// 文全体で各漢字に割り当てる（`utils/pinyin.dart`）。漢字数と音節数が
+/// 合わない範囲はルビ無しで漢字だけを並べる（位置のずれたルビを出さない）。
+///
+/// 差分のある文字は[changedColor]／[changedBackground]で強調し、隣り合う
+/// 差分は1つの箱にまとめる（[groupDiffSegments]。[words]があれば単語ずつ、
+/// 無ければ連続する差分ごと）。[toneNotes]に該当する文字はルビを赤にして
+/// 下段に期待された声調を添える。
 class _RubyDiffText extends StatelessWidget {
   const _RubyDiffText({
     required this.segments,
     required this.reading,
     required this.changedColor,
     required this.changedBackground,
+    this.words,
     this.toneNotes = const [],
     this.changedDecoration,
   });
 
   final List<DiffSegment> segments;
   final String? reading;
+
+  /// この側の文の語区切り（中国語の添削応答が返す。無ければ null）。
+  /// 差分の箱を単語ずつに切るのと、修正版のルビの割り当てに使う。
+  final List<WordUnit>? words;
+
   final Color changedColor;
   final Color changedBackground;
   final List<ToneNote> toneNotes;
@@ -714,32 +738,67 @@ class _RubyDiffText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = segments.map((s) => s.text).toList();
-    final readings = reading == null
-        ? null
-        : alignReading(tokens: tokens, reading: reading!);
+    final words = this.words;
+    final reading = this.reading;
+    // 語ごとのピンインがあるときはそちらを優先する（合わない語だけルビが
+    // 落ちる）。無い・使えないときだけ文全体のピンインで割り当てる。
+    final readings =
+        (words == null
+            ? null
+            : alignWordReadings(tokens: tokens, words: words)) ??
+        (reading == null
+            ? null
+            : alignReading(tokens: tokens, reading: reading));
     // あなたの発話のルビは聞き取ったピンインの音節位置（spokenIndex）で引く
     final notesBySyllable = {for (final n in toneNotes) n.spokenIndex: n};
+    final groups = groupDiffSegments(
+      segments,
+      words: words?.map((w) => w.text).toList(),
+    );
+
+    // セルの描画情報を先に組み立てる。隣のセルが同じ箱（同じまとまり・同じ
+    // 背景色）かどうかで角丸と隙間を決め、単語ぶんの箱を1つに繋ぐ。
+    final cells = <_RubyCellSpec>[];
+    var index = 0;
+    for (var group = 0; group < groups.length; group++) {
+      for (final segment in groups[group].segments) {
+        final ruby = readings?[index];
+        cells.add(
+          _spec(
+            group: group,
+            segment: segment,
+            ruby: ruby,
+            note: ruby == null ? null : notesBySyllable[ruby.syllableIndex],
+          ),
+        );
+        index++;
+      }
+    }
+
+    bool joined(int left, int right) =>
+        left >= 0 &&
+        right < cells.length &&
+        cells[left].background != null &&
+        cells[left].group == cells[right].group &&
+        cells[left].background == cells[right].background;
 
     // 上揃え: ルビ行の高さは全セル同じなので漢字が横一列に揃う。
     // 期待声調の下段があるセルだけ下にぶら下がる（他の漢字を持ち上げない）。
     return Wrap(
-      spacing: 2,
       runSpacing: 6,
       crossAxisAlignment: WrapCrossAlignment.start,
       children: [
-        for (var i = 0; i < segments.length; i++)
-          _rubyCell(
-            segment: segments[i],
-            ruby: readings?[i],
-            note: readings?[i] == null
-                ? null
-                : notesBySyllable[readings![i]!.syllableIndex],
+        for (var i = 0; i < cells.length; i++)
+          cells[i].toCell(
+            joinLeft: joined(i - 1, i),
+            joinRight: joined(i, i + 1),
           ),
       ],
     );
   }
 
-  Widget _rubyCell({
+  _RubyCellSpec _spec({
+    required int group,
     required DiffSegment segment,
     required TokenReading? ruby,
     required ToneNote? note,
@@ -754,7 +813,8 @@ class _RubyDiffText extends StatelessWidget {
         : changed
         ? changedColor
         : AppColors.textSecondary;
-    return _RubyCell(
+    return _RubyCellSpec(
+      group: group,
       text: segment.text,
       ruby: ruby?.reading,
       rubyColor: rubyColor,
@@ -781,6 +841,51 @@ class _RubyDiffText extends StatelessWidget {
   }
 }
 
+/// [_RubyDiffText]が組み立てるセル1つ分の描画情報。
+///
+/// [group]が同じで背景色も同じセルが隣り合うときは、間の隙間を詰めて
+/// 角丸を外側だけに寄せ、1つの箱（＝単語ぶんのハイライト）に見せる。
+@immutable
+class _RubyCellSpec {
+  const _RubyCellSpec({
+    required this.group,
+    required this.text,
+    required this.ruby,
+    required this.rubyColor,
+    required this.rubyBelow,
+    required this.textColor,
+    required this.background,
+    required this.decoration,
+  });
+
+  /// 同じ箱にまとめる単位（[groupDiffSegments]が返すまとまりの添字）
+  final int group;
+
+  final String text;
+  final String? ruby;
+  final Color rubyColor;
+  final String? rubyBelow;
+  final Color textColor;
+  final Color? background;
+  final TextDecoration? decoration;
+
+  /// 隣のセルと箱を繋ぐかどうかを受け取ってセルを組み立てる。
+  Widget toCell({required bool joinLeft, required bool joinRight}) => _RubyCell(
+    text: text,
+    ruby: ruby,
+    rubyColor: rubyColor,
+    rubyBelow: rubyBelow,
+    textColor: textColor,
+    background: background,
+    decoration: decoration,
+    borderRadius: BorderRadius.horizontal(
+      left: Radius.circular(joinLeft ? 0 : 4),
+      right: Radius.circular(joinRight ? 0 : 4),
+    ),
+    gapAfter: joinRight ? 0 : 2,
+  );
+}
+
 /// ピンインのルビ付き1文字分。ルビ（上）・漢字・期待声調（下、任意）を縦に並べる。
 class _RubyCell extends StatelessWidget {
   const _RubyCell({
@@ -791,6 +896,8 @@ class _RubyCell extends StatelessWidget {
     this.rubyBelow,
     this.background,
     this.decoration,
+    this.borderRadius = const BorderRadius.all(Radius.circular(4)),
+    this.gapAfter = 0,
   });
 
   final String text;
@@ -801,16 +908,20 @@ class _RubyCell extends StatelessWidget {
   final Color? background;
   final TextDecoration? decoration;
 
+  /// 背景の角丸。隣のセルと同じ箱に繋げる側は0にする
+  final BorderRadius borderRadius;
+
+  /// 右隣のセルとの隙間。同じ箱に繋げるときは0にして背景を途切れさせない
+  final double gapAfter;
+
   @override
   Widget build(BuildContext context) {
     return Container(
+      margin: EdgeInsets.only(right: gapAfter),
       padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 2),
       decoration: background == null
           ? null
-          : BoxDecoration(
-              color: background,
-              borderRadius: BorderRadius.circular(4),
-            ),
+          : BoxDecoration(color: background, borderRadius: borderRadius),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

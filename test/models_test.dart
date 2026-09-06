@@ -140,6 +140,59 @@ void main() {
       expect(result.language, 'en');
       expect(result.toneNotes, isNull);
       expect(result.feedback.correctedReading, isNull);
+      expect(result.feedback.correctedWords, isNull);
+      expect(result.feedback.spokenWords, isNull);
+    });
+
+    test('語区切り（corrected_words / spoken_words）を含めてroundtripできる', () {
+      const feedback = CompositionFeedback(
+        score: 80,
+        isAcceptable: true,
+        corrected: '我要水。',
+        correctedWords: [
+          WordUnit(text: '我', reading: 'wǒ'),
+          WordUnit(text: '要', reading: 'yào'),
+          WordUnit(text: '水', reading: 'shuǐ'),
+          WordUnit(text: '。', reading: ''),
+        ],
+        spokenWords: [
+          WordUnit(text: '我'),
+          WordUnit(text: '要'),
+          WordUnit(text: '睡'),
+        ],
+        correctedReading: 'wǒ yào shuǐ',
+        explanationJa: '解説',
+        comparisonJa: '比較',
+      );
+
+      final roundTripped = CompositionFeedback.fromJson(feedback.toJson());
+
+      expect(roundTripped, feedback);
+      expect(roundTripped.correctedWords!.first.reading, 'wǒ');
+      // 発話側はピンインを持たない
+      expect(roundTripped.spokenWords!.first.reading, isNull);
+    });
+
+    test('corrected_reading が無い応答では語ごとのピンインを繋いで読みにする', () {
+      final feedback = CompositionFeedback.fromJson(const {
+        'score': 80,
+        'is_acceptable': true,
+        'corrected': '我要水。',
+        'corrected_words': [
+          {'hanzi': '我要', 'pinyin': 'wǒ yào'},
+          {'hanzi': '水', 'pinyin': 'shuǐ'},
+          {'hanzi': '。', 'pinyin': ''},
+        ],
+        'spoken_words': ['我要', '睡'],
+        'explanation_ja': '',
+        'comparison_ja': '',
+      });
+
+      expect(feedback.correctedReading, 'wǒ yào shuǐ');
+      expect(feedback.spokenWords, const [
+        WordUnit(text: '我要'),
+        WordUnit(text: '睡'),
+      ]);
     });
   });
 

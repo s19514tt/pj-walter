@@ -4,10 +4,12 @@
 // から取っている。語ごとに連結された表記・スペース区切り・儿化・jue/xue・軽声を含む。
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pj_walter/models/drill_result.dart';
 import 'package:pj_walter/models/learning_language.dart';
 import 'package:pj_walter/models/sentence.dart';
 import 'package:pj_walter/models/tone_note.dart';
 import 'package:pj_walter/utils/pinyin.dart';
+import 'package:pj_walter/utils/word_diff.dart';
 
 List<String> _bases(String pinyin) =>
     parsePinyinSyllables(pinyin).map((s) => s.base).toList();
@@ -502,6 +504,76 @@ void main() {
       expect(toneMarked('dianr', 3), 'diǎnr');
       expect(toneMarked('er', 4), 'èr');
       expect(toneMarked('ma', neutralTone), 'ma');
+    });
+  });
+
+  group('alignWordReadings', () {
+    List<String> tokens(String text) =>
+        diffWords(text, text).map((s) => s.text).toList();
+
+    test('語ごとにルビを割り当てる', () {
+      final readings = alignWordReadings(
+        tokens: tokens('我要水。'),
+        words: const [
+          WordUnit(text: '我要', reading: 'wǒ yào'),
+          WordUnit(text: '水', reading: 'shuǐ'),
+          WordUnit(text: '。', reading: ''),
+        ],
+      )!;
+
+      expect(readings.map((r) => r?.reading), ['wǒ', 'yào', 'shuǐ', null]);
+    });
+
+    test('音節数が合わない語だけルビが落ちる（ほかの語は残る）', () {
+      final readings = alignWordReadings(
+        tokens: tokens('请重新说明'),
+        words: const [
+          WordUnit(text: '请', reading: 'qǐng'),
+          WordUnit(text: '重新', reading: 'chóng xīn'),
+          // 1音節多い
+          WordUnit(text: '说明', reading: 'shuō míng bái'),
+        ],
+      )!;
+
+      expect(readings.map((r) => r?.reading), [
+        'qǐng',
+        'chóng',
+        'xīn',
+        null,
+        null,
+      ]);
+    });
+
+    test('儿化は語の中でも「点」と「儿」に分けて付く', () {
+      final readings = alignWordReadings(
+        tokens: tokens('早点儿'),
+        words: const [WordUnit(text: '早点儿', reading: 'zǎo diǎnr')],
+      )!;
+
+      expect(readings.map((r) => r?.reading), ['zǎo', 'diǎn', 'r']);
+    });
+
+    test('語を繋いだ文字列が本文と違えば null（呼び出し側は文全体の割り当てに戻す）', () {
+      expect(
+        alignWordReadings(
+          tokens: tokens('我要水'),
+          words: const [WordUnit(text: '我要', reading: 'wǒ yào')],
+        ),
+        isNull,
+      );
+    });
+
+    test('ピンインを持たない語区切り（あなたの発話側）では null', () {
+      expect(
+        alignWordReadings(
+          tokens: tokens('我要水'),
+          words: const [
+            WordUnit(text: '我要'),
+            WordUnit(text: '水'),
+          ],
+        ),
+        isNull,
+      );
     });
   });
 }

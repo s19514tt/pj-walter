@@ -138,3 +138,86 @@ final _standalone = RegExp(
   r'[぀-ヿ㐀-䶿一-鿿豈-﫿가-힯]'
   r'|[　-〿！-／：-＠]',
 );
+
+/// 差分表示のまとまり（ハイライトの箱1つ分）。
+///
+/// [DiffSegment]は中国語では漢字1文字ずつになるため、そのまま色を付けると
+/// 1文字ごとに箱が並ぶ。連続する同じ種別のセグメントをまとめ、単語の境界で
+/// 切り直したものがこのまとまりで、表示は箱1つになる。
+@immutable
+class DiffGroup {
+  const DiffGroup({required this.type, required this.segments});
+
+  /// このまとまりの差分種別（中の[segments]はすべて同じ種別）
+  final DiffSegmentType type;
+
+  /// まとまりに入るセグメント（元の順序のまま）
+  final List<DiffSegment> segments;
+
+  /// 差分（削除・追加）のまとまりか
+  bool get changed => type != DiffSegmentType.same;
+
+  /// まとまり全体のテキスト
+  String get text => segments.map((s) => s.text).join();
+
+  @override
+  String toString() => 'DiffGroup(${type.name}, "$text")';
+}
+
+/// 片側ぶんの[segments]（[diffWords]の結果から`added`または`removed`を
+/// 除いたもの）を、表示上のまとまり（[DiffGroup]）に切り分ける。
+///
+/// - 差分（削除・追加）のセグメントは、連続していれば1つのまとまりにする
+/// - [words]（この側の文の語区切り）があれば、語の境界でまとまりを切る。
+///   結果として差分のハイライトは1文字ずつではなく単語ずつの箱になる
+/// - 差分の無いセグメントは1つずつのまとまりにする（背景を付けないため、
+///   まとめても見た目が変わらない）
+///
+/// [words]を繋いだ文字列がセグメントを繋いだ文字列と一致しないとき
+/// （モデルが語区切りを取り違えたなど）は語の境界を使わない。ずれた位置で
+/// 切るくらいなら、連続する差分をひとまとまりにするだけにとどめる。
+List<DiffGroup> groupDiffSegments(
+  List<DiffSegment> segments, {
+  List<String>? words,
+}) {
+  final boundaries = _wordBoundaries(segments, words);
+  final groups = <List<DiffSegment>>[];
+  var offset = 0;
+  for (final segment in segments) {
+    final atWordBoundary = boundaries?.contains(offset) ?? false;
+    final previous = groups.isEmpty ? null : groups.last;
+    final continues =
+        previous != null &&
+        previous.first.type == segment.type &&
+        segment.type != DiffSegmentType.same &&
+        !atWordBoundary;
+    if (continues) {
+      previous.add(segment);
+    } else {
+      groups.add([segment]);
+    }
+    offset += _withoutWhitespace(segment.text).length;
+  }
+  return [
+    for (final group in groups)
+      DiffGroup(type: group.first.type, segments: List.unmodifiable(group)),
+  ];
+}
+
+/// [words]の切れ目を、[segments]を繋いだ文字列の中の位置（空白を除いた
+/// 文字数）で返す。語区切りが文と一致しなければ null。
+Set<int>? _wordBoundaries(List<DiffSegment> segments, List<String>? words) {
+  if (words == null || words.isEmpty) return null;
+  final joinedWords = words.map(_withoutWhitespace).join();
+  final joinedSegments = segments.map((s) => _withoutWhitespace(s.text)).join();
+  if (joinedWords.isEmpty || joinedWords != joinedSegments) return null;
+  final boundaries = <int>{};
+  var offset = 0;
+  for (final word in words) {
+    boundaries.add(offset);
+    offset += _withoutWhitespace(word).length;
+  }
+  return boundaries;
+}
+
+String _withoutWhitespace(String text) => text.replaceAll(_whitespace, '');

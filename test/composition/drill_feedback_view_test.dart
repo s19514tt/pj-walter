@@ -577,4 +577,138 @@ void main() {
       expect(find.text('気づいた点'), findsNothing);
     });
   });
+
+  group('差分のハイライトの単位', () {
+    // 模範解答（这里）と修正版（建筑物前面）で漢字が重ならないようにして、
+    // 修正版のセルだけを find.text で一意に取れるようにしている。
+    Sentence sentence() => const Sentence(
+      id: 'z3-020',
+      ja: '建物の前で写真を撮ろう。',
+      target: '我在这里拍照。',
+      theme: 'daily',
+      tips: 'tips',
+      level: 3,
+      reading: 'Wǒ zài zhèli pāizhào',
+    );
+
+    CompositionFeedback feedback({
+      List<WordUnit>? correctedWords,
+      List<WordUnit>? spokenWords,
+    }) => CompositionFeedback(
+      score: 70,
+      isAcceptable: true,
+      corrected: '我在建筑物前面拍照。',
+      correctedWords: correctedWords,
+      spokenWords: spokenWords,
+      explanationJa: '解説',
+      comparisonJa: '',
+    );
+
+    List<WordUnit> correctedWords({String jianzhuwu = 'jiàn zhù wù'}) => [
+      const WordUnit(text: '我', reading: 'wǒ'),
+      const WordUnit(text: '在', reading: 'zài'),
+      WordUnit(text: '建筑物', reading: jianzhuwu),
+      const WordUnit(text: '前面', reading: 'qián miàn'),
+      const WordUnit(text: '拍照', reading: 'pāi zhào'),
+      const WordUnit(text: '。', reading: ''),
+    ];
+
+    Future<void> pumpView(WidgetTester tester, CompositionFeedback f) async {
+      await _tall(tester);
+      await tester.pumpWidget(
+        _wrap(
+          DrillFeedbackView(
+            sentence: sentence(),
+            profile: LanguageProfile.chinese,
+            spoken: '我拍照',
+            spokenReading: null,
+            feedback: f,
+            onNext: () {},
+            onRetry: () {},
+            ttsService: FakeTtsService(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    /// 文字[char]のセルの背景（角丸と右の隙間で箱の繋がりが分かる）。
+    Container cell(WidgetTester tester, String char) =>
+        tester.widget<Container>(
+          find
+              .ancestor(of: find.text(char), matching: find.byType(Container))
+              .first,
+        );
+
+    BorderRadius radiusOf(WidgetTester tester, String char) =>
+        ((cell(tester, char).decoration! as BoxDecoration).borderRadius!)
+            as BorderRadius;
+
+    double gapOf(WidgetTester tester, String char) =>
+        (cell(tester, char).margin! as EdgeInsets).right;
+
+    testWidgets('語区切りがあると差分のハイライトは単語ごとに1つの箱になる', (tester) async {
+      await pumpView(
+        tester,
+        feedback(
+          correctedWords: correctedWords(),
+          spokenWords: const [
+            WordUnit(text: '我'),
+            WordUnit(text: '拍照'),
+          ],
+        ),
+      );
+
+      // 建筑物: 左端だけ左が丸く、中は角無し、右端だけ右が丸い＝1つの箱
+      expect(
+        radiusOf(tester, '建'),
+        const BorderRadius.horizontal(left: Radius.circular(4)),
+      );
+      expect(radiusOf(tester, '筑'), BorderRadius.zero);
+      expect(
+        radiusOf(tester, '物'),
+        const BorderRadius.horizontal(right: Radius.circular(4)),
+      );
+      // 箱の中は隙間なしで繋がり、語の切れ目では隙間が空く
+      expect(gapOf(tester, '建'), 0);
+      expect(gapOf(tester, '物'), 2);
+      // 次の語「前面」は別の箱として始まる
+      expect(
+        radiusOf(tester, '前'),
+        const BorderRadius.horizontal(left: Radius.circular(4)),
+      );
+    });
+
+    testWidgets('語区切りが無い（旧データ）ときは連続する差分がまとめて1つの箱になる', (tester) async {
+      await pumpView(tester, feedback());
+
+      // 在建筑物前面 がひと続きの箱（左端＝在、右端＝面）
+      expect(
+        radiusOf(tester, '在'),
+        const BorderRadius.horizontal(left: Radius.circular(4)),
+      );
+      expect(radiusOf(tester, '建'), BorderRadius.zero);
+      expect(
+        radiusOf(tester, '面'),
+        const BorderRadius.horizontal(right: Radius.circular(4)),
+      );
+    });
+
+    testWidgets('修正版のルビは語ごとに割り当てられ、合わない語だけ落ちる', (tester) async {
+      await pumpView(tester, feedback(correctedWords: correctedWords()));
+      expect(find.text('jiàn'), findsOneWidget);
+      expect(find.text('qián'), findsOneWidget);
+
+      // 「建筑物」のピンインだけ音節数が合わない場合
+      await pumpView(
+        tester,
+        feedback(correctedWords: correctedWords(jianzhuwu: 'jiàn zhù')),
+      );
+      expect(find.text('jiàn'), findsNothing);
+      expect(find.text('zhù'), findsNothing);
+      // ほかの語のルビは残る（文全体のルビが消えない）
+      expect(find.text('qián'), findsOneWidget);
+      expect(find.text('miàn'), findsOneWidget);
+    });
+  });
 }

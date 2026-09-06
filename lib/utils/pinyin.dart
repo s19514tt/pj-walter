@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../models/drill_result.dart';
 import '../models/learning_language.dart';
 import '../models/sentence.dart';
 import '../models/tone_note.dart';
@@ -232,6 +233,55 @@ List<TokenReading?>? alignReading({
     next++;
   }
   if (next != syllables.length) return null;
+  return out;
+}
+
+/// 語ごとにピンインが分かれているとき（添削応答の `corrected_words`）の
+/// ルビ割り当て。[tokens]と同じ長さのルビ列を返す。
+///
+/// [alignReading]は文全体で漢字数と音節数が合わないとルビを丸ごと落とすが、
+/// こちらは語ごとに突き合わせるので、合わない語だけルビ無しにできる
+/// （モデルのピンインが1音節ずれただけで修正版のルビが全部消えるのを防ぐ）。
+/// 語の中でしか位置を見ないので、ずれたルビが出ることはない。
+///
+/// 語を繋いだ文字列が[tokens]を繋いだものと一致しないとき、また語の境界が
+/// トークンの途中に来るときは null（呼び出し側は[alignReading]に戻す）。
+///
+/// 返り値の[TokenReading.syllableIndex]は**語の中での位置**なので、
+/// 声調の気づき（あなたの発話）の突き合わせには使えない。
+List<TokenReading?>? alignWordReadings({
+  required List<String> tokens,
+  required List<WordUnit> words,
+}) {
+  // ピンインを持たない語区切り（あなたの発話側）ではルビを決められない
+  if (!words.any((w) => w.reading != null && w.reading!.trim().isNotEmpty)) {
+    return null;
+  }
+  final texts = [for (final word in words) word.text.replaceAll(_space, '')];
+  final joined = tokens.join();
+  if (joined.isEmpty || joined != texts.join()) return null;
+
+  final out = List<TokenReading?>.filled(tokens.length, null);
+  var next = 0;
+  for (var w = 0; w < words.length; w++) {
+    final start = next;
+    var length = 0;
+    while (length < texts[w].length && next < tokens.length) {
+      length += tokens[next].length;
+      next++;
+    }
+    // 語の境界がトークンの途中に来た（語区切りとトークン化が食い違う）
+    if (length != texts[w].length) return null;
+    final reading = words[w].reading;
+    if (reading == null || reading.trim().isEmpty) continue;
+    final slice = tokens.sublist(start, next);
+    final aligned = alignReading(tokens: slice, reading: reading);
+    // 合わない語はルビ無し（この語だけ落とす）
+    if (aligned == null) continue;
+    for (var i = 0; i < slice.length; i++) {
+      out[start + i] = aligned[i];
+    }
+  }
   return out;
 }
 
@@ -564,6 +614,7 @@ String toneMarked(String base, int tone) {
 bool _isDigit(String s) =>
     s.length == 1 && s.codeUnitAt(0) >= 0x31 && s.codeUnitAt(0) <= 0x35;
 
+final _space = RegExp(r'\s');
 final _cjk = RegExp(r'[㐀-䶿一-鿿]');
 final _cjkToken = RegExp(r'^[㐀-䶿一-鿿]$');
 
