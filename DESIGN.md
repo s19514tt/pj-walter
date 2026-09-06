@@ -23,12 +23,14 @@ LLMに発音を評価させると根拠のない指摘（ハルシネーショ�
 
 ### 学習言語の抽象化
 
-言語で分岐する設定は `models/learning_language.dart` の `LanguageProfile` に集約する。
-言語を増やすときは `LanguageProfile.values` に1件足し、教材アセットを置くだけで済むようにしてある。
-`LanguageProfile` が持つもの: 言語コード / 表示名 / トレーニングの呼び名 / 教材アセットのディレクトリ /
-デッキのレベル一覧 / 発音表記のラベル（中国語のみ「ピンイン」）/ 分かち書きする言語かどうか。
+言語で分岐する設定は `core/language/learning_language.dart` の `LanguageProfile` に集約する。
+言語を増やすときは `LanguageProfile.values` に1件足し、`LanguageSupport` の実装と教材アセットを置き、ARB の
+`select` キーに表示名を足すだけで済むようにしてある。
+`LanguageProfile` が持つもの: 言語コード / 教材アセットのディレクトリ / デッキのレベル一覧 / `LanguageSupport`
+（分かち書きする言語か / 読み表記の種類（中国語のみピンイン）/ TTS ボイス / プロンプト用の英語名）。
+表示名（言語名・トレーニングの呼び名・デッキ名・読み表記のラベル）は ARB の `select` キーで UI 言語ごとに持つ。
 
-「分かち書きするか」は差分表示に効く。`utils/word_diff.dart` は空白分割ではなく
+「分かち書きするか」は差分表示に効く。`core/utils/word_diff.dart` は空白分割ではなく
 CJK文字を1文字1トークンとして切るため、中国語でも語レベルに近い差分が出る
 （空白分割だと文全体が1トークンになり「全消し・全追加」になってしまう）。
 差分の**比較**は1文字ずつのままで、**表示**だけ `groupDiffSegments()` で単語ごとの
@@ -46,74 +48,190 @@ CJK文字を1文字1トークンとして切るため、中国語でも語レベ
 ## 技術スタック
 
 - Flutter (stable 3.44) / Dart 3。対応: Android / iOS / Web（検証は analyze・test・web build）
-- 状態管理: `provider` + `ChangeNotifier`（Riverpod/BLoC は使わない）
-- ルーティング: 素の `Navigator`（go_router は使わない）
-- ローカルDB: `hive` / `hive_flutter`（コード生成なし、`Box<Map>` 相当で Map を格納）
-- APIキー保存: `flutter_secure_storage`
+- 状態管理: **signals（`signals_flutter`）**。`provider` / `ChangeNotifier` は使わない（全廃済み）。
+  画面ごとの Store が `signal` / `computed` を持ち、UI は `SignalBuilder` で購読する
+  （signals_flutter 7 では `Watch` が deprecated で `SignalBuilder` に委譲するだけなので、直接 `SignalBuilder` を使う）
+- DI: **get_it によるコンポジションルート**（`lib/core/di/`）。Store へはコンストラクタ注入する
+- モデル: **freezed + json_serializable**（生成物はコミットする。後述）
+- i18n: **flutter_localizations + ARB（gen-l10n）**。UI 文言は日本語も含めてすべて ARB 経由
+- ルーティング: 素の `Navigator`（go_router は認証リダイレクトが必要になる次フェーズで検討）
+- ローカルDB: `hive` / `hive_flutter`（コード生成なし、`Box<Map>` 相当で DTO の Map を格納）
+- APIキー保存: `flutter_secure_storage`（次フェーズでサーバ側に集約され、設定画面から消える）
 - 音声認識: `record`（録音→Gemini音声認識）のみ。端末STT（speech_to_text）はPR17で廃止
 - 読み上げ: Gemini TTS（`gemini-3.1-flash-tts-preview`）で音声生成し、`audioplayers` で再生
 - HTTP: `http`
 - グラフ: `fl_chart`
 - その他: `intl`, `uuid`
+- dev: `build_runner`, `freezed`, `json_serializable`, `widgetbook`, `flutter_lints`
 
 ## ディレクトリ構成
 
 ```
 lib/
-  main.dart                 # Hive初期化、Provider登録、MaterialApp
-  theme/app_theme.dart      # テーマ定義（色・タイポ・コンポーネントテーマを全て集約）
-  models/                   # 純Dartモデル（fromJson/toJson を持つ）
-    sentence.dart           # 教材文
-    topic.dart              # 独り言のお題
-    drill_result.dart       # 口頭英作文の1問の結果＋添削（中国語は声調の気づき toneNotes も持つ）
-    tone_note.dart          # 声調の気づき1件（音節位置・期待/実測のピンインと声調番号）
-    token_usage.dart        # Gemini APIのトークン使用量（usageMetadata由来）
-    monologue_result.dart   # 独り言1回の結果＋添削
-    srs_item.dart           # SRS復習アイテム
-    phrase.dart             # フレーズ帳エントリ
-  services/
-    settings_service.dart   # 設定の読み書き（ChangeNotifier）
-    gemini_service.dart     # Gemini REST クライアント（結果＋TokenUsageを返す）
-    gemini_pricing.dart     # gemini-3.8-flash の単価とコスト計算
-    speech_input_service.dart # STT/録音の抽象化
-    tts_service.dart        # 読み上げ（TTS）の抽象化
-    sentence_repository.dart  # 教材JSONのロード・フィルタ
-    history_service.dart    # 履歴・SRS・フレーズ帳・日次統計の永続化（ChangeNotifier）
-    drill_question_selector.dart  # 口頭英作文の出題選定ロジック
-    review_question_resolver.dart # SRSアイテム→出題文の解決
-  screens/
-    home_screen.dart        # ダッシュボード（ストリーク/今日の復習/開始ボタン、設定への導線）
-    shell.dart              # BottomNavigationBar のシェル（ホーム/学習/復習/記録の4タブ。設定はホームからpush）
-    training_menu_screen.dart # 学習タブ（口頭英作文/独り言英会話への導線）
-    composition/            # 口頭英作文（デッキ選択→ドリル→添削表示→まとめ）
-      deck_select_screen.dart
-      sentence_list_screen.dart
-      drill_screen.dart
-      drill_feedback_view.dart
-      drill_summary_screen.dart
-    monologue/              # 独り言英会話（お題選択→スピーキング→フィードバック）
-      topic_select_screen.dart
-      monologue_speak_screen.dart
-      monologue_feedback_screen.dart
-    review_screen.dart      # 復習タブ（今日の復習＋フレーズ帳）
-    stats_screen.dart       # 記録タブ
-    stats/                   # 記録タブの構成パーツ
-      streak_summary.dart
-      weekly_chart.dart
-      study_calendar.dart
-      history_section.dart
-    settings_screen.dart    # APIキー/独り言デフォルト時間（モデル・音声認識方式は固定表示）
-  widgets/                  # 共通ウィジェット（PrimaryButton, SecondaryButton, SectionHeader, AppCard, PillChip, SpeakButton 等）
-  utils/                    # 画面をまたいで使う小さなヘルパー
-    review_launcher.dart    # 「今日の復習」開始処理の共通ロジック（ホーム/復習タブ両方から利用）
-    score_colors.dart       # スコア(0-100)→表示色の変換
-    theme_labels.dart       # テーマ識別子(daily/business/travel)→日本語表示名
-    pinyin.dart             # ピンインの音節分割・声調抽出・声調差分（自前実装、外部パッケージ不使用）
-assets/data/
-  sentences_700.json        # TOEIC700点台 200文
-  sentences_800.json        # TOEIC800点台 200文
-  topics.json               # 独り言のお題
+  main.dart                   # Hive初期化 → configureDependencies() → runApp(App)
+  app.dart                    # MaterialApp（テーマ・ローカライズ・AppScope）
+  core/                       # feature をまたぐ土台。feature には依存しない（di/ だけは例外）
+    di/
+      injector.dart           # コンポジションルート。Hive box を開き各 feature の登録関数を呼ぶ
+      store_factory.dart      # StoreFactory（抽象）＋ AppScope（InheritedWidget）
+      get_it_store_factory.dart  # StoreFactory の get_it 実装（Store へコンストラクタ注入）
+    state/store.dart          # Store 基底クラス（signal / computed / effect の生成と一括破棄）
+    l10n/                     # app_ja.arb と gen-l10n の生成物、context.l10n 拡張
+    language/learning_language.dart  # LearningLanguage / LanguageProfile / LanguageSupport
+    domain/                   # feature をまたぐ値: TokenUsage, GeminiPricing, AppFailure
+    data/gemini_client.dart   # Gemini REST の共通トランスポート（次フェーズで削除）
+    theme/app_theme.dart      # テーマ定義（色・タイポ・コンポーネントテーマを全て集約）
+    widgets/                  # 共通ウィジェット（PrimaryButton, AppCard, CountdownRing, SpeakButton 等）
+    utils/                    # app_route, score_colors, word_diff, pcm_converter, wav_builder
+  features/
+    settings/                 # 学習言語・独り言デフォルト秒数・APIキー
+      domain/   app_settings.dart, settings_repository.dart
+      data/     hive_settings_repository.dart
+      presentation/ settings_store.dart, settings_screen.dart
+      settings_module.dart
+    content/                  # 教材・お題（Sentence / Topic）
+      domain/   sentence.dart, topic.dart, content_repository.dart
+      data/     asset_content_repository.dart, sentence_dto.dart, topic_dto.dart
+      content_module.dart
+    speech/                   # 文字起こし・読み上げ（録音／再生の抽象化も含む）
+      domain/   transcription_repository.dart, tts_repository.dart, speech_input_service.dart, tts_service.dart
+      data/     gemini_transcription_repository.dart, gemini_tts_repository.dart,
+                recorder_speech_input_service.dart, audio_player_tts_service.dart
+      speech_module.dart
+    composition/              # 口頭作文（デッキ選択→ドリル→添削表示→まとめ）
+      domain/   drill_result.dart（DrillResult / CompositionFeedback / WordUnit）, tone_note.dart,
+                correction_repository.dart, drill_history_repository.dart,
+                drill_question_selector.dart, record_drill_result.dart（UseCase）, pinyin.dart（声調比較）
+      data/     gemini_correction_repository.dart, hive_drill_history_repository.dart, *_dto.dart
+      presentation/ deck_select_{store,screen}.dart, sentence_list_{store,screen}.dart,
+                drill_{store,screen}.dart, drill_feedback_view.dart, drill_summary_{store,screen}.dart
+      composition_module.dart
+    monologue/                # 独り言（お題選択→スピーキング→フィードバック）
+      domain/   monologue_result.dart, monologue_review_repository.dart, monologue_history_repository.dart
+      data/     gemini_monologue_review_repository.dart, hive_monologue_history_repository.dart, *_dto.dart
+      presentation/ topic_select_{store,screen}.dart, monologue_speak_{store,screen}.dart,
+                monologue_feedback_{store,screen}.dart
+      monologue_module.dart
+    review/                   # SRS 復習キュー・フレーズ帳
+      domain/   srs_item.dart, phrase.dart, srs_repository.dart, phrase_repository.dart, review_question_resolver.dart
+      data/     hive_srs_repository.dart, hive_phrase_repository.dart, *_dto.dart
+      presentation/ review_store.dart, review_screen.dart, review_launcher.dart
+      review_module.dart
+    stats/                    # 日次統計・ストリーク・記録タブ
+      domain/   daily_stats.dart, study_stats_repository.dart
+      data/     hive_study_stats_repository.dart
+      presentation/ stats_store.dart, stats_screen.dart, streak_summary.dart, weekly_chart.dart,
+                study_calendar.dart, history_section.dart
+      stats_module.dart
+    home/presentation/        # shell.dart（BottomNavigationBar）, home_{store,screen}.dart, training_menu_screen.dart
+assets/data/en/, assets/data/zh/  # 教材・お題のJSON（言語ごと）
+widgetbook/                   # UIの状態一覧（fixtures/ をゴールデンテストと共有）
+docs/ROADMAP.md               # フェーズ計画
 ```
+
+## アーキテクチャ
+
+### レイヤと依存の向き
+
+feature-first のクリーンアーキテクチャ。各 feature は `domain` / `data` / `presentation` の3層に分ける。
+
+| 層 | 置くもの | 依存してよいもの |
+|---|---|---|
+| `domain` | Entity（freezed）、Repository インタフェース、UseCase、純粋なロジック | `core/domain`、`core/language`、他 feature の `domain` |
+| `data` | Repository 実装（Hive / Gemini / アセット）、DTO（json_serializable）、Entity⇔DTO 変換 | 自 feature と他 feature の `domain`、`core/data` |
+| `presentation` | Store（signals）、画面、feature 固有ウィジェット | 自 feature と他 feature の `domain`、`core/*` |
+
+- `presentation` は `data` を import しない（実装クラス名を画面が知らない）。実装の選択は
+  コンポジションルートだけが行う
+- `domain` は Flutter に依存しない（`package:flutter` を import しない。`signals_core` は可）
+- Entity は freezed の immutable クラス。**外部 I/O 用の DTO は `data/` に分け、`toEntity()` / `fromEntity()` で
+  相互変換する**。Gemini の応答スキーマや Hive の保存形式は DTO が知り、Entity は知らない
+  （次フェーズでリモート実装に差し替えるとき、DTO だけを入れ替えられるようにするため）
+- 学習言語で分岐する設定は `core/language/learning_language.dart` の `LanguageProfile` に集約する。
+  言語で変わる振る舞い（分かち書きの有無・読み表記の種類・TTS ボイス・プロンプト用の英語名）は
+  `LanguageSupport` インタフェースに閉じ込め、言語を足すときはこの実装を1つ足す。表示名は持たない（ARB。後述）
+
+### 次フェーズでサーバ実装に差し替わる継ぎ目
+
+外部サービスへの I/O は次の Repository インタフェース（`domain/`）に閉じ込めてある。**現在の実装は
+Gemini 直叩き・アセット読み込みで、次フェーズではここが丸ごと Rust バックエンド呼び出しに差し替わる。**
+UI・Store・UseCase はインタフェースだけを見ているので、差し替えは `data/` と `*_module.dart` の登録行だけで済む。
+
+| インタフェース | 現在の実装 | 役割 |
+|---|---|---|
+| `features/composition/domain/correction_repository.dart` `CorrectionRepository` | `GeminiCorrectionRepository` | 口頭作文の添削 |
+| `features/monologue/domain/monologue_review_repository.dart` `MonologueReviewRepository` | `GeminiMonologueReviewRepository` | 独り言のフィードバック |
+| `features/speech/domain/transcription_repository.dart` `TranscriptionRepository` | `GeminiTranscriptionRepository` | 音声の文字起こし |
+| `features/speech/domain/tts_repository.dart` `TtsRepository` | `GeminiTtsRepository` | 読み上げ音声の生成 |
+| `features/content/domain/content_repository.dart` `ContentRepository` | `AssetContentRepository` | 教材・お題の取得 |
+
+共通の HTTP トランスポート（認証ヘッダー・ステータス判定・空応答の再試行・`usageMetadata` の読み取り）は
+`lib/core/data/gemini_client.dart` の `GeminiClient` にあり、プロンプトと JSON スキーマは各 Gemini 実装の
+ファイルに置いてある。次フェーズではこれらをそのまま Rust 側へ移植し、アプリからは削除する。
+失敗は実装を問わず `core/domain/app_failure.dart` の `AppFailure(kind)` で表し、UI が `FailureKind` を ARB の
+文言に変換する（Repository が表示文言を持たない）。
+
+### DI（コンポジションルート）
+
+- `lib/core/di/injector.dart` の `configureDependencies()` が **唯一の組み立て場所**。Hive box を開き、
+  各 feature の登録関数（`lib/features/<機能>/<機能>_module.dart` の `registerXxx(GetIt)`）を順に呼ぶ
+- **get_it への登録・参照を行ってよいのは `lib/main.dart`、`lib/core/di/**`、各 feature の `*_module.dart` だけ。**
+  UI・Store・Repository から `GetIt` を直接参照することは禁止（`import 'package:get_it/get_it.dart'` を
+  それ以外のファイルに書かない）
+- Store は必要な Repository / Service を**コンストラクタ注入**で受け取る。画面は
+  `StoreFactory.of(context)`（`lib/core/di/store_factory.dart`。`AppScope` InheritedWidget 経由）で Store を組み立てる。
+  `StoreFactory` の get_it 実装（`GetItStoreFactory`）は `lib/core/di/` にあり、ここだけが get_it から依存を
+  取り出して Store のコンストラクタへ渡す
+- アプリ寿命のもの（Repository、`GeminiClient`）は get_it のシングルトン。
+  画面寿命の Store はシングルトンにせず、画面が生成・破棄する（下記ライフサイクル）
+- テストは `GetIt.asNewInstance()` にフェイクを登録し、`GetItStoreFactory` を `AppScope` に渡す
+  （`test/test_support/test_app.dart`）
+
+### signals のライフサイクル規約（全 Store で守る）
+
+放置した signal / effect はリークするため、次を規約とする。
+
+1. **Store は `lib/core/state/store.dart` の `Store` を継承する。** signal / computed / effect は必ず
+   `createSignal` / `createComputed` / `createEffect` / `createFutureSignal` で作る。これらは生成物を
+   Store に登録し、`Store.dispose()` が一括で破棄する（`effect` の cleanup も呼ぶ）。`dispose` 後の Store は使わない
+2. **画面スコープの Store は `State.initState` で `StoreFactory.of(context)` から生成し、`State.dispose` で
+   必ず `store.dispose()` を呼ぶ。** `build` の中で Store や signal を作らない。Store が `Timer` や
+   `SpeechInputService` のような外部リソースを持つときも `dispose` で解放する
+3. **アプリスコープの signal は Repository が持つ。** 一覧（履歴・SRS・フレーズ帳・設定）は Repository が
+   `ReadonlySignal` として公開し、書き込みのたびに更新する。Store はそれを `computed` で派生させる
+   だけで、コピーを持たない（画面をまたぐ更新が自動で伝わる）。Repository はアプリ寿命なので破棄しない
+4. **非同期の読み込み状態は `FutureSignal` / `AsyncState` に寄せる。** `loading` / `error` の bool を
+   画面に手書きしない。再読込は `reload()` / `refresh()`、依存 signal の変化による再実行は
+   `AsyncSignalOptions.dependencies`
+5. **UI は `SignalBuilder` の中でだけ `.value` を読む。** `build` の外（`initState` やコールバック）で
+   読むときは `peek()` / `untracked` を使い、意図しない購読を作らない。`effect` は Store の中だけで使い、
+   画面から `effect` を張らない
+6. Store は Flutter に依存してよい（`presentation` 層）が、`BuildContext` を保持しない。ナビゲーションや
+   SnackBar は画面側が Store のメソッドの戻り値・signal の変化を受けて行う
+
+### i18n（ARB）
+
+- 文言は `lib/core/l10n/app_ja.arb` に置く。`flutter gen-l10n`（`l10n.yaml`）が
+  `lib/core/l10n/app_localizations*.dart` を生成する。生成物はコミットする
+- UI は `context.l10n.xxx`（`lib/core/l10n/l10n.dart` の拡張）で参照する。**`lib/` に日本語の UI 文言を直書きしない**
+  （コメントは日本語でよい）。Store は文言を持たず、文言の選択に必要なデータ（言語コード・件数など）だけを公開する
+- 学習言語ごとの表示名（言語名・トレーニング名・デッキ名・読み表記名）は ARB の `select` キー
+  （`languageName` / `compositionTitle` / `monologueTitle` / `deckLevelLabel` / `readingLabel`）で表す。
+  UI 言語 × 学習言語の組み合わせを Dart に直書きしない
+- ゴールデンテストと Widgetbook はロケールを `ja` に固定する（`test/test_support/test_app.dart` の `localizedApp`）。
+  翻訳を追加しても画像が変わらないようにするため
+- Gemini へのリクエスト（`CorrectionRequest` 等）には `uiLocale`（解説を書く言語）と `learningLanguage`（採点対象の言語）を
+  明示的に渡す。プロンプト中の「日本語で」は `uiLocale` から決める
+
+### 生成物のコミット方針
+
+- freezed（`*.freezed.dart`）、json_serializable（`*.g.dart`）、gen-l10n（`lib/core/l10n/app_localizations*.dart`）の
+  生成物は**コミットする**。clone 直後に analyze・test・Widgetbook がそのまま動くこと、Pages 用ワークフローが
+  build_runner を持たなくてよいことを優先した
+- 変更したら `dart run build_runner build --delete-conflicting-outputs` と `flutter gen-l10n` を実行してコミットする。
+  CI（`.github/workflows/ci.yml`）は同じコマンドを実行して `git diff --exit-code` で**生成物が最新であること**を検証する
+- 生成物は `dart format` の検査対象に含めたまま通るようにする（freezed は `// dart format off` を先頭に出し、
+  json_serializable と gen-l10n は整形済みの出力を出す）。手で編集しない
 
 ## デザインシステム（Klook風）
 
@@ -139,11 +257,11 @@ assets/data/
 - `widgets/stat_badge.dart` の `StatBadge`: ピル型バッジ。`scoreXxxSurface`背景＋濃色（scoreXxx）文字（例: 「合格 🎉」「要復習」）
 - `widgets/bottom_cta_bar.dart` の `BottomCtaBar`: 画面下固定のCTAバー。白背景・上辺1px border・SafeArea内、左右16px/上下12pxパディング。`secondary`引数で上にテキストボタン等を追加可。スクロール本文側はこの分の下部余白を確保する
 - `widgets/mic_button.dart` の `MicButton`: ドリル・独り言共通のマイク操作ボタン（直径88px既定）。未録音時はprimaryGradient背景＋オレンジ影（blur16、alpha 0.2）。録音中は外側に広がる半透明オレンジのパルスリングを1.2秒周期で繰り返しアニメーション（無限ループ。テストで`pumpAndSettle()`を使うと収束しないため、明示的に`pump(duration)`で扱う）
-- `utils/app_route.dart` の `appRoute()`: 250msの軽いスライド（右から）＋フェードの`PageRouteBuilder`。主要な画面遷移で`MaterialPageRoute`の代わりに使用
+- `core/utils/app_route.dart` の `appRoute()`: 250msの軽いスライド（右から）＋フェードの`PageRouteBuilder`。主要な画面遷移で`MaterialPageRoute`の代わりに使用
 
 ### スピーキング画面のカウントダウンリング
 
-`widgets/countdown_ring.dart` の `CountdownRing`（口頭英作文のドリル・独り言スピーキング共通）:
+`core/widgets/countdown_ring.dart` の `CountdownRing`（口頭英作文のドリル・独り言スピーキング共通）:
 
 - 200×200のボックスに半径`size * 0.45`（＝直径180）・線幅8のリング。トラックは`#EDEEF1`固定
 - 12時起点で**時計回りに消費**（先端を12時に固定し、空きを時計回りに広げる）。
@@ -161,7 +279,7 @@ assets/data/
 
 - ドリル画面のリング下に「わからないので飛ばす」を下線付きテキストリンクで置く
   （主ボタン「答える／採点する」より弱く見せる）。pre・rec のどちらでも押せる
-- 押すと `widgets/skip_question_dialog.dart` の `confirmSkipQuestion()` で必ず確認する
+- 押すと `core/widgets/skip_question_dialog.dart` の `confirmSkipQuestion()` で必ず確認する
   （「この問題を飛ばしますか？」／続ける・飛ばす）。誤タップで学習機会を失わせない
 - 「飛ばす」を選ぶと、録音中なら `SpeechInputService.cancel()` で音声を**文字起こしせずに破棄**する
   （Geminiに送らないのでトークンを消費しない）。そのうえで時間切れと同じく
@@ -174,10 +292,10 @@ assets/data/
 
 ### 口頭中国語作文の添削画面（ピンインのルビ＋声調フィードバック）
 
-デザイン `SpeakingApp-Chinese.dc.html` に従い、中国語（`profile.readingLabel != null`）の添削画面では
+デザイン `SpeakingApp-Chinese.dc.html` に従い、中国語（`profile.hasReading`）の添削画面では
 漢字1文字ごとに「ピンインのルビ（上、10px、textSecondary）＋漢字（17px 太字）」のセルを `Wrap` で並べる
-（`_RubyDiffText` / `_RubyText`）。差分トークンは `utils/word_diff.dart` がCJKを1文字1トークンに切るので、
-そのままセルに対応する。ルビの割り当ては `utils/pinyin.dart` の `alignReading()` で行い、
+（`_RubyDiffText` / `_RubyText`）。差分トークンは `core/utils/word_diff.dart` がCJKを1文字1トークンに切るので、
+そのままセルに対応する。ルビの割り当ては `features/composition/domain/pinyin.dart` の `alignReading()` で行い、
 漢字数と音節数が合わないときはルビ無しで漢字だけを出す（位置のずれたルビは出さない）。
 修正版は語ごとにピンインが返るので `alignWordReadings()` で語ごとに割り当て、合わない語だけ
 ルビを落とす（1語ずれただけで修正版のルビが全部消えるのを防ぐ）。
@@ -199,7 +317,7 @@ assets/data/
 スコアカードの一文は、声調の気づきが1件以上あるときだけ
 「声調が違って聞こえた音節がNつあります。赤いルビを確認しましょう。」に置き換える（デザインの総評に相当）。
 気づきが無いときは英語と同じスコア帯の定型文のまま。デザインにある「声調は問題ありません」は出さない
-（見逃した分がそのまま嘘になる）。ドリル画面の AppBar は `profile.compositionTitle`（中国語では「口頭中国語作文」）。
+（見逃した分がそのまま嘘になる）。ドリル画面の AppBar は ARB の `compositionTitle`（中国語では「口頭中国語作文」）。
 
 **声調の気づき（赤ルビ）**: 下記ガードをすべて通った音節だけ、あなたの発話のセルで
 上のルビ（聞こえた声調）を `scoreLow` に、下段に期待された声調（`scoreGood` 太字 10px）を添え、
@@ -216,7 +334,7 @@ assets/data/
 - 補足文（textSecondary 12px）: 「音声認識が聞き取った声調（参考値）が模範解答のピンインと違っていた音節です。聞き取りの誤差も含まれます。」
 - 1件1行: `[3声 → 4声]` のピル（`scoreLowSurface` 背景・`scoreLow` 文字）＋ 対象の漢字（`alignReading` で対応が取れるときだけ。儿化は「点儿」）
   ＋ `shuǐ`（模範解答、textPrimary 太字）→ `shuì`（聞こえた音、scoreLow 太字）
-- 英語モード（`readingLabel == null`）ではルビ・カードに関わる処理は一切走らない
+- 英語モード（`hasReading == false`）ではルビ・カードに関わる処理は一切走らない
 
 ## データモデル
 
@@ -242,12 +360,12 @@ assets/data/
 
 50題以上。theme は教材と同じ3分類。
 
-### Hive ボックス（全て Map を格納、モデルの toJson/fromJson で変換）
+### Hive ボックス（全て Map を格納、`data/` の DTO の toJson/fromJson で変換）
 
 | box名 | キー | 内容 |
 |---|---|---|
-| `settings` | 固定キー | 独り言デフォルト秒数など非秘匿設定（旧`modelName`/`sttMode`キーは起動時に削除） |
-| `drill_results` | uuid | DrillResult（sentenceId, spoken, feedback一式（中国語は corrected_reading も）, timestamp, toneNotes=声調の気づき。null は未判定＝英語・ピンイン無し。既存データは null で読める） |
+| `settings` | 固定キー | 学習言語・独り言デフォルト秒数など非秘匿設定 |
+| `drill_results` | uuid | DrillResult（sentenceId, spoken, feedback一式（中国語は corrected_reading も）, timestamp, toneNotes=声調の気づき。null は未判定＝英語・ピンイン無し） |
 | `monologue_results` | uuid | MonologueResult（topicId, seconds, transcript, feedback一式, timestamp） |
 | `srs_items` | sentenceId | SrsItem（stage, dueDate, lapses, lastResult） |
 | `phrases` | uuid | Phrase（en, ja, source, createdAt） |
@@ -255,21 +373,26 @@ assets/data/
 
 APIキーだけは `flutter_secure_storage`（キー名 `gemini_api_key`）。
 
+未リリースのため保存形式の後方互換は取らない（[docs/ROADMAP.md](./docs/ROADMAP.md)）。形式を変えたら
+`lib/main.dart` の `_legacyBoxNames` に旧 box 名を足して起動時に削除する。
+
 ### SRS アルゴリズム
 
 - 間隔: stage 0→翌日, 1→3日後, 2→7日後, 3→14日後, 4→30日後, 5=卒業（キューから除外）
 - ドリルで不正解（スコア < 70）→ srs_items に stage 0 で登録（既存なら stage 0 に戻し lapses+1）
-- 復習で正解（スコア ≥ 70）→ stage+1、dueDate 更新
+- 復習で正解（スコア ≥ 70）→ stage+1、dueDate 更新（`SrsRepository`。ドリル結果の保存と SRS 登録・日次統計は
+  `RecordDrillResult` UseCase がまとめて行う）
 - 「今日の復習」= `dueDate <= 今日` のアイテム。日付は日単位で比較（時刻無視）
 
 ## Gemini API 契約
 
 - エンドポイント: `POST https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent`
 - 認証: HTTPヘッダー `x-goog-api-key: {apiKey}`（URLクエリに入れない）
-- モデルは `gemini-3.8-flash`（最新のFlash系）1本に固定（`GeminiService.modelName`）。設定画面からは変更不可
+- モデルは `gemini-3.8-flash`（最新のFlash系）1本に固定（`GeminiClient.modelName`）。設定画面からは変更不可
 - 思考制御: Gemini 3系は `generationConfig.thinkingConfig.thinkingLevel` で制御（`thinkingBudget` は使わない）。文字起こし・添削は `low`
 - 構造化出力: `generationConfig.responseMimeType = "application/json"` ＋ `responseSchema` を必ず指定し、返答をモデルの fromJson でパース
-- エラー処理: 非200・パース失敗・タイムアウト(30s)は `GeminiException(message日本語)` を投げ、UI側でスナックバー＋リトライボタン表示。APIキー未設定なら添削ボタン押下時に設定画面へ誘導するダイアログ
+- エラー処理: 非200・パース失敗・タイムアウト(30s)は `AppFailure(kind)` を投げ、UI側で `FailureKind` を ARB の文言に変換してスナックバー＋リトライボタン表示。APIキー未設定なら添削ボタン押下時に設定画面へ誘導するダイアログ
+- リクエストは `uiLocale`（解説の言語。現在は常に `ja`）と `learningLanguage`（学習言語コード）を持つ。プロンプトの「日本語で」は `uiLocale` から決める。**プロンプト本体は次フェーズで Rust に移植する**ので作り込まない
 
 ### 口頭英作文の添削（テキスト）
 
@@ -279,13 +402,13 @@ APIキーだけは `flutter_secure_storage`（キー名 `gemini_api_key`）。
 { "score": 85,                      // 0-100 伝わりやすさ＋正確さ
   "is_acceptable": true,            // score>=70 相当の合否
   "corrected": "発話を最小修正した英文",
-  "explanation_ja": "誤りの解説（日本語、2-3文）",
-  "comparison_ja": "模範解答との違い・どちらでも良い点の解説（日本語）" }
+  "explanation": "誤りの解説（uiLocale の言語、2-3文）",
+  "comparison": "模範解答との違い・どちらでも良い点の解説（uiLocale の言語）" }
 ```
 
 プロンプト方針: 「あなたは日本人向け英語講師。発話は音声認識由来なので大文字小文字・句読点は減点しない。意味が通り文法的に正しければ模範解答と違っても許容」。
 
-中国語（`readingLabel != null`）ではスキーマに語区切りを2つ追加する
+中国語（`hasReading`）ではスキーマに語区切りを2つ追加する
 （`CompositionFeedback.correctedWords` / `spokenWords`。英語・旧データでは null）。
 
 - `corrected_words`: `corrected` を単語ごとに切った `{hanzi, pinyin}` の配列。`hanzi` を繋ぐと `corrected` に
@@ -306,14 +429,14 @@ APIキーだけは `flutter_secure_storage`（キー名 `gemini_api_key`）。
 ```json
 { "fluency_score": 72,
   "corrected_transcript": "全文を自然な英語に直したもの",
-  "corrections": [ { "original": "...", "corrected": "...", "reason_ja": "..." } ],
-  "useful_phrases": [ { "en": "It slipped my mind.", "ja": "うっかり忘れていた" } ],  // 3-5個、次回使える表現
-  "overall_feedback_ja": "良かった点＋改善点（日本語、3-4文）" }
+  "corrections": [ { "original": "...", "corrected": "...", "reason": "..." } ],
+  "useful_phrases": [ { "target": "It slipped my mind.", "ja": "うっかり忘れていた" } ],  // 3-5個、次回使える表現
+  "overall_feedback": "良かった点＋改善点（uiLocale の言語、3-4文）" }
 ```
 
 ### トークン使用量とコスト
 
-- 全ての呼び出しでレスポンスの `usageMetadata`（`promptTokenCount` / `candidatesTokenCount` / `thoughtsTokenCount`）を `TokenUsage` に読み取り、結果と一緒に返す（`correctComposition` → `CorrectionResult`、`transcribe` → `TranscriptionResult` など Dart の record）。`usageMetadata` が無ければゼロ扱い
+- 全ての呼び出しでレスポンスの `usageMetadata`（`promptTokenCount` / `candidatesTokenCount` / `thoughtsTokenCount`）を `TokenUsage` に読み取り、結果と一緒に返す（`CorrectionRepository.correct` → `CorrectionResult`、`TranscriptionRepository.transcribe` → `TranscriptionResult`）。`usageMetadata` が無ければゼロ扱い
 - 課金上の出力トークン = 返答本文 + 思考（`billedOutputTokens`）
 - 単価は `GeminiPricing`（`gemini-3.8-flash`、Standardティア、出典 https://ai.google.dev/gemini-api/docs/pricing 2026-09-03確認）
   - 2026-12-31まで: 入力 $0.75 / 出力 $3.75 per 1M tokens（導入価格）
@@ -323,7 +446,7 @@ APIキーだけは `flutter_secure_storage`（キー名 `gemini_api_key`）。
   （入力 $1.00 / 出力（音声）$20.00 per 1M tokens、導入価格の設定なし。2026-09-05確認）。
   **合計トークンに単価を1つ掛けると請求とずれる**ため、コストは必ず用途ごとに計算して足す
   （`DrillQuestionUsage.costUsd()`）。音声出力は単価が高いので同じ文の読み上げはキャッシュする
-- 口頭英作文の `DrillScreen` は問ごとに文字起こしと添削の `TokenUsage` を `DrillSummaryEntry.usage`（`DrillQuestionUsage`）に積み（「もう一度」のやり直し分も加算）、全問終了後の `DrillSummaryScreen` で
+- 口頭英作文の `DrillStore` は問ごとに文字起こしと添削の `TokenUsage` を `DrillSummaryEntry.usage`（`DrillQuestionUsage`）に積み（「もう一度」のやり直し分も加算）、全問終了後の `DrillSummaryScreen` で
   - 「APIトークン使用量」カード: 文字起こし／添削／読み上げ（使った場合のみ）／合計の入力・出力トークンとコスト（USD、小数4桁）、思考トークン数、適用単価
   - 問ごとの行: `入力 N · 出力 M · $X.XXXX`（使用量ゼロの問は非表示）
 - 独り言英会話は使用量を受け取るが表示はまだしない
@@ -331,11 +454,11 @@ APIキーだけは `flutter_secure_storage`（キー名 `gemini_api_key`）。
 
 ### 読み上げ（TTS）
 
-`POST .../models/gemini-3.1-flash-tts-preview:generateContent`（`GeminiService.ttsModelName`）。
+`POST .../models/gemini-3.1-flash-tts-preview:generateContent`（`GeminiClient.ttsModelName`）。
 `gemini-3.8-flash` は音声出力に対応していないため、読み上げだけモデルを分けている。
 
 ```json
-{ "contents": [{ "parts": [{ "text": "Read the following 英語 sentence clearly and a little slowly, in a calm teaching voice: I had toast this morning." }] }],
+{ "contents": [{ "parts": [{ "text": "Read the following English sentence clearly and a little slowly, in a calm teaching voice: I had toast this morning." }] }],
   "generationConfig": {
     "responseModalities": ["AUDIO"],
     "speechConfig": { "voiceConfig": { "prebuiltVoiceConfig": { "voiceName": "Kore" } } } } }
@@ -350,12 +473,12 @@ APIキーだけは `flutter_secure_storage`（キー名 `gemini_api_key`）。
 
 `inline_data`（base64、mimeType は録音フォーマットに一致: wav推奨）＋指示「Transcribe this English speech verbatim. Return only the transcript.」。プレーンテキスト応答。録音は `record` パッケージで wav (16kHz mono)。
 
-- 聞き取れる対象言語の発話が無い場合はマーカー `[NO_SPEECH]`（`GeminiService.noSpeechMarker`）を返すよう指示し、応答に含まれていれば「音声を聞き取れませんでした」の `GeminiException`。空文字を返させると下記の空応答と区別できないため
-- 空応答（`"content": {}` で `parts` が無く `finishReason: STOP`、出力トークン0）は Gemini 3系Flash が稀に返す一時的な不調。`_requestText` で同じリクエストを最大3回まで送り直し、それでも空なら「文字起こし結果が返ってきませんでした」の `GeminiException`（添削の構造化出力も同じ再試行を通る）。使用量は再試行分も合算する
+- 聞き取れる対象言語の発話が無い場合はマーカー `[NO_SPEECH]`（`GeminiTranscriptionRepository.noSpeechMarker`）を返すよう指示し、応答に含まれていれば `FailureKind.noSpeech`。空文字を返させると下記の空応答と区別できないため
+- 空応答（`"content": {}` で `parts` が無く `finishReason: STOP`、出力トークン0）は Gemini 3系Flash が稀に返す一時的な不調。`GeminiClient.requestText` で同じリクエストを最大3回まで送り直し、それでも空なら `FailureKind.emptyResponse`（添削の構造化出力も同じ再試行を通る）。使用量は再試行分も合算する
 
 #### 中国語の文字起こし（声調付きピンイン併記）
 
-`LanguageProfile.readingLabel != null`（＝中国語）のときだけ、文字起こしを構造化出力にして
+`LanguageProfile.hasReading`（＝中国語）のときだけ、文字起こしを構造化出力にして
 漢字と一緒に「聞こえたままの声調付きピンイン」を受け取る。英語はプレーンテキストのまま一切変えない。
 
 ```json
@@ -370,7 +493,7 @@ APIキーだけは `flutter_secure_storage`（キー名 `gemini_api_key`）。
   声調を推測せずピッチだけを根拠にする／声調が判断できない音節は軽声（記号なし）」を明示する
 - **この呼び出しに模範解答は渡さない**（渡すと確実にそれに引っ張られる）
 - 無音・聞き取り不能の扱いは英語と同じ（`hanzi` に `[NO_SPEECH]` を返させ、含まれていれば
-  「音声を聞き取れませんでした」の `GeminiException`。`hanzi` が空文字の場合も同様）
+  `FailureKind.noSpeech`。`hanzi` が空文字の場合も同様）
 - 返り値は `TranscriptionResult.reading`（英語では常に null）。ピンインの解釈・比較は Dart 側で行う
 - コスト増は1問あたり出力+50トークン程度
 
@@ -383,7 +506,7 @@ APIキーだけは `flutter_secure_storage`（キー名 `gemini_api_key`）。
 ガードは仕様として固定する。学習アプリでは「見逃し」より「嘘」（正しく発音できている箇所を誤りと
 教える）のほうが有害。
 
-**アルゴリズム**（`utils/pinyin.dart`、すべてDart側の決定的処理。Geminiに正誤判定を聞かない）:
+**アルゴリズム**（`features/composition/domain/pinyin.dart`、すべてDart側の決定的処理。Geminiに正誤判定を聞かない）:
 
 1. `Sentence.reading`（模範解答。変調適用済み）と認識ピンインをそれぞれ音節に分割する
 2. **声調記号を外した綴り**で2つの音節列をLCS整列する（`tool/pinyin_poc` の `alignSyllables` と同じ）
@@ -407,7 +530,7 @@ APIキーだけは `flutter_secure_storage`（キー名 `gemini_api_key`）。
   断定を出さない。指摘0件のときはカードごと非表示（「問題なし」と出さない）。検出できた誤りだけを
   控えめに列挙する。指摘がない＝正しい、と誤解される見せ方をすると見逃した分がそのまま嘘になる
 
-**スコアに声調を含めない。** `correctComposition()` の「発音・声調は評価対象に含めません」の行は
+**スコアに声調を含めない。** `GeminiCorrectionRepository` のプロンプトの「発音・声調は評価対象に含めません」の行は
 そのまま残す。声調は加点減点と無関係の別カード。
 
 **やらないこと**: 独り言モードへの追加／変調・多音字の自前解決／声調のスコアリング／
@@ -415,31 +538,32 @@ APIキーだけは `flutter_secure_storage`（キー名 `gemini_api_key`）。
 
 ## 音声入力の抽象化
 
-`SpeechInputService`（抽象）の実装は `GeminiSpeechInputService` のみ:
-- record の `startStream` でPCM16をメモリに蓄積 → 停止後に16kHz monoへ変換・WAV化して GeminiService.transcribe() → テキスト
+`features/speech/domain/speech_input_service.dart` の `SpeechInputService`（抽象）の実装は
+`RecorderSpeechInputService`（`data/`）のみ:
+- record の `startStream` でPCM16をメモリに蓄積 → 停止後に16kHz monoへ変換・WAV化して `TranscriptionRepository.transcribe()` → テキスト
 - 返り値 `SpeechInputResult` は `text`・`usage` に加えて `reading`（中国語の声調付きピンイン。英語では null）を透過する
 - 録音中は `onPartial` に「聞き取り中…」の固定文言、`onLevel` に正規化した入力音量を流す
   （`onLevel` は任意。現在の画面はどちらも表示に使っていない）
 - `cancel()` は録音を止めて溜めた音声を捨てる（文字起こししない）。「わからないので飛ばす」のように
   結果が要らないと決まったときに使い、`stop()` と違ってGeminiを呼ばないのでトークンを消費しない
-- 権限拒否・録音失敗時は日本語エラーメッセージ（`SpeechInputException`）を返し、画面側は録り直しの導線を用意する
+- 権限拒否・録音失敗時は `AppFailure`（`micPermission` / `noSpeech`）を投げ、画面側は録り直しの導線を用意する
 - 端末STT（speech_to_text）はPR17で廃止（設定項目も削除）
 
 ## 読み上げ（TTS）の抽象化
 
-`TtsService`（抽象）の実装は `GeminiTtsService` のみ。端末のTTSエンジンは使わない
-（対応言語・声質が端末ごとにぶれるため。中国語の音声が入っていない端末でも読み上げたい）:
-- `GeminiService.synthesizeSpeech()` が Gemini TTS のWAVを返し、それを `audioplayers` の
+`features/speech/domain/tts_service.dart` の `TtsService`（抽象）の実装は `AudioPlayerTtsService`（`data/`）のみ。
+端末のTTSエンジンは使わない（対応言語・声質が端末ごとにぶれるため。中国語の音声が入っていない端末でも読み上げたい）:
+- `TtsRepository.synthesize()`（実装は `GeminiTtsRepository`）が WAV を返し、それを `audioplayers` の
   `BytesSource` で鳴らす。読み上げ言語はモデルが入力テキストから自動判定する
 - `speak()` は再生完了（または `stop()` による中断）まで待つ。画面側はこれを
   「読み上げ中」表示（ボタンが「停止」に変わる）にそのまま使える。
   `audioplayers` は `stop()` では `onPlayerComplete` を流さないため、
   完了通知と停止の両方で `Completer` を解いている（片方だけだと停止後に待ち続ける）
 - 音声出力は単価が高いので、同じ文の2回目以降はメモリ上のキャッシュから再生してAPIを呼ばない
-- 生成・破棄は画面（`DrillScreen`）が持ち、テストでは `FakeTtsService` に差し替える
+- 生成・破棄は `DrillStore` が持ち（`StoreFactory` が組み立てる）、テストでは `FakeTtsService` に差し替える
 
 添削画面（`drill_feedback_view.dart`）の「修正版」「模範解答」の見出し右端に
-`widgets/speak_button.dart` の `SpeakButton` を置いている。読み上げ中はもう一度押すと止まる。
+`core/widgets/speak_button.dart` の `SpeakButton` を置いている。読み上げ中はもう一度押すと止まる。
 
 ## Widgetbook とゴールデンテスト（見た目の確認・崩れ検出）
 
@@ -459,12 +583,13 @@ APIキーだけは `flutter_secure_storage`（キー名 `gemini_api_key`）。
 
 - 状態一覧は `widgetbook/fixtures/*.dart` にだけ書く（`Story(name, slug, build)` のリスト）。Widgetbook と
   ゴールデンの両方がそこから読むので、**新しい状態は fixtures に1件足すだけ**で両方に出る
-- fixtures は `widgetbook` パッケージに依存しない（テストからも読むため）。画面側は Provider や Hive に
+- fixtures は `widgetbook` パッケージに依存しない（テストからも読むため）。画面側は Store や Hive に
   依存せず引数だけで描けること（`DrillFeedbackView` はそのまま載る）
-- ゴールデンは `AppTheme.build(webFonts: false)` で描く。`AppTheme.light` は Google Fonts をネットワーク取得するため
+- ゴールデンはロケールを `ja` に固定し（`localizedApp`）、`AppTheme.build(webFonts: false)` で描く。`AppTheme.light` は Google Fonts をネットワーク取得するため
   テストでは使えない。既定フォントでは漢字が四角（tofu）で描かれるが、検出したいのは文字の形ではなく
   位置・サイズ・色の崩れなので問題ない。見た目の確認は Widgetbook で行う
-- 意図して見た目を変えたときだけ `--update-goldens` で画像を更新し、差分を PR で確認する
+- 意図して見た目を変えたときだけ `--update-goldens` で画像を更新し、差分を PR で確認する。
+  UI 構造のリファクタで差分が出た場合も CI と同じ Linux で更新し、理由を PR 説明に書く
 
 現在の対象: `DrillFeedbackView`（中国語の声調の気づき1件／なし／語数違い／複数／儿化／ルビ不整合／
 修正版のピンインが1語だけ合わない／語区切りなしの旧データ＋記号なしピンイン／stage 0・1／時間切れ、
@@ -474,15 +599,18 @@ APIキーだけは `flutter_secure_storage`（キー名 `gemini_api_key`）。
 ## コーディング規約
 
 - `flutter analyze` 警告ゼロ、`dart format` 適用、flutter_lints デフォルト準拠
-- UI文言は日本語ハードコード（i18n しない）。コメントも日本語可
+- UI 文言は ARB（`lib/core/l10n/app_ja.arb`）経由。`lib/` に日本語の UI 文言を直書きしない。コメントは日本語可
+- 状態管理は signals のみ。`provider` / `ChangeNotifier` / `setState` による業務状態の管理はしない
+  （`setState` はアニメーションやフォーカスのような純粋な描画都合に限る）
+- get_it を参照してよいのは `main.dart` / `core/di/` / `*_module.dart` だけ（「DI」の節）
 - 1ファイル400行を目安に分割。ウィジェットの深いネストはメソッド/クラス抽出
-- モデルは immutable（final フィールド＋fromJson/toJson）
-- 新規依存パッケージの追加は原則しない（必要なら PR 説明に理由を書く）。例外として `widgetbook` は
-  dev_dependencies に入れている（上記「Widgetbook とゴールデンテスト」）
+- モデルは freezed（`@freezed` + `const factory`）。Hive / Gemini の JSON 形式は `data/` の DTO が持つ
+- 新規依存パッケージの追加は理由を PR 説明に書く（今回の signals / get_it / freezed / json_serializable /
+  build_runner / flutter_localizations は本ドキュメントの方針転換に伴うもの）
 
 ## Git / PR ワークフロー
 
-- ブランチ名 `feature/pr{N}-{slug}`、mainから分岐。PRは `gh pr create`
-- 実装エージェントは: 実装 → `flutter analyze`（警告0）→ `flutter test` パス → commit/push → PR作成まで。**マージはしない**（レビュー担当がマージ）
+- ブランチ名 `feature/{slug}`、mainから分岐。PRは `gh pr create`
+- 実装エージェントは: 実装 → 生成（build_runner / gen-l10n）→ `flutter analyze`（警告0）→ `flutter test` パス → `dart format` → commit/push → PR作成まで。**マージはしない**（レビュー担当がマージ）
 - コミットは論理単位で分割。メッセージは英語1行要約＋必要なら本文
 - `flutter` コマンドは `export PATH="$HOME/flutter/bin:$PATH"` で使う
