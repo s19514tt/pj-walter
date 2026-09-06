@@ -661,6 +661,10 @@ class _DrillScreenState extends State<DrillScreen> {
 ///
 /// 主ボタン（答える／採点する）より弱く見せるため、グレー文字＋薄いグレーの
 /// 下線にしている。
+///
+/// 下線は[TextDecoration.underline]ではなく下ボーダーで引く。デザインは
+/// `text-underline-offset:4px`で文字から離した下線（ベースラインの約6px下）
+/// だが、Flutterの下線はフォントの下線位置に密着し、オフセットを指定できないため。
 class _SkipQuestionButton extends StatelessWidget {
   const _SkipQuestionButton({required this.onPressed});
 
@@ -675,14 +679,20 @@ class _SkipQuestionButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
-      child: const Text(
-        'わからないので飛ばす',
-        style: TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.bold,
-          height: 1,
-          decoration: TextDecoration.underline,
-          decorationColor: Color(0xFFB9BDC4),
+      child: Container(
+        // 文字ボックス（fontSize 13・height 1 なので高さ13）の下端から4px下に
+        // 1pxの線。ブラウザで`text-underline-offset:4px`と重ねて実測した値。
+        padding: const EdgeInsets.only(bottom: 4),
+        decoration: const BoxDecoration(
+          border: Border(bottom: BorderSide(color: Color(0xFFB9BDC4))),
+        ),
+        child: const Text(
+          'わからないので飛ばす',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+            height: 1,
+          ),
         ),
       ),
     );
