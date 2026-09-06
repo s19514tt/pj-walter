@@ -17,6 +17,7 @@ import 'package:pj_walter/services/settings_service.dart';
 import 'package:provider/provider.dart';
 
 import 'test_support/hive_test_support.dart';
+import 'test_support/test_app.dart';
 
 Future<HistoryService> _buildHistoryService() async => HistoryService(
   drillResultsBox: await Hive.openBox('drill_results'),
@@ -41,7 +42,7 @@ Widget _buildApp(HistoryService historyService, SettingsService settings) {
       ChangeNotifierProvider<SettingsService>.value(value: settings),
       Provider<SentenceRepository>(create: (_) => SentenceRepository()),
     ],
-    child: const MaterialApp(home: ReviewScreen()),
+    child: localizedApp(home: const ReviewScreen()),
   );
 }
 

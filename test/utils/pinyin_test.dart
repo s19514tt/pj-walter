@@ -5,11 +5,11 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pj_walter/models/drill_result.dart';
-import 'package:pj_walter/models/learning_language.dart';
+import 'package:pj_walter/core/language/learning_language.dart';
 import 'package:pj_walter/models/sentence.dart';
 import 'package:pj_walter/models/tone_note.dart';
-import 'package:pj_walter/utils/pinyin.dart';
-import 'package:pj_walter/utils/word_diff.dart';
+import 'package:pj_walter/core/utils/pinyin.dart';
+import 'package:pj_walter/core/utils/word_diff.dart';
 
 List<String> _bases(String pinyin) =>
     parsePinyinSyllables(pinyin).map((s) => s.base).toList();

@@ -1,23 +1,23 @@
 import 'package:flutter/material.dart';
 
 import '../../models/drill_result.dart';
-import '../../models/learning_language.dart';
+import '../../core/language/learning_language.dart';
 import '../../models/sentence.dart';
 import '../../models/token_usage.dart';
 import '../../models/tone_note.dart';
 import '../../services/tts_service.dart';
-import '../../theme/app_theme.dart';
-import '../../utils/pinyin.dart';
-import '../../utils/score_colors.dart';
-import '../../utils/word_diff.dart';
-import '../../widgets/app_card.dart';
-import '../../widgets/bottom_cta_bar.dart';
-import '../../widgets/primary_button.dart';
-import '../../widgets/secondary_button.dart';
-import '../../widgets/skeleton.dart';
-import '../../widgets/score_ring.dart';
-import '../../widgets/speak_button.dart';
-import '../../widgets/stat_badge.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/utils/pinyin.dart';
+import '../../core/utils/score_colors.dart';
+import '../../core/utils/word_diff.dart';
+import '../../core/widgets/app_card.dart';
+import '../../core/widgets/bottom_cta_bar.dart';
+import '../../core/widgets/primary_button.dart';
+import '../../core/widgets/secondary_button.dart';
+import '../../core/widgets/skeleton.dart';
+import '../../core/widgets/score_ring.dart';
+import '../../core/widgets/speak_button.dart';
+import '../../core/widgets/stat_badge.dart';
 
 /// 口頭英作文1問分のGemini添削結果の段階表示。
 ///
@@ -149,7 +149,7 @@ class _DrillFeedbackViewState extends State<DrillFeedbackView> {
             sentence: widget.sentence,
             spokenReading: widget.spokenReading,
           );
-    final withRuby = widget.profile.readingLabel != null;
+    final withRuby = widget.profile.hasReading;
     var delayStep = 0;
     Widget staggered(Widget child) {
       final delay = Duration(milliseconds: 60 * delayStep);

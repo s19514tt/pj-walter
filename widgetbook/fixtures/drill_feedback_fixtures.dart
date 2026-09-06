@@ -7,7 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:pj_walter/models/drill_result.dart';
-import 'package:pj_walter/models/learning_language.dart';
+import 'package:pj_walter/core/language/learning_language.dart';
 import 'package:pj_walter/models/sentence.dart';
 import 'package:pj_walter/models/token_usage.dart';
 import 'package:pj_walter/screens/composition/drill_feedback_view.dart';

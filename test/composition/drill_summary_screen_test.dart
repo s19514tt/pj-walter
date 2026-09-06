@@ -7,6 +7,7 @@ import 'package:pj_walter/models/token_usage.dart';
 import 'package:pj_walter/screens/composition/drill_summary_screen.dart';
 import 'package:pj_walter/services/gemini_pricing.dart';
 import 'package:pj_walter/services/gemini_service.dart';
+import '../test_support/test_app.dart';
 
 void main() {
   testWidgets('用途別・合計のトークン数と、単価から算出したコストが表示される', (tester) async {
@@ -55,8 +56,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      const MaterialApp(
-        home: DrillSummaryScreen(
+      localizedApp(
+        home: const DrillSummaryScreen(
           level: 700,
           theme: 'daily',
           entries: entries,
@@ -106,8 +107,8 @@ void main() {
     const pricing = GeminiPricing.introductory;
 
     await tester.pumpWidget(
-      const MaterialApp(
-        home: DrillSummaryScreen(
+      localizedApp(
+        home: const DrillSummaryScreen(
           level: 700,
           theme: 'daily',
           entries: entries,

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../services/history_service.dart';
-import '../widgets/section_header.dart';
+import '../core/widgets/section_header.dart';
 import 'stats/history_section.dart';
 import 'stats/streak_summary.dart';
 import 'stats/study_calendar.dart';

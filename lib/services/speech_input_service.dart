@@ -4,10 +4,10 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:record/record.dart';
 
-import '../models/learning_language.dart';
+import '../core/language/learning_language.dart';
 import '../models/token_usage.dart';
-import '../utils/pcm_converter.dart';
-import '../utils/wav_builder.dart';
+import '../core/utils/pcm_converter.dart';
+import '../core/utils/wav_builder.dart';
 import 'gemini_service.dart';
 
 /// [SpeechInputService.stop]の結果（文字起こしテキスト＋トークン使用量）。

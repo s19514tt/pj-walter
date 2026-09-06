@@ -18,7 +18,7 @@ import 'package:pj_walter/services/gemini_service.dart';
 import 'package:pj_walter/services/settings_service.dart';
 
 import 'test_support/hive_test_support.dart';
-import 'package:pj_walter/models/learning_language.dart';
+import 'package:pj_walter/core/language/learning_language.dart';
 
 Map<String, dynamic> _geminiEnvelope(
   Object payload, {
@@ -276,7 +276,7 @@ void main() {
       expect(config.containsKey('responseMimeType'), isFalse);
       expect(config.containsKey('responseSchema'), isFalse);
       final parts = (sentBody!['contents'] as List).first['parts'] as List;
-      expect(parts.first['text'], startsWith('Transcribe this 英語 speech'));
+      expect(parts.first['text'], startsWith('Transcribe this English speech'));
     });
 
     test('中国語の添削は語区切りを追加で要求し、CompositionFeedbackに入れる', () async {

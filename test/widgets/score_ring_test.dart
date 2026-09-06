@@ -5,10 +5,11 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pj_walter/widgets/score_ring.dart';
+import 'package:pj_walter/core/widgets/score_ring.dart';
+import '../test_support/test_app.dart';
 
 void main() {
-  Widget wrap(Widget child) => MaterialApp(
+  Widget wrap(Widget child) => localizedApp(
     home: Scaffold(body: Center(child: child)),
   );
 

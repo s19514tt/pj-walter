@@ -8,7 +8,7 @@ import 'package:flutter_secure_storage/test/test_flutter_secure_storage_platform
 import 'package:flutter_secure_storage_platform_interface/flutter_secure_storage_platform_interface.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
-import 'package:pj_walter/models/learning_language.dart';
+import 'package:pj_walter/core/language/learning_language.dart';
 import 'package:pj_walter/models/srs_item.dart';
 import 'package:pj_walter/services/history_service.dart';
 import 'package:pj_walter/services/sentence_repository.dart';
@@ -208,10 +208,12 @@ void main() {
       );
     });
 
-    test('中国語だけ発音表記のラベルを持ち、分かち書きしない扱いになる', () {
-      expect(LanguageProfile.english.readingLabel, isNull);
+    test('中国語だけ読み表記（ピンイン）を持ち、分かち書きしない扱いになる', () {
+      expect(LanguageProfile.english.hasReading, isFalse);
+      expect(LanguageProfile.english.support.reading, isNull);
       expect(LanguageProfile.english.wordSeparated, isTrue);
-      expect(LanguageProfile.chinese.readingLabel, 'ピンイン');
+      expect(LanguageProfile.chinese.hasReading, isTrue);
+      expect(LanguageProfile.chinese.support.reading, ReadingSystem.pinyin);
       expect(LanguageProfile.chinese.wordSeparated, isFalse);
     });
   });
@@ -226,7 +228,7 @@ void main() {
       expect(settings.languageProfile.code, 'en');
 
       await settings.setLearningLanguage(LearningLanguage.chinese);
-      expect(settings.languageProfile.compositionTitle, '口頭中国語作文');
+      expect(settings.languageProfile.code, 'zh');
 
       // 別インスタンスで読み直しても保持されている
       final reopened = SettingsService(settingsBox: box);

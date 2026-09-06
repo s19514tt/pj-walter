@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../models/learning_language.dart';
 import '../models/srs_item.dart';
 import '../services/history_service.dart';
 import '../services/settings_service.dart';
-import '../theme/app_theme.dart';
-import '../utils/app_route.dart';
-import '../utils/review_launcher.dart';
-import '../widgets/app_card.dart';
-import '../widgets/score_square_badge.dart';
-import '../widgets/section_header.dart';
+import '../core/l10n/l10n.dart';
+import '../core/theme/app_theme.dart';
+import '../core/utils/app_route.dart';
+import '../core/utils/review_launcher.dart';
+import '../core/widgets/app_card.dart';
+import '../core/widgets/score_square_badge.dart';
+import '../core/widgets/section_header.dart';
 import 'composition/deck_select_screen.dart';
 import 'monologue/topic_select_screen.dart';
 import 'settings_screen.dart';
@@ -46,6 +46,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// ドリル・独り言の履歴を新しい順に混ぜて上位3件を返す。
   List<_RecentEntry> _recentEntries(HistoryService history, DateTime now) {
+    final l10n = context.l10n;
     // 履歴は言語混在なので、各エントリを記録された言語の呼び名で表示する。
     String when(DateTime t) {
       final days = DateTime(
@@ -63,9 +64,9 @@ class _HomeScreenState extends State<HomeScreen> {
         (
           r.timestamp,
           _RecentEntry(
-            title: LanguageProfile.ofCode(r.language).compositionTitle,
+            title: l10n.compositionTitle(r.language),
             meta:
-                '${LanguageProfile.ofCode(r.language).levelLabel(r.level)}'
+                '${l10n.deckLevelLabel(r.language, r.level)}'
                 ' · ${r.feedback.score}点',
             when: when(r.timestamp),
             score: r.feedback.score,
@@ -75,7 +76,7 @@ class _HomeScreenState extends State<HomeScreen> {
         (
           r.timestamp,
           _RecentEntry(
-            title: LanguageProfile.ofCode(r.language).monologueTitle,
+            title: l10n.monologueTitle(r.language),
             meta: '${r.seconds}秒 · 流暢さ${r.feedback.fluencyScore}',
             when: when(r.timestamp),
             score: r.feedback.fluencyScore,
@@ -132,7 +133,10 @@ class _HomeScreenState extends State<HomeScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _GreetingHeader(greeting: _greeting, language: profile.label),
+          _GreetingHeader(
+            greeting: _greeting,
+            language: context.l10n.languageName(profile.code),
+          ),
           const SizedBox(height: 16),
           if (!settings.hasApiKey) ...[
             _ApiKeyBanner(onTap: _openSettings),
@@ -158,7 +162,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Expanded(
                 child: _TrainingShortcutCard(
                   icon: Icons.edit_note,
-                  title: profile.compositionTitle,
+                  title: context.l10n.compositionTitle(profile.code),
                   description: '制限時間内に発話',
                   onTap: () {
                     Navigator.of(
@@ -171,7 +175,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Expanded(
                 child: _TrainingShortcutCard(
                   icon: Icons.forum_outlined,
-                  title: profile.monologueTitle,
+                  title: context.l10n.monologueTitle(profile.code),
                   description: 'お題を30秒〜3分',
                   onTap: () {
                     Navigator.of(

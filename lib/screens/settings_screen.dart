@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../models/learning_language.dart';
+import '../core/language/learning_language.dart';
 import '../services/gemini_service.dart';
 import '../services/settings_service.dart';
-import '../theme/app_theme.dart';
-import '../widgets/app_card.dart';
-import '../widgets/pill_chip.dart';
-import '../widgets/primary_button.dart';
-import '../widgets/secondary_button.dart';
-import '../widgets/section_header.dart';
+import '../core/l10n/l10n.dart';
+import '../core/theme/app_theme.dart';
+import '../core/widgets/app_card.dart';
+import '../core/widgets/pill_chip.dart';
+import '../core/widgets/primary_button.dart';
+import '../core/widgets/secondary_button.dart';
+import '../core/widgets/section_header.dart';
 
 /// 設定画面。Gemini APIキー・独り言デフォルト時間を管理する。
 ///
@@ -201,6 +202,7 @@ class _LanguageOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(AppTheme.cardRadius),
@@ -219,7 +221,7 @@ class _LanguageOption extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    profile.label,
+                    l10n.languageName(profile.code),
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: selected
@@ -229,9 +231,9 @@ class _LanguageOption extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '${profile.levels.map((deck) => deck.label).join('・')}'
-                    'の教材で、${profile.compositionTitle}と'
-                    '${profile.monologueTitle}のトレーニングができます。',
+                    '${profile.levels.map((level) => l10n.deckLevelLabel(profile.code, level)).join('・')}'
+                    'の教材で、${l10n.compositionTitle(profile.code)}と'
+                    '${l10n.monologueTitle(profile.code)}のトレーニングができます。',
                     style: const TextStyle(
                       fontSize: 12,
                       color: AppColors.textSecondary,

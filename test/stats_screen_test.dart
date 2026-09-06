@@ -15,6 +15,7 @@ import 'package:pj_walter/services/sentence_repository.dart';
 import 'package:provider/provider.dart';
 
 import 'test_support/hive_test_support.dart';
+import 'test_support/test_app.dart';
 
 Future<HistoryService> _buildHistoryService() async => HistoryService(
   drillResultsBox: await Hive.openBox('drill_results'),
@@ -25,7 +26,7 @@ Future<HistoryService> _buildHistoryService() async => HistoryService(
 );
 
 Widget _buildApp(HistoryService historyService) {
-  return MaterialApp(
+  return localizedApp(
     home: MultiProvider(
       providers: [
         ChangeNotifierProvider<HistoryService>.value(value: historyService),

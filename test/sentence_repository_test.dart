@@ -2,7 +2,7 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pj_walter/services/sentence_repository.dart';
-import 'package:pj_walter/models/learning_language.dart';
+import 'package:pj_walter/core/language/learning_language.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

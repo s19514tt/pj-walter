@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../theme/app_theme.dart';
-import '../../widgets/app_card.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/widgets/app_card.dart';
 
 const _weekdayHeaders = ['月', '火', '水', '木', '金', '土', '日'];
 

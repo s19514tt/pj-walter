@@ -1,0 +1,29 @@
+{
+  "@@locale": "ja",
+  "appTitle": "pj-walter",
+  "languageName": "{code, select, en{英語} zh{中国語} other{{code}}}",
+  "@languageName": {
+    "description": "学習言語の表示名",
+    "placeholders": {"code": {"type": "String"}}
+  },
+  "compositionTitle": "{code, select, en{口頭英作文} zh{口頭中国語作文} other{口頭作文}}",
+  "@compositionTitle": {
+    "description": "口頭作文トレーニングの呼び名（学習言語ごと）",
+    "placeholders": {"code": {"type": "String"}}
+  },
+  "monologueTitle": "{code, select, en{独り言英会話} zh{独り言中国語} other{独り言}}",
+  "@monologueTitle": {
+    "description": "独り言トレーニングの呼び名（学習言語ごと）",
+    "placeholders": {"code": {"type": "String"}}
+  },
+  "deckLevelLabel": "{code, select, en{TOEIC{level}点台} zh{HSK{level}級} other{{level}}}",
+  "@deckLevelLabel": {
+    "description": "デッキ選択に出すレベル名",
+    "placeholders": {"code": {"type": "String"}, "level": {"type": "int"}}
+  },
+  "readingLabel": "{reading, select, pinyin{ピンイン} other{{reading}}}",
+  "@readingLabel": {
+    "description": "読み表記の名前",
+    "placeholders": {"reading": {"type": "String"}}
+  }
+}

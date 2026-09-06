@@ -3,11 +3,11 @@ import 'package:provider/provider.dart';
 
 import '../../models/sentence.dart';
 import '../../services/sentence_repository.dart';
-import '../../theme/app_theme.dart';
-import '../../utils/theme_labels.dart';
-import '../../widgets/app_card.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/utils/theme_labels.dart';
+import '../../core/widgets/app_card.dart';
 import '../../services/settings_service.dart';
-import '../../models/learning_language.dart';
+import '../../core/language/learning_language.dart';
 
 /// 選択レベル×テーマの教材一覧。
 ///

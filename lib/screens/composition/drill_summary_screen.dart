@@ -6,12 +6,12 @@ import '../../models/token_usage.dart';
 import '../../services/drill_question_selector.dart';
 import '../../services/gemini_pricing.dart';
 import '../../services/sentence_repository.dart';
-import '../../theme/app_theme.dart';
-import '../../utils/app_route.dart';
-import '../../widgets/bottom_cta_bar.dart';
-import '../../widgets/primary_button.dart';
-import '../../widgets/score_square_badge.dart';
-import '../../widgets/secondary_button.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/utils/app_route.dart';
+import '../../core/widgets/bottom_cta_bar.dart';
+import '../../core/widgets/primary_button.dart';
+import '../../core/widgets/score_square_badge.dart';
+import '../../core/widgets/secondary_button.dart';
 import 'drill_screen.dart';
 import '../../services/settings_service.dart';
 

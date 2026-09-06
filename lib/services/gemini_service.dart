@@ -5,10 +5,10 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 
 import '../models/drill_result.dart';
-import '../models/learning_language.dart';
+import '../core/language/learning_language.dart';
 import '../models/monologue_result.dart';
 import '../models/token_usage.dart';
-import '../utils/wav_builder.dart';
+import '../core/utils/wav_builder.dart';
 import 'settings_service.dart';
 
 /// [GeminiService.correctComposition]の結果（添削＋トークン使用量）。
@@ -100,8 +100,8 @@ class GeminiService {
     required String modelAnswer,
     required String spoken,
   }) async {
-    final language = profile.label;
-    final withReading = profile.readingLabel != null;
+    final language = profile.support.englishName;
+    final withReading = profile.hasReading;
     final prompt =
         '''
 日本人向けの$languageスピーキング講師として、学習者が日本語文を見て$languageで発話した内容を添削してください。
@@ -150,7 +150,7 @@ ${withReading ? _correctedWordsInstruction : ''}''';
     required int seconds,
     required String transcript,
   }) async {
-    final language = profile.label;
+    final language = profile.support.englishName;
     final prompt =
         '''
 日本人向けの$languageスピーキング講師として、学習者が下記のお題について$languageで$seconds秒間話した内容を添削してください。
@@ -201,7 +201,7 @@ ${withReading ? _correctedWordsInstruction : ''}''';
   }) async {
     final apiKey = _requireApiKey();
     final uri = Uri.parse('$_baseUrl/$modelName:generateContent');
-    final withReading = profile.readingLabel != null;
+    final withReading = profile.hasReading;
     final body = jsonEncode({
       'contents': [
         {
@@ -288,7 +288,7 @@ ${withReading ? _correctedWordsInstruction : ''}''';
               // 学習者が発音を追えるように、速度と明瞭さを指示する。
               // 指示文と読み上げ対象を1つのpartに入れるのがTTSモデルの作法。
               'text':
-                  'Read the following ${profile.label} sentence clearly and '
+                  'Read the following ${profile.support.englishName} sentence clearly and '
                   'a little slowly, in a calm teaching voice: $text',
             },
           ],
@@ -362,9 +362,9 @@ ${withReading ? _correctedWordsInstruction : ''}''';
   /// 「聞き取れなければマーカーを返す」指示が無いと、無音や壊れた音声を
   /// 渡されたときにモデルがそれらしい英文を捏造して返してしまう。
   static String _plainTranscriptionPrompt(LanguageProfile profile) =>
-      'Transcribe this ${profile.label} speech verbatim. '
+      'Transcribe this ${profile.support.englishName} speech verbatim. '
       'Return only the transcript. If the audio contains no '
-      'intelligible ${profile.label} speech, return exactly '
+      'intelligible ${profile.support.englishName} speech, return exactly '
       '$noSpeechMarker and nothing else. '
       'Never guess or invent words that are not clearly audible.';
 

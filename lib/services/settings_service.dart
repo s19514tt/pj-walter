@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive/hive.dart';
 
-import '../models/learning_language.dart';
+import '../core/language/learning_language.dart';
 
 /// アプリ設定の読み書きを担うサービス。
 ///

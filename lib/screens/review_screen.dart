@@ -2,15 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import '../core/l10n/l10n.dart';
+
 import '../models/phrase.dart';
 import '../models/srs_item.dart';
 import '../services/history_service.dart';
-import '../theme/app_theme.dart';
-import '../utils/review_launcher.dart';
-import '../widgets/app_card.dart';
-import '../widgets/section_header.dart';
+import '../core/theme/app_theme.dart';
+import '../core/utils/review_launcher.dart';
+import '../core/widgets/app_card.dart';
+import '../core/widgets/section_header.dart';
 import '../services/settings_service.dart';
-import '../models/learning_language.dart';
 
 /// 復習予定一覧で全件を個別表示する上限。超えた分は件数表示のみにする。
 const _upcomingListLimit = 8;
@@ -95,7 +96,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          _buildSearchField(profile.label),
+          _buildSearchField(context.l10n.languageName(profile.code)),
           const SizedBox(height: 12),
           _buildPhrases(history, phrases),
         ],
@@ -248,7 +249,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                 children: [
                   Expanded(
                     child: Text(
-                      '${LanguageProfile.ofCode(item.language).levelLabel(item.level)}の文',
+                      '${context.l10n.deckLevelLabel(item.language, item.level)}の文',
                       style: const TextStyle(color: AppColors.textPrimary),
                     ),
                   ),

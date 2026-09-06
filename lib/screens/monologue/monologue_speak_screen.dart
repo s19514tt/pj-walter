@@ -7,12 +7,12 @@ import '../../models/topic.dart';
 import '../../services/gemini_service.dart';
 import '../../services/settings_service.dart';
 import '../../services/speech_input_service.dart';
-import '../../theme/app_theme.dart';
-import '../../utils/app_route.dart';
-import '../../widgets/abort_session_dialog.dart';
-import '../../widgets/bottom_cta_bar.dart';
-import '../../widgets/countdown_ring.dart';
-import '../../widgets/primary_button.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/utils/app_route.dart';
+import '../../core/widgets/abort_session_dialog.dart';
+import '../../core/widgets/bottom_cta_bar.dart';
+import '../../core/widgets/countdown_ring.dart';
+import '../../core/widgets/primary_button.dart';
 import '../settings_screen.dart';
 import 'monologue_feedback_screen.dart';
 

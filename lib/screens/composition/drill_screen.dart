@@ -12,14 +12,15 @@ import '../../services/history_service.dart';
 import '../../services/settings_service.dart';
 import '../../services/speech_input_service.dart';
 import '../../services/tts_service.dart';
-import '../../theme/app_theme.dart';
-import '../../utils/app_route.dart';
-import '../../utils/pinyin.dart';
-import '../../widgets/abort_session_dialog.dart';
-import '../../widgets/bottom_cta_bar.dart';
-import '../../widgets/countdown_ring.dart';
-import '../../widgets/primary_button.dart';
-import '../../widgets/skip_question_dialog.dart';
+import '../../core/l10n/l10n.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/utils/app_route.dart';
+import '../../core/utils/pinyin.dart';
+import '../../core/widgets/abort_session_dialog.dart';
+import '../../core/widgets/bottom_cta_bar.dart';
+import '../../core/widgets/countdown_ring.dart';
+import '../../core/widgets/primary_button.dart';
+import '../../core/widgets/skip_question_dialog.dart';
 import '../settings_screen.dart';
 import 'drill_feedback_view.dart';
 import 'drill_summary_screen.dart';
@@ -516,10 +517,9 @@ class _DrillScreenState extends State<DrillScreen> {
         title: Text(
           widget.isReview
               ? '復習'
-              : context
-                    .watch<SettingsService>()
-                    .languageProfile
-                    .compositionTitle,
+              : context.l10n.compositionTitle(
+                  context.watch<SettingsService>().languageProfile.code,
+                ),
         ),
         actions: [
           Padding(
@@ -603,7 +603,7 @@ class _DrillScreenState extends State<DrillScreen> {
                   child: Column(
                     children: [
                       Text(
-                        'この日本語を${profile.label}で',
+                        'この日本語を${context.l10n.languageName(profile.code)}で',
                         style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,

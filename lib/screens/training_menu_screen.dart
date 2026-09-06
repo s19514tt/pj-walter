@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_theme.dart';
-import '../utils/app_route.dart';
-import '../widgets/app_card.dart';
-import '../widgets/section_header.dart';
+import '../core/l10n/l10n.dart';
+import '../core/theme/app_theme.dart';
+import '../core/utils/app_route.dart';
+import '../core/widgets/app_card.dart';
+import '../core/widgets/section_header.dart';
 import 'composition/deck_select_screen.dart';
 import 'monologue/topic_select_screen.dart';
 import 'package:provider/provider.dart';
-import '../models/learning_language.dart';
+import '../core/language/learning_language.dart';
 import '../services/settings_service.dart';
 
 /// 学習タブ。口頭作文・独り言の2つのトレーニングメニューを表示する。
@@ -19,6 +20,7 @@ class TrainingMenuScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final profile = context.watch<SettingsService>().languageProfile;
+    final l10n = context.l10n;
     return Scaffold(
       appBar: AppBar(title: const Text('学習')),
       body: ListView(
@@ -34,8 +36,9 @@ class TrainingMenuScreen extends StatelessWidget {
             },
             child: _MenuItem(
               icon: Icons.edit_note,
-              title: profile.compositionTitle,
-              description: '日本語文を見て制限時間内に${profile.label}で発話し、AIが添削します。',
+              title: l10n.compositionTitle(profile.code),
+              description:
+                  '日本語文を見て制限時間内に${l10n.languageName(profile.code)}で発話し、AIが添削します。',
             ),
           ),
           const SizedBox(height: 12),
@@ -47,7 +50,7 @@ class TrainingMenuScreen extends StatelessWidget {
             },
             child: _MenuItem(
               icon: Icons.mic_none,
-              title: profile.monologueTitle,
+              title: l10n.monologueTitle(profile.code),
               description: 'お題について自由に話し、AIがフィードバックします。',
             ),
           ),

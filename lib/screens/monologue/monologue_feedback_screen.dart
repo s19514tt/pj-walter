@@ -8,13 +8,13 @@ import '../../models/topic.dart';
 import '../../services/gemini_service.dart';
 import '../../services/history_service.dart';
 import '../../services/speech_input_service.dart';
-import '../../theme/app_theme.dart';
-import '../../widgets/abort_session_dialog.dart';
-import '../../widgets/app_card.dart';
-import '../../widgets/bottom_cta_bar.dart';
-import '../../widgets/primary_button.dart';
-import '../../widgets/score_ring.dart';
-import '../../widgets/skeleton.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/widgets/abort_session_dialog.dart';
+import '../../core/widgets/app_card.dart';
+import '../../core/widgets/bottom_cta_bar.dart';
+import '../../core/widgets/primary_button.dart';
+import '../../core/widgets/score_ring.dart';
+import '../../core/widgets/skeleton.dart';
 import '../../services/settings_service.dart';
 
 /// 独り言英会話のGeminiフィードバック画面（段階表示）。

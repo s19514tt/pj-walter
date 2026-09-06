@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../models/srs_item.dart';
-import '../screens/composition/drill_screen.dart';
-import '../services/review_question_resolver.dart';
-import '../services/sentence_repository.dart';
+import '../../models/srs_item.dart';
+import '../../screens/composition/drill_screen.dart';
+import '../../services/review_question_resolver.dart';
+import '../../services/sentence_repository.dart';
 import 'app_route.dart';
-import '../models/learning_language.dart';
+import '../language/learning_language.dart';
 
 /// 「今日の復習」開始処理の共通ロジック。
 ///

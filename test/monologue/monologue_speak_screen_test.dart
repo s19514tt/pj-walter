@@ -22,6 +22,7 @@ import 'package:pj_walter/services/speech_input_service.dart';
 import 'package:provider/provider.dart';
 
 import '../test_support/hive_test_support.dart';
+import '../test_support/test_app.dart';
 
 /// テスト用のフェイク音声入力サービス。
 ///
@@ -136,7 +137,7 @@ void main() {
         ChangeNotifierProvider<HistoryService>.value(value: historyService),
         Provider<GeminiService>.value(value: geminiService),
       ],
-      child: MaterialApp(
+      child: localizedApp(
         home: MonologueSpeakScreen(
           topic: _topic,
           seconds: seconds,

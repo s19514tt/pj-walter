@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pj_walter/utils/word_diff.dart';
+import 'package:pj_walter/core/utils/word_diff.dart';
 
 void main() {
   group('diffWords', () {

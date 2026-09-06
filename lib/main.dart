@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
 
+import 'core/l10n/l10n.dart';
 import 'screens/shell.dart';
 import 'services/gemini_service.dart';
 import 'services/history_service.dart';
 import 'services/sentence_repository.dart';
 import 'services/settings_service.dart';
-import 'theme/app_theme.dart';
+import 'core/theme/app_theme.dart';
 
 /// Hive boxを開き、初期化済みのサービス一式を返す。
 ///
@@ -72,9 +73,11 @@ class MyApp extends StatelessWidget {
         Provider<SentenceRepository>(create: (context) => SentenceRepository()),
       ],
       child: MaterialApp(
-        title: 'pj-walter',
+        onGenerateTitle: (context) => context.l10n.appTitle,
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: const Shell(),
       ),
     );

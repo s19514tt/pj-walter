@@ -6,13 +6,13 @@ import 'package:provider/provider.dart';
 import '../../models/topic.dart';
 import '../../services/sentence_repository.dart';
 import '../../services/settings_service.dart';
-import '../../theme/app_theme.dart';
-import '../../utils/app_route.dart';
-import '../../utils/theme_labels.dart';
-import '../../widgets/app_card.dart';
-import '../../widgets/pill_chip.dart';
-import '../../widgets/secondary_button.dart';
-import '../../widgets/section_header.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/utils/app_route.dart';
+import '../../core/utils/theme_labels.dart';
+import '../../core/widgets/app_card.dart';
+import '../../core/widgets/pill_chip.dart';
+import '../../core/widgets/secondary_button.dart';
+import '../../core/widgets/section_header.dart';
 import 'monologue_speak_screen.dart';
 
 /// 選択できる発話時間（秒）

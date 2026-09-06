@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
 
-import '../models/drill_result.dart';
-import '../models/learning_language.dart';
-import '../models/sentence.dart';
-import '../models/tone_note.dart';
+import '../../models/drill_result.dart';
+import '../language/learning_language.dart';
+import '../../models/sentence.dart';
+import '../../models/tone_note.dart';
 
 /// ピンインの音節分割・声調抽出・声調差分（DESIGN.md「声調フィードバック」参照）。
 ///
@@ -147,7 +147,7 @@ List<ToneNote>? toneNotesFor({
   required Sentence sentence,
   required String? spokenReading,
 }) {
-  if (profile.readingLabel == null) return null;
+  if (!profile.hasReading) return null;
   final expected = sentence.reading;
   if (expected == null || expected.trim().isEmpty) return null;
   if (spokenReading == null || spokenReading.trim().isEmpty) return null;

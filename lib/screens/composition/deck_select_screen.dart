@@ -3,17 +3,18 @@ import 'package:provider/provider.dart';
 
 import '../../services/drill_question_selector.dart';
 import '../../services/sentence_repository.dart';
-import '../../theme/app_theme.dart';
-import '../../utils/app_route.dart';
-import '../../utils/theme_labels.dart';
-import '../../widgets/pill_chip.dart';
-import '../../widgets/primary_button.dart';
-import '../../widgets/secondary_button.dart';
-import '../../widgets/section_header.dart';
+import '../../core/l10n/l10n.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/utils/app_route.dart';
+import '../../core/utils/theme_labels.dart';
+import '../../core/widgets/pill_chip.dart';
+import '../../core/widgets/primary_button.dart';
+import '../../core/widgets/secondary_button.dart';
+import '../../core/widgets/section_header.dart';
 import 'drill_screen.dart';
 import 'sentence_list_screen.dart';
 import '../../services/settings_service.dart';
-import '../../models/learning_language.dart';
+import '../../core/language/learning_language.dart';
 
 /// 口頭作文のデッキ選択画面。
 ///
@@ -38,7 +39,7 @@ class _DeckSelectScreenState extends State<DeckSelectScreen> {
   void initState() {
     super.initState();
     _profile = context.read<SettingsService>().languageProfile;
-    _level = _profile.levels.first.value;
+    _level = _profile.levels.first;
     _countFuture = _loadCount();
   }
 
@@ -83,7 +84,7 @@ class _DeckSelectScreenState extends State<DeckSelectScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(_profile.compositionTitle)),
+      appBar: AppBar(title: Text(context.l10n.compositionTitle(_profile.code))),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -93,12 +94,12 @@ class _DeckSelectScreenState extends State<DeckSelectScreen> {
             spacing: 8,
             runSpacing: 8,
             children: [
-              for (final deck in _profile.levels)
+              for (final level in _profile.levels)
                 PillChip(
-                  label: deck.label,
-                  selected: _level == deck.value,
+                  label: context.l10n.deckLevelLabel(_profile.code, level),
+                  selected: _level == level,
                   onTap: () => setState(() {
-                    _level = deck.value;
+                    _level = level;
                     _countFuture = _loadCount();
                   }),
                 ),

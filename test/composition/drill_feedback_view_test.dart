@@ -4,15 +4,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pj_walter/models/drill_result.dart';
-import 'package:pj_walter/models/learning_language.dart';
+import 'package:pj_walter/core/language/learning_language.dart';
 import 'package:pj_walter/models/sentence.dart';
 import 'package:pj_walter/models/token_usage.dart';
 import 'package:pj_walter/screens/composition/drill_feedback_view.dart';
 import 'package:pj_walter/services/tts_service.dart';
-import 'package:pj_walter/theme/app_theme.dart';
-import 'package:pj_walter/widgets/speak_button.dart';
+import 'package:pj_walter/core/theme/app_theme.dart';
+import 'package:pj_walter/core/widgets/speak_button.dart';
 
 import '../test_support/fake_tts_service.dart';
+import '../test_support/test_app.dart';
 
 Sentence _sentence() => const Sentence(
   id: 's700-001',
@@ -42,7 +43,7 @@ const _zhFeedback = CompositionFeedback(
   comparisonJa: '',
 );
 
-Widget _wrap(Widget child) => MaterialApp(home: Scaffold(body: child));
+Widget _wrap(Widget child) => localizedApp(home: Scaffold(body: child));
 
 /// ルビ付きカードは縦に長く、既定のテスト画面では下のカードがListViewの
 /// 描画範囲外（未構築）になるため、画面を縦に広げる。

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../theme/app_theme.dart';
-import '../../widgets/app_card.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/widgets/app_card.dart';
 
 /// ストリーク大表示（🔥＋N日連続）＋累計サマリー（総ドリル数/総独り言/総学習時間）。
 class StreakSummary extends StatelessWidget {

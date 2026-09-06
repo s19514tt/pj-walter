@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/services.dart' show rootBundle;
 
-import '../models/learning_language.dart';
+import '../core/language/learning_language.dart';
 import '../models/sentence.dart';
 import '../models/topic.dart';
 
@@ -51,7 +51,11 @@ class SentenceRepository {
     if (cached != null) return cached;
 
     if (!profile.hasLevel(level)) {
-      throw ArgumentError.value(level, 'level', '${profile.label}に存在しないレベルです');
+      throw ArgumentError.value(
+        level,
+        'level',
+        'unknown level for ${profile.code}',
+      );
     }
 
     final raw = await rootBundle.loadString(profile.sentencesAssetPath(level));

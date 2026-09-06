@@ -13,7 +13,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:pj_walter/models/learning_language.dart';
+import 'package:pj_walter/core/language/learning_language.dart';
 import 'package:pj_walter/models/sentence.dart';
 import 'package:pj_walter/screens/composition/drill_screen.dart';
 import 'package:pj_walter/services/gemini_service.dart';
@@ -25,6 +25,7 @@ import 'package:provider/provider.dart';
 
 import '../test_support/fake_tts_service.dart';
 import '../test_support/hive_test_support.dart';
+import '../test_support/test_app.dart';
 
 /// テスト用のフェイク音声入力サービス。
 ///
@@ -148,7 +149,7 @@ void main() {
     required FakeSpeechInputService speechInputService,
     int questionSeconds = 30,
   }) {
-    return MaterialApp(
+    return localizedApp(
       home: MultiProvider(
         providers: [
           ChangeNotifierProvider<SettingsService>.value(value: settings),
@@ -774,7 +775,7 @@ void main() {
           ChangeNotifierProvider<HistoryService>.value(value: historyService),
           Provider<GeminiService>.value(value: geminiService),
         ],
-        child: MaterialApp(
+        child: localizedApp(
           home: Builder(
             builder: (context) => Scaffold(
               body: Center(

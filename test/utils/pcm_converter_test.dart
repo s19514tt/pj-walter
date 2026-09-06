@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pj_walter/utils/pcm_converter.dart';
+import 'package:pj_walter/core/utils/pcm_converter.dart';
 
 /// int16サンプル列をPCM16(LE)のバイト列にする。
 Uint8List pcm(List<int> samples) {

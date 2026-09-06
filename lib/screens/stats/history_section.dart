@@ -7,11 +7,11 @@ import '../../models/monologue_result.dart';
 import '../../models/sentence.dart';
 import '../../models/topic.dart';
 import '../../services/sentence_repository.dart';
-import '../../theme/app_theme.dart';
-import '../../utils/score_colors.dart';
-import '../../widgets/app_card.dart';
-import '../../widgets/secondary_button.dart';
-import '../../models/learning_language.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/utils/score_colors.dart';
+import '../../core/widgets/app_card.dart';
+import '../../core/widgets/secondary_button.dart';
+import '../../core/language/learning_language.dart';
 
 const _pageSize = 20;
 
