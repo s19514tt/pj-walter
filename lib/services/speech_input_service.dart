@@ -68,6 +68,13 @@ abstract class SpeechInputService {
   /// （[GeminiException]が投げられる場合がある）。
   Future<SpeechInputResult> stop();
 
+  /// 録音を中止し、溜めた音声を破棄する（文字起こしはしない）。
+  ///
+  /// 「わからないので飛ばす」のように、録音中でも結果が要らないと決まった
+  /// ときに使う。[stop]と違いGeminiへは送らないのでトークンを消費しない。
+  /// 呼んだ後は[start]で録り直せる。
+  Future<void> cancel();
+
   /// このデバイスで音声入力が利用可能かどうか。
   Future<bool> get isAvailable;
 
@@ -212,6 +219,18 @@ class GeminiSpeechInputService implements SpeechInputService {
       mimeType: 'audio/wav',
     );
     return SpeechInputResult(text: text, reading: reading, usage: usage);
+  }
+
+  @override
+  Future<void> cancel() async {
+    await _amplitudeSub?.cancel();
+    _amplitudeSub = null;
+    await _recorder.stop();
+    await _subscription?.cancel();
+    _subscription = null;
+    _streamDone = null;
+    // 溜めたPCMは文字起こしせずに捨てる
+    _bytesBuilder = null;
   }
 
   @override

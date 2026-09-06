@@ -6,24 +6,26 @@ import '../theme/app_theme.dart';
 
 /// スピーキング画面共通の円形カウントダウンリング。
 ///
-/// 直径200のリング。12時起点で**時計回りに消費**され（先端が12時に固定され、
-/// 空きが時計回りに広がる）、1秒ごとの更新をlinear補間で滑らかに描画する。
+/// 200×200のボックスに直径180（半径`size * 0.45`）・線幅8のリングを描く。
+/// 12時起点で**時計回りに消費**され（先端が12時に固定され、空きが時計回りに
+/// 広がる）、1秒ごとの更新をlinear補間で滑らかに描画する。
 ///
-/// 進捗弧の線幅は入力音量[level]に応じて8〜14pxで変化し、話している間は
-/// リングが太く脈動する（Claude Designプロトタイプには無い本実装独自の仕様）。
+/// 聞き取りが始まった瞬間（[recording]がfalse→true）にリング全体が
+/// 1.0→1.11→1.08と一度弾んで1.08で止まる（デザインの`ringPop`、620ms）。
+/// 「大きくなったまま聞き取り中」であることが分かるようにするための演出で、
+/// 線幅・半径は変えない。[recording]がfalseに戻ると等倍へ戻す。
 ///
 /// [dimmed]は録音開始前（pre）の状態で、弧・数字は#B9BDC4、ドットはグレー、
 /// ラベルは[idleLabel]（「聞き取り前」など）になる。聞き取り中（rec）は
 /// オレンジ・「聞き取り中」・赤ドット、残りわずか（[urgent]）で警告色。
 /// トラックは常に#EDEEF1。
-class CountdownRing extends StatelessWidget {
+class CountdownRing extends StatefulWidget {
   const CountdownRing({
     super.key,
     required this.progress,
     required this.label,
     required this.recording,
     required this.idleLabel,
-    this.level = 0,
     this.dimmed = false,
     this.urgent = false,
     this.size = 200,
@@ -35,14 +37,11 @@ class CountdownRing extends StatelessWidget {
   /// 中央に表示する残り時間（「23」「1:42」など）
   final String label;
 
-  /// 録音中かどうか（状態ドットの色と状態テキストに反映）
+  /// 録音中かどうか（状態ドットの色・状態テキストと、弾む演出に反映）
   final bool recording;
 
   /// pre（録音開始前）に表示する状態テキスト（例:「録音前」）
   final String idleLabel;
-
-  /// 入力音量（0.0〜1.0）。進捗弧の線幅を8pxから14pxの間で変化させる。
-  final double level;
 
   /// 録音開始前（pre）の控えめ表示
   final bool dimmed;
@@ -54,68 +53,126 @@ class CountdownRing extends StatelessWidget {
   final double size;
 
   @override
+  State<CountdownRing> createState() => _CountdownRingState();
+}
+
+class _CountdownRingState extends State<CountdownRing>
+    with SingleTickerProviderStateMixin {
+  /// 聞き取り開始時に一度だけ再生する「弾み」（デザインの`ringPop`）。
+  /// 再生後は1.08倍のまま保持し、preへ戻るとリセットして等倍に戻す。
+  static final _pop = TweenSequence<double>([
+    TweenSequenceItem(
+      tween: Tween<double>(
+        begin: 1,
+        end: 1.11,
+      ).chain(CurveTween(curve: const Cubic(.3, .85, .5, 1))),
+      weight: 38,
+    ),
+    TweenSequenceItem(
+      tween: Tween<double>(
+        begin: 1.11,
+        end: 1.08,
+      ).chain(CurveTween(curve: const Cubic(.5, 0, .5, 1))),
+      weight: 62,
+    ),
+  ]);
+
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 620),
+  );
+
+  bool get _active => widget.recording && !widget.dimmed;
+
+  @override
+  void initState() {
+    super.initState();
+    // 最初から聞き取り中の状態で組み立てられた場合は、弾み終わった姿で見せる。
+    if (_active) _controller.value = 1;
+  }
+
+  @override
+  void didUpdateWidget(CountdownRing oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final wasActive = oldWidget.recording && !oldWidget.dimmed;
+    if (_active == wasActive) return;
+    if (_active) {
+      _controller.forward(from: 0);
+    } else {
+      _controller.reset();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final ringColor = dimmed
+    final ringColor = widget.dimmed
         ? const Color(0xFFB9BDC4)
-        : urgent
+        : widget.urgent
         ? AppColors.scoreLow
         : AppColors.primary;
-    return SizedBox(
-      width: size,
-      height: size,
-      // 1秒刻みの更新をlinear補間して滑らかに減らす
-      child: TweenAnimationBuilder<double>(
-        tween: Tween<double>(end: progress.clamp(0, 1)),
-        duration: const Duration(seconds: 1),
-        curve: Curves.linear,
-        builder: (context, animatedProgress, child) => CustomPaint(
-          painter: _CountdownRingPainter(
-            progress: animatedProgress.clamp(0.0, 1.0),
-            color: ringColor,
-            // 音量0で8px、最大音量で14px
-            strokeWidth: dimmed ? 8 : 8 + 6 * level.clamp(0.0, 1.0),
+    return ScaleTransition(
+      scale: _pop.animate(_controller),
+      child: SizedBox(
+        width: widget.size,
+        height: widget.size,
+        // 1秒刻みの更新をlinear補間して滑らかに減らす
+        child: TweenAnimationBuilder<double>(
+          tween: Tween<double>(end: widget.progress.clamp(0, 1)),
+          duration: const Duration(seconds: 1),
+          curve: Curves.linear,
+          builder: (context, animatedProgress, child) => CustomPaint(
+            painter: _CountdownRingPainter(
+              progress: animatedProgress.clamp(0.0, 1.0),
+              color: ringColor,
+            ),
+            child: child,
           ),
-          child: child,
-        ),
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 46,
-                  fontWeight: FontWeight.w900,
-                  color: ringColor,
-                  height: 1,
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  widget.label,
+                  style: TextStyle(
+                    fontSize: 46,
+                    fontWeight: FontWeight.w900,
+                    color: ringColor,
+                    height: 1,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 9),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 7,
-                    height: 7,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: recording && !dimmed
-                          ? AppColors.scoreLow
-                          : const Color(0xFFC4C7CC),
+                const SizedBox(height: 9),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 7,
+                      height: 7,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: _active
+                            ? AppColors.scoreLow
+                            : const Color(0xFFC4C7CC),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    recording && !dimmed ? '聞き取り中' : idleLabel,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.textSecondary,
+                    const SizedBox(width: 6),
+                    Text(
+                      _active ? '聞き取り中' : widget.idleLabel,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -124,37 +181,30 @@ class CountdownRing extends StatelessWidget {
 }
 
 class _CountdownRingPainter extends CustomPainter {
-  _CountdownRingPainter({
-    required this.progress,
-    required this.color,
-    required this.strokeWidth,
-  });
+  _CountdownRingPainter({required this.progress, required this.color});
 
   final double progress;
   final Color color;
 
-  /// 進捗弧の線幅（音量に応じて8〜14px）
-  final double strokeWidth;
-
-  /// 最大線幅。レイアウト半径はこれ基準で固定し、線幅が変わっても
-  /// リングの外径が動かないようにする。
-  static const _maxStrokeWidth = 14.0;
+  /// トラック・進捗弧の線幅（デザインどおり固定）
+  static const _strokeWidth = 8.0;
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = size.center(Offset.zero);
-    final radius = (size.shortestSide - _maxStrokeWidth) / 2;
+    // デザインは200のボックスに r=90。線幅が変わらないので比率で決め打ちできる。
+    final radius = size.shortestSide * 0.45;
 
     final track = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 8
+      ..strokeWidth = _strokeWidth
       ..color = const Color(0xFFEDEEF1);
     canvas.drawCircle(center, radius, track);
 
     if (progress <= 0) return;
     final arc = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
+      ..strokeWidth = _strokeWidth
       ..strokeCap = StrokeCap.round
       ..color = color;
     // 弧の終端（12時）を固定し、始端を時計回りに進めることで
@@ -171,7 +221,5 @@ class _CountdownRingPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_CountdownRingPainter oldDelegate) =>
-      oldDelegate.progress != progress ||
-      oldDelegate.color != color ||
-      oldDelegate.strokeWidth != strokeWidth;
+      oldDelegate.progress != progress || oldDelegate.color != color;
 }

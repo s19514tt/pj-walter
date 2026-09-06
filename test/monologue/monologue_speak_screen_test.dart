@@ -31,6 +31,7 @@ class FakeSpeechInputService implements SpeechInputService {
   String stopResult = 'this is my spoken monologue';
   bool startCalled = false;
   bool stopCalled = false;
+  bool cancelCalled = false;
 
   @override
   Future<bool> get isAvailable async => true;
@@ -49,6 +50,11 @@ class FakeSpeechInputService implements SpeechInputService {
   Future<SpeechInputResult> stop() async {
     stopCalled = true;
     return SpeechInputResult(text: stopResult, usage: TokenUsage.zero);
+  }
+
+  @override
+  Future<void> cancel() async {
+    cancelCalled = true;
   }
 
   @override
