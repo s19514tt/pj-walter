@@ -4,10 +4,10 @@
 // から取っている。語ごとに連結された表記・スペース区切り・儿化・jue/xue・軽声を含む。
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pj_walter/models/drill_result.dart';
+import 'package:pj_walter/features/composition/domain/drill_result.dart';
 import 'package:pj_walter/core/language/learning_language.dart';
-import 'package:pj_walter/models/sentence.dart';
-import 'package:pj_walter/models/tone_note.dart';
+import 'package:pj_walter/features/content/domain/sentence.dart';
+import 'package:pj_walter/features/composition/domain/tone_note.dart';
 import 'package:pj_walter/core/utils/pinyin.dart';
 import 'package:pj_walter/core/utils/word_diff.dart';
 

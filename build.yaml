@@ -1,0 +1,8 @@
+# json_serializable の共通設定。入れ子の DTO も toJson() で Map に展開する
+# （Hive には Map しか入れられないため）。
+targets:
+  $default:
+    builders:
+      json_serializable:
+        options:
+          explicit_to_json: true

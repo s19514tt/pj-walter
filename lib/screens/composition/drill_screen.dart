@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../models/drill_result.dart';
-import '../../models/sentence.dart';
-import '../../models/token_usage.dart';
+import '../../features/composition/domain/drill_result.dart';
+import '../../features/content/domain/sentence.dart';
+import '../../core/domain/token_usage.dart';
 import '../../services/gemini_service.dart';
 import '../../services/history_service.dart';
 import '../../services/settings_service.dart';
@@ -201,8 +201,8 @@ class _DrillScreenState extends State<DrillScreen> {
       score: 0,
       isAcceptable: false,
       corrected: '',
-      explanationJa: explanation,
-      comparisonJa: '',
+      explanation: explanation,
+      comparison: '',
     );
     setState(() {
       _resultMode = true;

@@ -1,4 +1,4 @@
-import '../models/token_usage.dart';
+import '../core/domain/token_usage.dart';
 
 /// `gemini-3.8-flash` の従量課金単価（USD / 100万トークン、Standardティア）。
 ///

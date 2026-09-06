@@ -12,12 +12,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:pj_walter/models/topic.dart';
+import 'package:pj_walter/features/content/domain/topic.dart';
 import 'package:pj_walter/screens/monologue/monologue_speak_screen.dart';
 import 'package:pj_walter/services/gemini_service.dart';
 import 'package:pj_walter/services/history_service.dart';
 import 'package:pj_walter/services/settings_service.dart';
-import 'package:pj_walter/models/token_usage.dart';
+import 'package:pj_walter/core/domain/token_usage.dart';
 import 'package:pj_walter/services/speech_input_service.dart';
 import 'package:provider/provider.dart';
 
@@ -163,13 +163,13 @@ void main() {
             {
               'original': 'this is my spoken monologue',
               'corrected': 'This is my corrected monologue.',
-              'reason_ja': '文頭は大文字にします',
+              'reason': '文頭は大文字にします',
             },
           ],
           'useful_phrases': [
-            {'en': 'It slipped my mind.', 'ja': 'うっかり忘れていた'},
+            {'target': 'It slipped my mind.', 'ja': 'うっかり忘れていた'},
           ],
-          'overall_feedback_ja': '良い流れで話せています。文頭の大文字化に気をつけましょう。',
+          'overall_feedback': '良い流れで話せています。文頭の大文字化に気をつけましょう。',
         }),
         200,
       );
@@ -267,7 +267,7 @@ void main() {
           'corrected_transcript': 'One-press corrected monologue.',
           'corrections': <Map<String, dynamic>>[],
           'useful_phrases': <Map<String, dynamic>>[],
-          'overall_feedback_ja': '一気に添削しました。',
+          'overall_feedback': '一気に添削しました。',
         }),
         200,
       );
@@ -321,7 +321,7 @@ void main() {
           'corrected_transcript': 'Timeout corrected monologue.',
           'corrections': <Map<String, dynamic>>[],
           'useful_phrases': <Map<String, dynamic>>[],
-          'overall_feedback_ja': '時間切れでも添削しました。',
+          'overall_feedback': '時間切れでも添削しました。',
         }),
         200,
       );

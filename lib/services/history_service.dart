@@ -6,10 +6,16 @@
 import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 
-import '../models/drill_result.dart';
-import '../models/monologue_result.dart';
-import '../models/phrase.dart';
-import '../models/srs_item.dart';
+import '../core/data/json_map.dart';
+import '../features/composition/data/drill_result_dto.dart';
+import '../features/monologue/data/monologue_result_dto.dart';
+import '../features/review/data/phrase_dto.dart';
+import '../features/review/data/srs_item_dto.dart';
+
+import '../features/composition/domain/drill_result.dart';
+import '../features/monologue/domain/monologue_result.dart';
+import '../features/review/domain/phrase.dart';
+import '../features/review/domain/srs_item.dart';
 
 /// スコアがこの値未満だとSRSキューに登録される（不合格ライン）。
 const _passingScore = 70;
@@ -54,7 +60,10 @@ class HistoryService extends ChangeNotifier {
     DrillResult result, {
     bool updateSrs = true,
   }) async {
-    await _drillResultsBox.put(result.id, result.toJson());
+    await _drillResultsBox.put(
+      result.id,
+      DrillResultDto.fromEntity(result).toJson(),
+    );
     await _bumpDailyStats(language: result.language, drillCount: 1);
     if (updateSrs && result.feedback.score < _passingScore) {
       await _registerSrsFailure(
@@ -69,7 +78,9 @@ class HistoryService extends ChangeNotifier {
   /// 口頭英作文の結果を新しい順に返す。
   List<DrillResult> get drillHistory {
     final list = _drillResultsBox.values
-        .map((e) => DrillResult.fromJson(Map<String, dynamic>.from(e as Map)))
+        .map(
+          (e) => DrillResultDto.fromJson(jsonMapFrom(e as Object)).toEntity(),
+        )
         .toList();
     list.sort((a, b) => b.timestamp.compareTo(a.timestamp));
     return list;
@@ -79,7 +90,10 @@ class HistoryService extends ChangeNotifier {
 
   /// 独り言英会話の結果を保存し、日次統計を更新する。
   Future<void> saveMonologueResult(MonologueResult result) async {
-    await _monologueResultsBox.put(result.id, result.toJson());
+    await _monologueResultsBox.put(
+      result.id,
+      MonologueResultDto.fromEntity(result).toJson(),
+    );
     await _bumpDailyStats(
       language: result.language,
       monologueCount: 1,
@@ -92,7 +106,8 @@ class HistoryService extends ChangeNotifier {
   List<MonologueResult> get monologueHistory {
     final list = _monologueResultsBox.values
         .map(
-          (e) => MonologueResult.fromJson(Map<String, dynamic>.from(e as Map)),
+          (e) =>
+              MonologueResultDto.fromJson(jsonMapFrom(e as Object)).toEntity(),
         )
         .toList();
     list.sort((a, b) => b.timestamp.compareTo(a.timestamp));
@@ -109,7 +124,7 @@ class HistoryService extends ChangeNotifier {
   List<SrsItem> dueSrsItems({String? language}) {
     final today = _dateOnly(DateTime.now());
     final list = _srsItemsBox.values
-        .map((e) => SrsItem.fromJson(Map<String, dynamic>.from(e as Map)))
+        .map((e) => SrsItemDto.fromJson(jsonMapFrom(e as Object)).toEntity())
         .where((item) => !_dateOnly(item.dueDate).isAfter(today))
         .where((item) => language == null || item.language == language)
         .toList();
@@ -119,7 +134,7 @@ class HistoryService extends ChangeNotifier {
 
   /// 全てのSRSアイテムを返す（順不同）。
   List<SrsItem> get allSrsItems => _srsItemsBox.values
-      .map((e) => SrsItem.fromJson(Map<String, dynamic>.from(e as Map)))
+      .map((e) => SrsItemDto.fromJson(jsonMapFrom(e as Object)).toEntity())
       .toList();
 
   /// 復習結果を反映する。
@@ -129,7 +144,7 @@ class HistoryService extends ChangeNotifier {
   Future<void> applyReviewResult(String sentenceId, bool correct) async {
     final map = _srsItemsBox.get(sentenceId) as Map?;
     if (map == null) return;
-    final item = SrsItem.fromJson(Map<String, dynamic>.from(map));
+    final item = SrsItemDto.fromJson(jsonMapFrom(map)).toEntity();
 
     if (correct) {
       final nextStage = item.stage + 1;
@@ -146,14 +161,20 @@ class HistoryService extends ChangeNotifier {
         ),
         lastResult: true,
       );
-      await _srsItemsBox.put(sentenceId, updated.toJson());
+      await _srsItemsBox.put(
+        sentenceId,
+        SrsItemDto.fromEntity(updated).toJson(),
+      );
     } else {
       final updated = item.copyWith(
         stage: 0,
         dueDate: _addDays(_dateOnly(DateTime.now()), _srsIntervalDays[0]!),
         lastResult: false,
       );
-      await _srsItemsBox.put(sentenceId, updated.toJson());
+      await _srsItemsBox.put(
+        sentenceId,
+        SrsItemDto.fromEntity(updated).toJson(),
+      );
     }
     notifyListeners();
   }
@@ -165,7 +186,7 @@ class HistoryService extends ChangeNotifier {
   }) async {
     final existingMap = _srsItemsBox.get(sentenceId) as Map?;
     final lapses = existingMap != null
-        ? SrsItem.fromJson(Map<String, dynamic>.from(existingMap)).lapses + 1
+        ? SrsItemDto.fromJson(jsonMapFrom(existingMap)).toEntity().lapses + 1
         : 0;
     final item = SrsItem(
       sentenceId: sentenceId,
@@ -176,21 +197,21 @@ class HistoryService extends ChangeNotifier {
       lapses: lapses,
       lastResult: false,
     );
-    await _srsItemsBox.put(sentenceId, item.toJson());
+    await _srsItemsBox.put(sentenceId, SrsItemDto.fromEntity(item).toJson());
   }
 
   // --- フレーズ帳 -----------------------------------------------------
 
   /// フレーズ帳にフレーズを追加する。
   Future<void> addPhrase(Phrase phrase) async {
-    await _phrasesBox.put(phrase.id, phrase.toJson());
+    await _phrasesBox.put(phrase.id, PhraseDto.fromEntity(phrase).toJson());
     notifyListeners();
   }
 
   /// フレーズ帳の内容を新しい順に返す。
   List<Phrase> get phrases {
     final list = _phrasesBox.values
-        .map((e) => Phrase.fromJson(Map<String, dynamic>.from(e as Map)))
+        .map((e) => PhraseDto.fromJson(jsonMapFrom(e as Object)).toEntity())
         .toList();
     list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     return list;

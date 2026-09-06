@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../models/srs_item.dart';
+import '../features/review/domain/srs_item.dart';
 import '../services/history_service.dart';
 import '../services/settings_service.dart';
 import '../core/l10n/l10n.dart';

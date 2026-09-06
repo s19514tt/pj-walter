@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:pj_walter/models/token_usage.dart';
+import 'package:pj_walter/core/domain/token_usage.dart';
 import 'package:pj_walter/services/tts_service.dart';
 
 /// 読み上げの呼び出しを記録するだけの[TtsService]。

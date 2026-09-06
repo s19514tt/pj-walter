@@ -1,18 +1,14 @@
-// TokenUsage（usageMetadataの読み取り・合算）とGeminiPricing（単価の日付切替・
+// TokenUsage（合算）とGeminiPricing（単価の日付切替・
 // 料金計算）のユニットテスト。
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pj_walter/models/token_usage.dart';
+import 'package:pj_walter/core/domain/token_usage.dart';
 import 'package:pj_walter/services/gemini_pricing.dart';
 
 void main() {
   group('TokenUsage', () {
-    test('usageMetadataから読み取り、欠けたキーは0にする', () {
-      final usage = TokenUsage.fromUsageMetadata({
-        'promptTokenCount': 120,
-        'candidatesTokenCount': 30,
-        'totalTokenCount': 150,
-      });
+    test('思考トークンを省略すると0で、出力・合計を計算できる', () {
+      const usage = TokenUsage(promptTokens: 120, candidatesTokens: 30);
       expect(usage.promptTokens, 120);
       expect(usage.candidatesTokens, 30);
       expect(usage.thoughtsTokens, 0);
@@ -21,9 +17,9 @@ void main() {
       expect(usage.isZero, isFalse);
     });
 
-    test('nullならzero', () {
-      expect(TokenUsage.fromUsageMetadata(null), TokenUsage.zero);
+    test('zeroは使用量なし', () {
       expect(TokenUsage.zero.isZero, isTrue);
+      expect(TokenUsage.zero + TokenUsage.zero, TokenUsage.zero);
     });
 
     test('思考トークンは出力に含めて合算する', () {

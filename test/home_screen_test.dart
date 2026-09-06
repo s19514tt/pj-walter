@@ -8,7 +8,8 @@ import 'package:flutter_secure_storage/test/test_flutter_secure_storage_platform
 import 'package:flutter_secure_storage_platform_interface/flutter_secure_storage_platform_interface.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
-import 'package:pj_walter/models/drill_result.dart';
+import 'package:pj_walter/features/composition/domain/drill_result.dart';
+import 'package:pj_walter/features/review/data/srs_item_dto.dart';
 import 'package:pj_walter/screens/home_screen.dart';
 import 'package:pj_walter/services/history_service.dart';
 import 'package:pj_walter/services/sentence_repository.dart';
@@ -114,8 +115,8 @@ void main() {
             score: 40,
             isAcceptable: false,
             corrected: 'corrected text',
-            explanationJa: '解説',
-            comparisonJa: '比較',
+            explanation: '解説',
+            comparison: '比較',
           ),
         ),
       );
@@ -125,9 +126,9 @@ void main() {
       final today = DateTime.now();
       await Hive.box('srs_items').put(
         item.sentenceId,
-        item
-            .copyWith(dueDate: DateTime(today.year, today.month, today.day))
-            .toJson(),
+        SrsItemDto.fromEntity(
+          item.copyWith(dueDate: DateTime(today.year, today.month, today.day)),
+        ).toJson(),
       );
     });
 

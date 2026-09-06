@@ -4,7 +4,7 @@
 import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pj_walter/models/sentence.dart';
+import 'package:pj_walter/features/content/domain/sentence.dart';
 import 'package:pj_walter/services/drill_question_selector.dart';
 
 Sentence _sentence(int i) => Sentence(

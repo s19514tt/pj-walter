@@ -1,5 +1,5 @@
-import '../models/sentence.dart';
-import '../models/srs_item.dart';
+import '../features/content/domain/sentence.dart';
+import '../features/review/domain/srs_item.dart';
 
 /// 復習セッションの出題文解決ロジック。
 ///

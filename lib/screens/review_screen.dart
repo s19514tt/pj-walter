@@ -4,8 +4,8 @@ import 'package:provider/provider.dart';
 
 import '../core/l10n/l10n.dart';
 
-import '../models/phrase.dart';
-import '../models/srs_item.dart';
+import '../features/review/domain/phrase.dart';
+import '../features/review/domain/srs_item.dart';
 import '../services/history_service.dart';
 import '../core/theme/app_theme.dart';
 import '../core/utils/review_launcher.dart';

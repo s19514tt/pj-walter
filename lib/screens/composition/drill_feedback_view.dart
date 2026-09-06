@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../../models/drill_result.dart';
+import '../../features/composition/domain/drill_result.dart';
 import '../../core/language/learning_language.dart';
-import '../../models/sentence.dart';
-import '../../models/token_usage.dart';
-import '../../models/tone_note.dart';
+import '../../features/content/domain/sentence.dart';
+import '../../core/domain/token_usage.dart';
+import '../../features/composition/domain/tone_note.dart';
 import '../../services/tts_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/pinyin.dart';
@@ -253,16 +253,16 @@ class _DrillFeedbackViewState extends State<DrillFeedbackView> {
                   _Section(
                     icon: Icons.lightbulb_outline,
                     title: '解説',
-                    content: feedback.explanationJa,
+                    content: feedback.explanation,
                   ),
                 ),
-                if (feedback.comparisonJa.isNotEmpty) ...[
+                if (feedback.comparison.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   staggered(
                     _Section(
                       icon: Icons.compare_arrows,
                       title: '模範解答との比較',
-                      content: feedback.comparisonJa,
+                      content: feedback.comparison,
                     ),
                   ),
                 ],

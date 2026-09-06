@@ -4,7 +4,7 @@ import 'dart:typed_data';
 import 'package:audioplayers/audioplayers.dart';
 
 import '../core/language/learning_language.dart';
-import '../models/token_usage.dart';
+import '../core/domain/token_usage.dart';
 import 'gemini_service.dart';
 
 /// [TtsService.speak]の結果（読み上げに消費したトークン使用量）。

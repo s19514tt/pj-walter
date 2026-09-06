@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../models/topic.dart';
+import '../../features/content/domain/topic.dart';
 import '../../services/gemini_service.dart';
 import '../../services/settings_service.dart';
 import '../../services/speech_input_service.dart';

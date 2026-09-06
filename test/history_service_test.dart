@@ -2,9 +2,10 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
-import 'package:pj_walter/models/drill_result.dart';
-import 'package:pj_walter/models/monologue_result.dart';
-import 'package:pj_walter/models/phrase.dart';
+import 'package:pj_walter/features/composition/domain/drill_result.dart';
+import 'package:pj_walter/features/monologue/domain/monologue_result.dart';
+import 'package:pj_walter/features/review/domain/phrase.dart';
+import 'package:pj_walter/features/review/data/srs_item_dto.dart';
 import 'package:pj_walter/services/history_service.dart';
 
 import 'test_support/hive_test_support.dart';
@@ -45,8 +46,8 @@ DrillResult _drillResult({
     score: score,
     isAcceptable: score >= 70,
     corrected: 'corrected text',
-    explanationJa: '解説',
-    comparisonJa: '比較',
+    explanation: '解説',
+    comparison: '比較',
   ),
 );
 
@@ -62,7 +63,7 @@ MonologueResult _monologueResult({int seconds = 60}) => MonologueResult(
     correctedTranscript: 'corrected transcript',
     corrections: [],
     usefulPhrases: [],
-    overallFeedbackJa: '総評',
+    overallFeedback: '総評',
   ),
 );
 
@@ -243,7 +244,9 @@ void main() {
       final today = _dateOnly(DateTime.now());
       final item = historyService.allSrsItems.first;
       final adjusted = item.copyWith(dueDate: today);
-      await Hive.box('srs_items').put(item.sentenceId, adjusted.toJson());
+      await Hive.box(
+        'srs_items',
+      ).put(item.sentenceId, SrsItemDto.fromEntity(adjusted).toJson());
 
       expect(historyService.dueSrsItems(), hasLength(1));
       expect(historyService.dueSrsItems().first.sentenceId, 's700-020');

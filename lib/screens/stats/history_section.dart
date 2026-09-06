@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-import '../../models/drill_result.dart';
-import '../../models/monologue_result.dart';
-import '../../models/sentence.dart';
-import '../../models/topic.dart';
+import '../../features/composition/domain/drill_result.dart';
+import '../../features/monologue/domain/monologue_result.dart';
+import '../../features/content/domain/sentence.dart';
+import '../../features/content/domain/topic.dart';
 import '../../services/sentence_repository.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/score_colors.dart';
@@ -228,7 +228,7 @@ class _DrillDetailSheet extends StatelessWidget {
         const SizedBox(height: 12),
         _DetailField(label: '修正版', value: result.feedback.corrected),
         const SizedBox(height: 12),
-        _DetailField(label: '解説', value: result.feedback.explanationJa),
+        _DetailField(label: '解説', value: result.feedback.explanation),
       ],
     );
   }
@@ -269,7 +269,7 @@ class _MonologueDetailSheet extends StatelessWidget {
         const SizedBox(height: 12),
         _DetailField(label: 'トランスクリプト', value: result.transcript),
         const SizedBox(height: 12),
-        _DetailField(label: '総評', value: result.feedback.overallFeedbackJa),
+        _DetailField(label: '総評', value: result.feedback.overallFeedback),
       ],
     );
   }

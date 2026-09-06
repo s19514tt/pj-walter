@@ -2,8 +2,8 @@
 // 欠損スキップ・dueDateが古い順に最大件数）のテスト。
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pj_walter/models/sentence.dart';
-import 'package:pj_walter/models/srs_item.dart';
+import 'package:pj_walter/features/content/domain/sentence.dart';
+import 'package:pj_walter/features/review/domain/srs_item.dart';
 import 'package:pj_walter/services/review_question_resolver.dart';
 
 Sentence _sentence({required String id, int level = 700}) => Sentence(

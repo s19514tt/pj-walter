@@ -14,12 +14,12 @@ import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:pj_walter/core/language/learning_language.dart';
-import 'package:pj_walter/models/sentence.dart';
+import 'package:pj_walter/features/content/domain/sentence.dart';
 import 'package:pj_walter/screens/composition/drill_screen.dart';
 import 'package:pj_walter/services/gemini_service.dart';
 import 'package:pj_walter/services/history_service.dart';
 import 'package:pj_walter/services/settings_service.dart';
-import 'package:pj_walter/models/token_usage.dart';
+import 'package:pj_walter/core/domain/token_usage.dart';
 import 'package:pj_walter/services/speech_input_service.dart';
 import 'package:provider/provider.dart';
 
@@ -184,8 +184,8 @@ void main() {
           'score': 85,
           'is_acceptable': true,
           'corrected': 'Corrected answer $callCount',
-          'explanation_ja': '解説$callCount',
-          'comparison_ja': '比較$callCount',
+          'explanation': '解説$callCount',
+          'comparison': '比較$callCount',
         }),
         200,
       );
@@ -337,8 +337,8 @@ void main() {
           'score': 90,
           'is_acceptable': true,
           'corrected': 'One-press corrected answer',
-          'explanation_ja': '解説',
-          'comparison_ja': '比較',
+          'explanation': '解説',
+          'comparison': '比較',
         }),
         200,
       );
@@ -407,8 +407,8 @@ void main() {
           'is_acceptable': true,
           'corrected': '我要水。',
           'corrected_reading': 'wǒ yào shuǐ',
-          'explanation_ja': '解説',
-          'comparison_ja': '比較',
+          'explanation': '解説',
+          'comparison': '比較',
         }),
         200,
       );
@@ -466,8 +466,8 @@ void main() {
           'score': 90,
           'is_acceptable': true,
           'corrected': 'ok',
-          'explanation_ja': '解説',
-          'comparison_ja': '比較',
+          'explanation': '解説',
+          'comparison': '比較',
         }),
         200,
       );

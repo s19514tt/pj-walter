@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../models/srs_item.dart';
+import '../../features/review/domain/srs_item.dart';
 import '../../screens/composition/drill_screen.dart';
 import '../../services/review_question_resolver.dart';
 import '../../services/sentence_repository.dart';

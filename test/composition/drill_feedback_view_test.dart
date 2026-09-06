@@ -3,10 +3,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pj_walter/models/drill_result.dart';
+import 'package:pj_walter/features/composition/domain/drill_result.dart';
 import 'package:pj_walter/core/language/learning_language.dart';
-import 'package:pj_walter/models/sentence.dart';
-import 'package:pj_walter/models/token_usage.dart';
+import 'package:pj_walter/features/content/domain/sentence.dart';
+import 'package:pj_walter/core/domain/token_usage.dart';
 import 'package:pj_walter/screens/composition/drill_feedback_view.dart';
 import 'package:pj_walter/services/tts_service.dart';
 import 'package:pj_walter/core/theme/app_theme.dart';
@@ -39,8 +39,8 @@ const _zhFeedback = CompositionFeedback(
   isAcceptable: true,
   corrected: '我要水。',
   correctedReading: 'wǒ yào shuǐ',
-  explanationJa: '解説',
-  comparisonJa: '',
+  explanation: '解説',
+  comparison: '',
 );
 
 Widget _wrap(Widget child) => localizedApp(home: Scaffold(body: child));
@@ -78,8 +78,8 @@ void main() {
       score: 85,
       isAcceptable: true,
       corrected: 'I had toast this morning.',
-      explanationJa: '解説',
-      comparisonJa: '比較',
+      explanation: '解説',
+      comparison: '比較',
     );
 
     await tester.pumpWidget(
@@ -110,8 +110,8 @@ void main() {
       score: 100,
       isAcceptable: true,
       corrected: 'I had toast this morning.',
-      explanationJa: '解説',
-      comparisonJa: '',
+      explanation: '解説',
+      comparison: '',
     );
 
     await tester.pumpWidget(
@@ -140,8 +140,8 @@ void main() {
       score: 100,
       isAcceptable: true,
       corrected: 'I had toast.',
-      explanationJa: '解説',
-      comparisonJa: '',
+      explanation: '解説',
+      comparison: '',
     );
 
     await tester.pumpWidget(
@@ -166,8 +166,8 @@ void main() {
       score: 0,
       isAcceptable: false,
       corrected: '',
-      explanationJa: '時間切れで回答できませんでした。模範解答を確認して復習しましょう。',
-      comparisonJa: '',
+      explanation: '時間切れで回答できませんでした。模範解答を確認して復習しましょう。',
+      comparison: '',
     );
 
     await tester.pumpWidget(
@@ -215,8 +215,8 @@ void main() {
       score: 85,
       isAcceptable: true,
       corrected: 'I had toast this morning.',
-      explanationJa: '解説',
-      comparisonJa: '比較',
+      explanation: '解説',
+      comparison: '比較',
     );
     final tts = FakeTtsService();
 
@@ -253,8 +253,8 @@ void main() {
       score: 85,
       isAcceptable: true,
       corrected: 'I had toast this morning.',
-      explanationJa: '解説',
-      comparisonJa: '比較',
+      explanation: '解説',
+      comparison: '比較',
     );
     final tts = FakeTtsService()..pending = true;
 
@@ -288,8 +288,8 @@ void main() {
       score: 85,
       isAcceptable: true,
       corrected: 'I had toast this morning.',
-      explanationJa: '解説',
-      comparisonJa: '比較',
+      explanation: '解説',
+      comparison: '比較',
     );
     final tts = FakeTtsService()..error = TtsException('読み上げできませんでした。');
 
@@ -319,8 +319,8 @@ void main() {
       score: 0,
       isAcceptable: false,
       corrected: '',
-      explanationJa: '時間切れ',
-      comparisonJa: '',
+      explanation: '時間切れ',
+      comparison: '',
     );
     final tts = FakeTtsService();
 
@@ -351,8 +351,8 @@ void main() {
       score: 85,
       isAcceptable: true,
       corrected: 'I had toast this morning.',
-      explanationJa: '解説',
-      comparisonJa: '比較',
+      explanation: '解説',
+      comparison: '比較',
     );
     // 1回目はGeminiを呼ぶので使用量が返る
     final tts = FakeTtsService()
@@ -601,8 +601,8 @@ void main() {
       corrected: '我在建筑物前面拍照。',
       correctedWords: correctedWords,
       spokenWords: spokenWords,
-      explanationJa: '解説',
-      comparisonJa: '',
+      explanation: '解説',
+      comparison: '',
     );
 
     List<WordUnit> correctedWords({String jianzhuwu = 'jiàn zhù wù'}) => [

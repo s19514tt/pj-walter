@@ -7,8 +7,8 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
-import 'package:pj_walter/models/drill_result.dart';
-import 'package:pj_walter/models/monologue_result.dart';
+import 'package:pj_walter/features/composition/domain/drill_result.dart';
+import 'package:pj_walter/features/monologue/domain/monologue_result.dart';
 import 'package:pj_walter/screens/stats_screen.dart';
 import 'package:pj_walter/services/history_service.dart';
 import 'package:pj_walter/services/sentence_repository.dart';
@@ -89,8 +89,8 @@ void main() {
             score: 85,
             isAcceptable: true,
             corrected: 'This is my corrected answer.',
-            explanationJa: '解説テキスト',
-            comparisonJa: '比較テキスト',
+            explanation: '解説テキスト',
+            comparison: '比較テキスト',
           ),
         ),
       );
@@ -107,7 +107,7 @@ void main() {
             correctedTranscript: 'corrected transcript',
             corrections: [],
             usefulPhrases: [],
-            overallFeedbackJa: '総評テキスト',
+            overallFeedback: '総評テキスト',
           ),
         ),
       );

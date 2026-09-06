@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:record/record.dart';
 
 import '../core/language/learning_language.dart';
-import '../models/token_usage.dart';
+import '../core/domain/token_usage.dart';
 import '../core/utils/pcm_converter.dart';
 import '../core/utils/wav_builder.dart';
 import 'gemini_service.dart';

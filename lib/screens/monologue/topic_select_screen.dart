@@ -3,7 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../models/topic.dart';
+import '../../features/content/domain/topic.dart';
 import '../../services/sentence_repository.dart';
 import '../../services/settings_service.dart';
 import '../../core/theme/app_theme.dart';

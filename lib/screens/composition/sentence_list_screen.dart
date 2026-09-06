@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../models/sentence.dart';
+import '../../features/content/domain/sentence.dart';
 import '../../services/sentence_repository.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/theme_labels.dart';

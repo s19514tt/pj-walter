@@ -1,6 +1,6 @@
 import 'dart:math';
 
-import '../models/sentence.dart';
+import '../features/content/domain/sentence.dart';
 
 /// 口頭英作文ドリル1セッション分の出題文選択ロジック。
 ///

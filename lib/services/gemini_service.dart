@@ -4,11 +4,13 @@ import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
-import '../models/drill_result.dart';
+import '../features/composition/domain/drill_result.dart';
 import '../core/language/learning_language.dart';
-import '../models/monologue_result.dart';
-import '../models/token_usage.dart';
+import '../features/monologue/domain/monologue_result.dart';
+import '../core/domain/token_usage.dart';
 import '../core/utils/wav_builder.dart';
+import '../features/composition/data/drill_result_dto.dart';
+import '../features/monologue/data/monologue_result_dto.dart';
 import 'settings_service.dart';
 
 /// [GeminiService.correctComposition]の結果（添削＋トークン使用量）。
@@ -136,7 +138,10 @@ ${withReading ? _correctedWordsInstruction : ''}''';
       schema: withReading ? _compositionSchemaWithReading : _compositionSchema,
     );
     try {
-      return (feedback: CompositionFeedback.fromJson(json), usage: usage);
+      return (
+        feedback: CompositionFeedbackDto.fromJson(json).toEntity(),
+        usage: usage,
+      );
     } catch (_) {
       throw GeminiException('Geminiからの応答を解析できませんでした。時間を置いて再度お試しください。');
     }
@@ -183,7 +188,10 @@ ${withReading ? _correctedWordsInstruction : ''}''';
       schema: _monologueSchema,
     );
     try {
-      return (feedback: MonologueFeedback.fromJson(json), usage: usage);
+      return (
+        feedback: MonologueFeedbackDto.fromJson(json).toEntity(),
+        usage: usage,
+      );
     } catch (_) {
       throw GeminiException('Geminiからの応答を解析できませんでした。時間を置いて再度お試しください。');
     }
@@ -472,7 +480,12 @@ ${withReading ? _correctedWordsInstruction : ''}''';
   TokenUsage _extractUsage(Map<String, dynamic> decoded) {
     final metadata = decoded['usageMetadata'];
     if (metadata is! Map) return TokenUsage.zero;
-    return TokenUsage.fromUsageMetadata(Map<String, dynamic>.from(metadata));
+    int read(String key) => (metadata[key] as num?)?.toInt() ?? 0;
+    return TokenUsage(
+      promptTokens: read('promptTokenCount'),
+      candidatesTokens: read('candidatesTokenCount'),
+      thoughtsTokens: read('thoughtsTokenCount'),
+    );
   }
 
   String _extractText(Map<String, dynamic> decoded) {
@@ -541,15 +554,15 @@ ${withReading ? _correctedWordsInstruction : ''}''';
       'score': {'type': 'INTEGER'},
       'is_acceptable': {'type': 'BOOLEAN'},
       'corrected': {'type': 'STRING'},
-      'explanation_ja': {'type': 'STRING'},
-      'comparison_ja': {'type': 'STRING'},
+      'explanation': {'type': 'STRING'},
+      'comparison': {'type': 'STRING'},
     },
     'required': [
       'score',
       'is_acceptable',
       'corrected',
-      'explanation_ja',
-      'comparison_ja',
+      'explanation',
+      'comparison',
     ],
   };
 
@@ -586,8 +599,8 @@ ${withReading ? _correctedWordsInstruction : ''}''';
         'description': '生徒の発話を単語ごとに区切ったもの。順に連結すると発話と一致する。',
         'items': {'type': 'STRING'},
       },
-      'explanation_ja': {'type': 'STRING'},
-      'comparison_ja': {'type': 'STRING'},
+      'explanation': {'type': 'STRING'},
+      'comparison': {'type': 'STRING'},
     },
     'required': [
       'score',
@@ -595,8 +608,8 @@ ${withReading ? _correctedWordsInstruction : ''}''';
       'corrected',
       'corrected_words',
       'spoken_words',
-      'explanation_ja',
-      'comparison_ja',
+      'explanation',
+      'comparison',
     ],
   };
 
@@ -626,9 +639,9 @@ ${withReading ? _correctedWordsInstruction : ''}''';
           'properties': {
             'original': {'type': 'STRING'},
             'corrected': {'type': 'STRING'},
-            'reason_ja': {'type': 'STRING'},
+            'reason': {'type': 'STRING'},
           },
-          'required': ['original', 'corrected', 'reason_ja'],
+          'required': ['original', 'corrected', 'reason'],
         },
       },
       'useful_phrases': {
@@ -642,14 +655,14 @@ ${withReading ? _correctedWordsInstruction : ''}''';
           'required': ['target', 'ja'],
         },
       },
-      'overall_feedback_ja': {'type': 'STRING'},
+      'overall_feedback': {'type': 'STRING'},
     },
     'required': [
       'fluency_score',
       'corrected_transcript',
       'corrections',
       'useful_phrases',
-      'overall_feedback_ja',
+      'overall_feedback',
     ],
   };
 }

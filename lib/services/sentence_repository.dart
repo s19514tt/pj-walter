@@ -3,8 +3,10 @@ import 'dart:convert';
 import 'package:flutter/services.dart' show rootBundle;
 
 import '../core/language/learning_language.dart';
-import '../models/sentence.dart';
-import '../models/topic.dart';
+import '../features/content/domain/sentence.dart';
+import '../features/content/data/sentence_dto.dart';
+import '../features/content/data/topic_dto.dart';
+import '../features/content/domain/topic.dart';
 
 /// 教材JSON（`assets/data/{言語}/`）のロード・キャッシュ・フィルタを担うリポジトリ。
 ///
@@ -64,10 +66,9 @@ class SentenceRepository {
     // キャッシュを呼び出し側のin-place操作（シャッフル等）から守るためunmodifiableで保持する
     final list = List<Sentence>.unmodifiable(
       (json['sentences'] as List<dynamic>).map(
-        (e) => Sentence.fromJson({
-          ...e as Map<String, dynamic>,
-          'level': jsonLevel,
-        }),
+        (e) => SentenceDto.fromJson(
+          e as Map<String, dynamic>,
+        ).toEntity(level: jsonLevel),
       ),
     );
 
@@ -83,7 +84,7 @@ class SentenceRepository {
     final json = jsonDecode(raw) as Map<String, dynamic>;
     final list = List<Topic>.unmodifiable(
       (json['topics'] as List<dynamic>).map(
-        (e) => Topic.fromJson(e as Map<String, dynamic>),
+        (e) => TopicDto.fromJson(e as Map<String, dynamic>).toEntity(),
       ),
     );
 

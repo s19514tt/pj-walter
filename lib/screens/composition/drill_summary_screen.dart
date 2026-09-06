@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-import '../../models/token_usage.dart';
+import '../../core/domain/token_usage.dart';
 import '../../services/drill_question_selector.dart';
 import '../../services/gemini_pricing.dart';
 import '../../services/sentence_repository.dart';

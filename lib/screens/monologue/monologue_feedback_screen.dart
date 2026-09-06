@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../models/monologue_result.dart';
-import '../../models/phrase.dart';
-import '../../models/topic.dart';
+import '../../features/monologue/domain/monologue_result.dart';
+import '../../features/review/domain/phrase.dart';
+import '../../features/content/domain/topic.dart';
 import '../../services/gemini_service.dart';
 import '../../services/history_service.dart';
 import '../../services/speech_input_service.dart';
@@ -252,7 +252,7 @@ class _MonologueFeedbackScreenState extends State<MonologueFeedbackScreen> {
                     _Section(
                       title: '総評',
                       child: Text(
-                        result.feedback.overallFeedbackJa,
+                        result.feedback.overallFeedback,
                         style: const TextStyle(
                           fontSize: 13,
                           height: 1.8,
@@ -305,10 +305,10 @@ class _MonologueFeedbackScreenState extends State<MonologueFeedbackScreen> {
                                   ),
                                 ],
                               ),
-                              if (correction.reasonJa.isNotEmpty) ...[
+                              if (correction.reason.isNotEmpty) ...[
                                 const SizedBox(height: 4),
                                 Text(
-                                  correction.reasonJa,
+                                  correction.reason,
                                   style: const TextStyle(
                                     fontSize: 12,
                                     height: 1.6,

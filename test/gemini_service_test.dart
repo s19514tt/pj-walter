@@ -12,8 +12,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:pj_walter/models/drill_result.dart';
-import 'package:pj_walter/models/token_usage.dart';
+import 'package:pj_walter/features/composition/domain/drill_result.dart';
+import 'package:pj_walter/core/domain/token_usage.dart';
 import 'package:pj_walter/services/gemini_service.dart';
 import 'package:pj_walter/services/settings_service.dart';
 
@@ -74,8 +74,8 @@ void main() {
             'score': 85,
             'is_acceptable': true,
             'corrected': "I'll call you back later.",
-            'explanation_ja': '概ね正しいです。',
-            'comparison_ja': '模範解答とほぼ同じです。',
+            'explanation': '概ね正しいです。',
+            'comparison': '模範解答とほぼ同じです。',
           }),
           200,
         );
@@ -194,13 +194,13 @@ void main() {
               {
                 'original': 'I eat toast',
                 'corrected': 'I had toast',
-                'reason_ja': '過去形が適切です。',
+                'reason': '過去形が適切です。',
               },
             ],
             'useful_phrases': [
-              {'en': 'It slipped my mind.', 'ja': 'うっかり忘れていた'},
+              {'target': 'It slipped my mind.', 'ja': 'うっかり忘れていた'},
             ],
-            'overall_feedback_ja': '良く話せていました。',
+            'overall_feedback': '良く話せていました。',
           }),
           200,
         );
@@ -295,8 +295,8 @@ void main() {
               {'hanzi': '。', 'pinyin': ''},
             ],
             'spoken_words': ['我', '要', '睡'],
-            'explanation_ja': '解説',
-            'comparison_ja': '比較',
+            'explanation': '解説',
+            'comparison': '比較',
           }),
           200,
         );
@@ -346,8 +346,8 @@ void main() {
             'score': 90,
             'is_acceptable': true,
             'corrected': 'ok',
-            'explanation_ja': '',
-            'comparison_ja': '',
+            'explanation': '',
+            'comparison': '',
           }),
           200,
         );
@@ -546,8 +546,8 @@ void main() {
               'score': 80,
               'is_acceptable': true,
               'corrected': 'ok',
-              'explanation_ja': '',
-              'comparison_ja': '',
+              'explanation': '',
+              'comparison': '',
             },
             usageMetadata: {
               'promptTokenCount': 150,
@@ -692,8 +692,8 @@ void main() {
             'score': 90,
             'is_acceptable': true,
             'corrected': 'ok',
-            'explanation_ja': '',
-            'comparison_ja': '',
+            'explanation': '',
+            'comparison': '',
           }),
           200,
         );
