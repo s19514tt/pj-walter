@@ -1,8 +1,3 @@
-// コンストラクタの公開パラメータ名と内部実装用のプライベートフィールド名を
-// あえて分けているため、initializing formalは使わない
-// （使うとパラメータ名がprivateになり外部から渡せなくなる）。
-// ignore_for_file: prefer_initializing_formals
-
 import 'dart:async';
 import 'dart:typed_data';
 
@@ -23,12 +18,10 @@ import '../domain/transcription_repository.dart';
 /// ファイルI/Oを一切使わないためWeb/Android/iOS全てで同じコードパスが動く。
 class RecorderSpeechInputService implements SpeechInputService {
   RecorderSpeechInputService({
-    required TranscriptionRepository transcription,
-    required LanguageProfile profile,
+    required this._transcription,
+    required this._profile,
     AudioRecorder? recorder,
-  }) : _transcription = transcription,
-       _profile = profile,
-       _recorder = recorder ?? AudioRecorder();
+  }) : _recorder = recorder ?? AudioRecorder();
 
   static const _sampleRate = 16000;
   static const _channels = 1;

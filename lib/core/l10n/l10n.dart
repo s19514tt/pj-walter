@@ -10,3 +10,21 @@ export 'app_localizations.dart';
 extension L10nContext on BuildContext {
   AppLocalizations get l10n => AppLocalizations.of(this);
 }
+
+/// ARB のキーを組み合わせた、画面をまたいで使う整形。
+extension L10nFormats on AppLocalizations {
+  /// 秒数を「30秒」「1分」「1分30秒」のように整形する。
+  String formatDuration(int seconds) {
+    if (seconds < 60) return durationSeconds(seconds);
+    final minutes = seconds ~/ 60;
+    final rest = seconds % 60;
+    return rest == 0
+        ? durationMinutes(minutes)
+        : durationMinutesSeconds(minutes, rest);
+  }
+
+  /// デッキ名を「TOEIC700点台・TOEIC800点台」のように1行に繋ぐ。
+  String deckLevelList(String languageCode, List<int> levels) => levels
+      .map((level) => deckLevelLabel(languageCode, level))
+      .join(listSeparator);
+}

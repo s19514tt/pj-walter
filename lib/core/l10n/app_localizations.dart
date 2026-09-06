@@ -135,6 +135,142 @@ abstract class AppLocalizations {
   /// In ja, this message translates to:
   /// **'{kind, select, apiKeyMissing{APIキーが設定されていません。設定画面からAPIキーを登録してください。} apiKeyInvalid{APIキーが無効です。設定画面で正しいAPIキーを設定してください。} rateLimited{リクエストが多すぎます。しばらく待ってから再度お試しください。} badRequest{リクエストが不正です。入力内容を確認してください。} serverError{サーバーでエラーが発生しました。しばらくしてから再度お試しください。} unexpectedStatus{通信エラーが発生しました。しばらくしてから再度お試しください。} timeout{通信がタイムアウトしました。電波状況を確認して再度お試しください。} network{通信エラーが発生しました。ネットワーク接続を確認してください。} invalidResponse{応答を解析できませんでした。時間を置いて再度お試しください。} emptyResponse{文字起こし結果が返ってきませんでした。もう一度お試しください。} noSpeech{音声を聞き取れませんでした。もう一度お試しください。} noAudio{読み上げ音声を取得できませんでした。時間を置いて再度お試しください。} micPermission{マイクの権限が許可されていません。設定でマイクを許可してください。} playback{音声を再生できませんでした。端末の音量・サイレントモードを確認してください。} other{エラーが発生しました。もう一度お試しください。}}'**
   String failureMessage(String kind);
+
+  /// No description provided for @save.
+  ///
+  /// In ja, this message translates to:
+  /// **'保存'**
+  String get save;
+
+  /// No description provided for @cancel.
+  ///
+  /// In ja, this message translates to:
+  /// **'キャンセル'**
+  String get cancel;
+
+  /// 箇条書きを1行に繋ぐときの区切り
+  ///
+  /// In ja, this message translates to:
+  /// **'・'**
+  String get listSeparator;
+
+  /// 秒数の表示（60秒未満）
+  ///
+  /// In ja, this message translates to:
+  /// **'{count}秒'**
+  String durationSeconds(int count);
+
+  /// 分の表示
+  ///
+  /// In ja, this message translates to:
+  /// **'{count}分'**
+  String durationMinutes(int count);
+
+  /// 分と秒の表示
+  ///
+  /// In ja, this message translates to:
+  /// **'{minutes}分{seconds}秒'**
+  String durationMinutesSeconds(int minutes, int seconds);
+
+  /// No description provided for @settingsTitle.
+  ///
+  /// In ja, this message translates to:
+  /// **'設定'**
+  String get settingsTitle;
+
+  /// No description provided for @settingsLearningLanguageSection.
+  ///
+  /// In ja, this message translates to:
+  /// **'学習する言語'**
+  String get settingsLearningLanguageSection;
+
+  /// 学習言語の説明。levels はデッキ名を listSeparator で繋いだもの
+  ///
+  /// In ja, this message translates to:
+  /// **'{levels}の教材で、{composition}と{monologue}のトレーニングができます。'**
+  String settingsLanguageDescription(
+    String levels,
+    String composition,
+    String monologue,
+  );
+
+  /// No description provided for @settingsApiKeySection.
+  ///
+  /// In ja, this message translates to:
+  /// **'Gemini APIキー'**
+  String get settingsApiKeySection;
+
+  /// No description provided for @settingsApiKeyDescription.
+  ///
+  /// In ja, this message translates to:
+  /// **'Google AI Studio（aistudio.google.com）でAPIキーを取得して入力してください。'**
+  String get settingsApiKeyDescription;
+
+  /// No description provided for @settingsApiKeyConfigured.
+  ///
+  /// In ja, this message translates to:
+  /// **'APIキーは設定済みです'**
+  String get settingsApiKeyConfigured;
+
+  /// No description provided for @settingsApiKeyHint.
+  ///
+  /// In ja, this message translates to:
+  /// **'APIキーを入力'**
+  String get settingsApiKeyHint;
+
+  /// No description provided for @settingsDeleteApiKey.
+  ///
+  /// In ja, this message translates to:
+  /// **'APIキーを削除'**
+  String get settingsDeleteApiKey;
+
+  /// No description provided for @settingsApiKeySaved.
+  ///
+  /// In ja, this message translates to:
+  /// **'APIキーを保存しました'**
+  String get settingsApiKeySaved;
+
+  /// No description provided for @settingsApiKeyDeleted.
+  ///
+  /// In ja, this message translates to:
+  /// **'APIキーを削除しました'**
+  String get settingsApiKeyDeleted;
+
+  /// No description provided for @settingsModelSection.
+  ///
+  /// In ja, this message translates to:
+  /// **'モデル・音声認識'**
+  String get settingsModelSection;
+
+  /// No description provided for @settingsModelLabel.
+  ///
+  /// In ja, this message translates to:
+  /// **'使用モデル'**
+  String get settingsModelLabel;
+
+  /// No description provided for @settingsSttLabel.
+  ///
+  /// In ja, this message translates to:
+  /// **'音声認識'**
+  String get settingsSttLabel;
+
+  /// No description provided for @settingsSttValue.
+  ///
+  /// In ja, this message translates to:
+  /// **'話した音声をGeminiに送信して文字起こし'**
+  String get settingsSttValue;
+
+  /// No description provided for @settingsModelNote.
+  ///
+  /// In ja, this message translates to:
+  /// **'添削・文字起こしは全てこのモデルで行い、APIキーの利用量を消費します。'**
+  String get settingsModelNote;
+
+  /// No description provided for @settingsMonologueSecondsSection.
+  ///
+  /// In ja, this message translates to:
+  /// **'独り言のデフォルト時間'**
+  String get settingsMonologueSecondsSection;
 }
 
 class _AppLocalizationsDelegate

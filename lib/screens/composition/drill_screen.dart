@@ -24,7 +24,7 @@ import '../../core/widgets/bottom_cta_bar.dart';
 import '../../core/widgets/countdown_ring.dart';
 import '../../core/widgets/primary_button.dart';
 import '../../core/widgets/skip_question_dialog.dart';
-import '../settings_screen.dart';
+import '../../features/settings/presentation/settings_screen.dart';
 import 'drill_feedback_view.dart';
 import 'drill_summary_screen.dart';
 

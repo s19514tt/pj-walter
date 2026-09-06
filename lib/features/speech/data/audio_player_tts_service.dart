@@ -1,8 +1,3 @@
-// コンストラクタの公開パラメータ名と内部実装用のプライベートフィールド名を
-// あえて分けているため、initializing formalは使わない
-// （使うとパラメータ名がprivateになり外部から渡せなくなる）。
-// ignore_for_file: prefer_initializing_formals
-
 import 'dart:async';
 import 'dart:typed_data';
 
@@ -25,12 +20,10 @@ import '../domain/tts_service.dart';
 /// キャッシュ件数の上限は設けていない（画面を離れると破棄される）。
 class AudioPlayerTtsService implements TtsService {
   AudioPlayerTtsService({
-    required TtsRepository tts,
-    required LanguageProfile profile,
+    required this._tts,
+    required this._profile,
     AudioPlayer? player,
-  }) : _tts = tts,
-       _profile = profile,
-       _player = player ?? AudioPlayer();
+  }) : _player = player ?? AudioPlayer();
 
   final TtsRepository _tts;
   final LanguageProfile _profile;

@@ -57,5 +57,71 @@
         "type": "String"
       }
     }
-  }
+  },
+  "save": "保存",
+  "cancel": "キャンセル",
+  "listSeparator": "・",
+  "@listSeparator": {
+    "description": "箇条書きを1行に繋ぐときの区切り"
+  },
+  "durationSeconds": "{count}秒",
+  "@durationSeconds": {
+    "description": "秒数の表示（60秒未満）",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "durationMinutes": "{count}分",
+  "@durationMinutes": {
+    "description": "分の表示",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "durationMinutesSeconds": "{minutes}分{seconds}秒",
+  "@durationMinutesSeconds": {
+    "description": "分と秒の表示",
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      },
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsTitle": "設定",
+  "settingsLearningLanguageSection": "学習する言語",
+  "settingsLanguageDescription": "{levels}の教材で、{composition}と{monologue}のトレーニングができます。",
+  "@settingsLanguageDescription": {
+    "description": "学習言語の説明。levels はデッキ名を listSeparator で繋いだもの",
+    "placeholders": {
+      "levels": {
+        "type": "String"
+      },
+      "composition": {
+        "type": "String"
+      },
+      "monologue": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsApiKeySection": "Gemini APIキー",
+  "settingsApiKeyDescription": "Google AI Studio（aistudio.google.com）でAPIキーを取得して入力してください。",
+  "settingsApiKeyConfigured": "APIキーは設定済みです",
+  "settingsApiKeyHint": "APIキーを入力",
+  "settingsDeleteApiKey": "APIキーを削除",
+  "settingsApiKeySaved": "APIキーを保存しました",
+  "settingsApiKeyDeleted": "APIキーを削除しました",
+  "settingsModelSection": "モデル・音声認識",
+  "settingsModelLabel": "使用モデル",
+  "settingsSttLabel": "音声認識",
+  "settingsSttValue": "話した音声をGeminiに送信して文字起こし",
+  "settingsModelNote": "添削・文字起こしは全てこのモデルで行い、APIキーの利用量を消費します。",
+  "settingsMonologueSecondsSection": "独り言のデフォルト時間"
 }

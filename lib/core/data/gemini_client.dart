@@ -1,8 +1,3 @@
-// コンストラクタの公開パラメータ名と内部実装用のプライベートフィールド名を
-// あえて分けているため、initializing formalは使わない
-// （使うとパラメータ名がprivateになり外部から渡せなくなる）。
-// ignore_for_file: prefer_initializing_formals
-
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
@@ -33,9 +28,8 @@ typedef GeminiAudioResponse = ({
 /// **次フェーズで API キーと Gemini 呼び出しはサーバ側に集約され、このクラスは
 /// アプリから削除される。** 各 Repository の Gemini 実装だけがこれに依存する。
 class GeminiClient {
-  GeminiClient({required String? Function() apiKey, http.Client? client})
-    : _apiKey = apiKey,
-      _client = client ?? http.Client();
+  GeminiClient({required this._apiKey, http.Client? client})
+    : _client = client ?? http.Client();
 
   static const _baseUrl =
       'https://generativelanguage.googleapis.com/v1beta/models';

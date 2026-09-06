@@ -13,7 +13,7 @@ import '../core/widgets/score_square_badge.dart';
 import '../core/widgets/section_header.dart';
 import 'composition/deck_select_screen.dart';
 import 'monologue/topic_select_screen.dart';
-import 'settings_screen.dart';
+import '../features/settings/presentation/settings_screen.dart';
 
 /// ホームタブ（ダッシュボード）。
 ///

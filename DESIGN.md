@@ -374,7 +374,8 @@ UI・Store・UseCase はインタフェースだけを見ているので、差�
 APIキーだけは `flutter_secure_storage`（キー名 `gemini_api_key`）。
 
 未リリースのため保存形式の後方互換は取らない（[docs/ROADMAP.md](./docs/ROADMAP.md)）。形式を変えたら
-`lib/main.dart` の `_legacyBoxNames` に旧 box 名を足して起動時に削除する。
+`lib/core/di/injector.dart` の `dataSchemaVersion` を上げる。起動時に `settings` box の `schemaVersion` と違えば
+全 box を削除してから開く（`AppBoxes.open`）。移行コードは書かない。
 
 ### SRS アルゴリズム
 

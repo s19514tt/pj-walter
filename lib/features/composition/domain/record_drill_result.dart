@@ -1,8 +1,3 @@
-// コンストラクタの公開パラメータ名と内部実装用のプライベートフィールド名を
-// あえて分けているため、initializing formalは使わない
-// （使うとパラメータ名がprivateになり外部から渡せなくなる）。
-// ignore_for_file: prefer_initializing_formals
-
 import '../../review/domain/srs_repository.dart';
 import '../../stats/domain/daily_stats.dart';
 import '../../stats/domain/study_stats_repository.dart';
@@ -17,12 +12,10 @@ import 'drill_result.dart';
 ///   [SrsRepository.applyReviewResult] で stage を進める／戻す
 class RecordDrillResult {
   const RecordDrillResult({
-    required DrillHistoryRepository history,
-    required SrsRepository srs,
-    required StudyStatsRepository stats,
-  }) : _history = history,
-       _srs = srs,
-       _stats = stats;
+    required this._history,
+    required this._srs,
+    required this._stats,
+  });
 
   final DrillHistoryRepository _history;
   final SrsRepository _srs;

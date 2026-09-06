@@ -16,7 +16,7 @@ import '../../core/widgets/abort_session_dialog.dart';
 import '../../core/widgets/bottom_cta_bar.dart';
 import '../../core/widgets/countdown_ring.dart';
 import '../../core/widgets/primary_button.dart';
-import '../settings_screen.dart';
+import '../../features/settings/presentation/settings_screen.dart';
 import 'monologue_feedback_screen.dart';
 
 /// 残り時間がこの割合以下になったらリング・数値を警告色にする
