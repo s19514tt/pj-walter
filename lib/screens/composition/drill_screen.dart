@@ -668,17 +668,32 @@ class _DrillScreenState extends State<DrillScreen> {
 class _SkipQuestionButton extends StatelessWidget {
   const _SkipQuestionButton({required this.onPressed});
 
+  /// 文字色。押下時のオーバーレイもこの色を薄めて使う。
+  static const _labelColor = Color(0xFF5F6368);
+
   final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
     return TextButton(
       onPressed: onPressed,
-      style: TextButton.styleFrom(
-        foregroundColor: const Color(0xFF5F6368),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
+      style:
+          TextButton.styleFrom(
+            foregroundColor: _labelColor,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ).copyWith(
+            // hover・フォーカスの背景ハイライトは出さない（テキストリンクとして
+            // 見せたいので、面で光ると主ボタンのように見えてしまう）。
+            // 押下時だけ薄く反応させるのは他のボタンテーマと同じ。
+            overlayColor: WidgetStateProperty.resolveWith(
+              (states) => states.contains(WidgetState.pressed)
+                  ? _labelColor.withValues(alpha: 0.1)
+                  : null,
+            ),
+          ),
       child: Container(
         // 文字ボックス（fontSize 13・height 1 なので高さ13）の下端から4px下に
         // 1pxの線。ブラウザで`text-underline-offset:4px`と重ねて実測した値。
