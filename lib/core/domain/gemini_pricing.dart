@@ -1,5 +1,17 @@
 import 'token_usage.dart';
 
+/// 単価の適用区分（表示名は ARB の `pricingTierLabel`）。
+enum PricingTier {
+  /// 2026年12月31日までの導入価格
+  introductory,
+
+  /// 2027年1月1日以降の標準価格
+  standard,
+
+  /// 読み上げ（TTS）モデル
+  tts,
+}
+
 /// `gemini-3.8-flash` の従量課金単価（USD / 100万トークン、Standardティア）。
 ///
 /// 出典: https://ai.google.dev/gemini-api/docs/pricing （2026-09-03 確認）
@@ -12,14 +24,14 @@ class GeminiPricing {
   const GeminiPricing({
     required this.inputUsdPerMillion,
     required this.outputUsdPerMillion,
-    required this.label,
+    required this.tier,
   });
 
   /// 導入価格（2026年12月31日まで）
   static const introductory = GeminiPricing(
     inputUsdPerMillion: 0.75,
     outputUsdPerMillion: 3.75,
-    label: '2026年12月31日までの導入価格',
+    tier: PricingTier.introductory,
   );
 
   /// 読み上げ（TTS）モデル`gemini-3.1-flash-tts-preview`の単価。
@@ -28,18 +40,18 @@ class GeminiPricing {
   /// 入力（テキスト）$1.00 / 出力（音声）$20.00 per 1M tokens。
   /// 導入価格の設定は無く、日付による切り替えもない。
   /// 音声出力はテキスト出力よりかなり高いため、同じ文の読み上げは
-  /// [GeminiTtsService]がキャッシュしてAPIの再呼び出しを避けている。
+  /// `AudioPlayerTtsService`がキャッシュしてAPIの再呼び出しを避けている。
   static const tts = GeminiPricing(
     inputUsdPerMillion: 1.00,
     outputUsdPerMillion: 20.00,
-    label: 'gemini-3.1-flash-tts-preview',
+    tier: PricingTier.tts,
   );
 
   /// 標準価格（2027年1月1日以降）
   static const standard = GeminiPricing(
     inputUsdPerMillion: 1.50,
     outputUsdPerMillion: 7.50,
-    label: '2027年1月1日以降の標準価格',
+    tier: PricingTier.standard,
   );
 
   /// 導入価格が適用される最終日（この日まで含む、ローカル日付）
@@ -51,8 +63,8 @@ class GeminiPricing {
   /// 出力トークン（思考トークン含む）の単価（USD / 100万トークン）
   final double outputUsdPerMillion;
 
-  /// 適用期間の説明（UI表示用）
-  final String label;
+  /// 適用区分（UI 表示用）
+  final PricingTier tier;
 
   /// [date]時点で適用される単価を返す。
   static GeminiPricing forDate(DateTime date) {
@@ -65,10 +77,11 @@ class GeminiPricing {
       usage.promptTokens * inputUsdPerMillion / 1000000 +
       usage.billedOutputTokens * outputUsdPerMillion / 1000000;
 
-  /// 単価の短い説明（例: `入力 $0.75 / 出力 $3.75 per 1M tokens`）
-  String get rateDescription =>
-      '入力 \$${_trim(inputUsdPerMillion)} / '
-      '出力 \$${_trim(outputUsdPerMillion)} per 1M tokens';
+  /// 入力単価の短い表記（例: `$0.75`）
+  String get inputRateLabel => '\$${_trim(inputUsdPerMillion)}';
+
+  /// 出力単価の短い表記（例: `$3.75`）
+  String get outputRateLabel => '\$${_trim(outputUsdPerMillion)}';
 
   static String _trim(double value) =>
       value.toStringAsFixed(2).replaceFirst(RegExp(r'0$'), '');

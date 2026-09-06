@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/l10n.dart';
 import '../theme/app_theme.dart';
 
 /// セッション中断の確認ダイアログを表示する。
@@ -8,20 +9,21 @@ import '../theme/app_theme.dart';
 /// 誤操作防止に使う。「中断する」を選ぶとtrue、「続ける」・ダイアログ外
 /// タップで閉じた場合はfalseを返す。
 Future<bool> confirmAbortSession(BuildContext context) async {
+  final l10n = context.l10n;
   final result = await showDialog<bool>(
     context: context,
     builder: (dialogContext) => AlertDialog(
-      title: const Text('トレーニングを中断しますか？'),
-      content: const Text('一度中断すると、このセッションは再開できません。'),
+      title: Text(l10n.abortSessionTitle),
+      content: Text(l10n.abortSessionBody),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(dialogContext).pop(false),
-          child: const Text('続ける'),
+          child: Text(l10n.continueLabel),
         ),
         TextButton(
           style: TextButton.styleFrom(foregroundColor: AppColors.error),
           onPressed: () => Navigator.of(dialogContext).pop(true),
-          child: const Text('中断する'),
+          child: Text(l10n.abortSession),
         ),
       ],
     ),

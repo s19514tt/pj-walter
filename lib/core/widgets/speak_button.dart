@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/l10n.dart';
 import '../theme/app_theme.dart';
 
 /// カード見出しの右端に置く、ピル型の「読み上げ」ボタン。
@@ -44,7 +45,7 @@ class SpeakButton extends StatelessWidget {
               ),
               const SizedBox(width: 6),
               Text(
-                speaking ? '停止' : '読み上げ',
+                speaking ? context.l10n.stopSpeaking : context.l10n.speak,
                 style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,

@@ -11,7 +11,7 @@ import '../core/utils/review_launcher.dart';
 import '../core/widgets/app_card.dart';
 import '../core/widgets/score_square_badge.dart';
 import '../core/widgets/section_header.dart';
-import 'composition/deck_select_screen.dart';
+import '../features/composition/presentation/deck_select_screen.dart';
 import 'monologue/topic_select_screen.dart';
 import '../features/settings/presentation/settings_screen.dart';
 

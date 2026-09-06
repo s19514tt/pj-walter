@@ -1,87 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
 
-import '../../core/domain/token_usage.dart';
-import '../../features/composition/domain/drill_question_selector.dart';
-import '../../core/domain/gemini_pricing.dart';
-import '../../features/content/domain/content_repository.dart';
-import '../../core/theme/app_theme.dart';
-import '../../core/utils/app_route.dart';
-import '../../core/widgets/bottom_cta_bar.dart';
-import '../../core/widgets/primary_button.dart';
-import '../../core/widgets/score_square_badge.dart';
-import '../../core/widgets/secondary_button.dart';
+import '../../../core/di/store_factory.dart';
+import '../../../core/domain/gemini_pricing.dart';
+import '../../../core/domain/token_usage.dart';
+import '../../../core/l10n/l10n.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/app_route.dart';
+import '../../../core/widgets/bottom_cta_bar.dart';
+import '../../../core/widgets/primary_button.dart';
+import '../../../core/widgets/score_square_badge.dart';
+import '../../../core/widgets/secondary_button.dart';
+import '../../review/domain/srs_repository.dart';
+import '../domain/drill_session.dart';
 import 'drill_screen.dart';
-import '../../services/settings_service.dart';
+import 'drill_summary_store.dart';
 
-/// 合格とみなすスコアのしきい値
-const _passingScore = 70;
+export '../domain/drill_session.dart';
 
-/// ドリル1問分のGemini API呼び出しで消費したトークン（用途別）。
-class DrillQuestionUsage {
-  const DrillQuestionUsage({
-    this.transcription = TokenUsage.zero,
-    this.correction = TokenUsage.zero,
-    this.speech = TokenUsage.zero,
-  });
-
-  /// 使用量ゼロ（時間切れなど、API呼び出しが無かった問）
-  static const zero = DrillQuestionUsage();
-
-  /// 音声の文字起こし（やり直した分も含む合計）
-  final TokenUsage transcription;
-
-  /// 添削
-  final TokenUsage correction;
-
-  /// 添削結果の読み上げ（TTSモデル。単価が別なので分けて持つ）
-  final TokenUsage speech;
-
-  /// 用途を問わない合計
-  TokenUsage get total => transcription + correction + speech;
-
-  /// [textPricing]（文字起こし・添削）と[GeminiPricing.tts]（読み上げ）を
-  /// 用途ごとに使い分けた概算コスト（USD）。
-  ///
-  /// 読み上げは別モデル・別単価なので、合計トークンに単価を1つ掛けると
-  /// 実際の請求とずれる。必ず用途ごとに計算して足し合わせる。
-  double costUsd(GeminiPricing textPricing) =>
-      textPricing.costUsd(transcription) +
-      textPricing.costUsd(correction) +
-      GeminiPricing.tts.costUsd(speech);
-
-  DrillQuestionUsage operator +(DrillQuestionUsage other) => DrillQuestionUsage(
-    transcription: transcription + other.transcription,
-    correction: correction + other.correction,
-    speech: speech + other.speech,
-  );
-}
-
-/// ドリル1問分の結果概要（まとめ画面表示用）。
-class DrillSummaryEntry {
-  const DrillSummaryEntry({
-    required this.ja,
-    required this.score,
-    this.usage = DrillQuestionUsage.zero,
-  });
-
-  /// 出題された日本語文
-  final String ja;
-
-  /// その問のスコア
-  final int score;
-
-  /// その問で消費したトークン
-  final DrillQuestionUsage usage;
-}
-
-/// 口頭英作文ドリルのセッション終了後のまとめ画面。
+/// 口頭作文ドリルのセッション終了後のまとめ画面。
 ///
 /// 平均スコアと問題ごとの結果一覧、セッション全体のトークン使用量と
 /// 概算コスト（USD）を表示し、「もう一度」で同条件の新しい10問へ、
 /// 「ホームに戻る」でホームへ戻る。
-class DrillSummaryScreen extends StatelessWidget {
+class DrillSummaryScreen extends StatefulWidget {
   const DrillSummaryScreen({
     super.key,
     required this.level,
@@ -90,7 +32,7 @@ class DrillSummaryScreen extends StatelessWidget {
     this.pricing,
   });
 
-  /// TOEICレベル（「もう一度」の再出題に使用）
+  /// デッキレベル（「もう一度」の再出題に使用）
   final int level;
 
   /// 出題テーマ（「もう一度」の再出題に使用、nullなら全テーマ）
@@ -103,43 +45,52 @@ class DrillSummaryScreen extends StatelessWidget {
   /// （テストで固定するための注入口）。
   final GeminiPricing? pricing;
 
-  DrillQuestionUsage get _totalUsage =>
-      entries.fold(DrillQuestionUsage.zero, (sum, entry) => sum + entry.usage);
+  @override
+  State<DrillSummaryScreen> createState() => _DrillSummaryScreenState();
+}
 
-  double get _averageScore {
-    if (entries.isEmpty) return 0;
-    final total = entries.map((e) => e.score).reduce((a, b) => a + b);
-    return total / entries.length;
+class _DrillSummaryScreenState extends State<DrillSummaryScreen> {
+  late final DrillSummaryStore _store;
+
+  @override
+  void initState() {
+    super.initState();
+    _store = StoreFactory.of(context).drillSummary(
+      level: widget.level,
+      theme: widget.theme,
+      entries: widget.entries,
+      pricing: widget.pricing,
+    );
   }
 
-  int get _passingCount =>
-      entries.where((e) => e.score >= _passingScore).length;
+  @override
+  void dispose() {
+    _store.dispose();
+    super.dispose();
+  }
 
-  Future<void> _retry(BuildContext context) async {
-    final repository = context.read<ContentRepository>();
-    final sentences = await repository.sentences(
-      profile: context.read<SettingsService>().languageProfile,
-      level: level,
-      theme: theme,
-    );
-    const selector = DrillQuestionSelector();
-    final selected = selector.select(sentences);
-    if (!context.mounted) return;
+  Future<void> _retry() async {
+    final selected = await _store.retry();
+    if (!mounted) return;
     Navigator.of(context).pushReplacement(
       appRoute(
-        builder: (_) =>
-            DrillScreen(sentences: selected, level: level, theme: theme),
+        builder: (_) => DrillScreen(
+          sentences: selected,
+          level: widget.level,
+          theme: widget.theme,
+        ),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final average = _averageScore.round();
-    final srsCount = entries.where((e) => e.score < _passingScore).length;
-    final pricing = this.pricing ?? GeminiPricing.forDate(DateTime.now());
+    final l10n = context.l10n;
+    final entries = _store.entries;
+    final pricing = _store.pricing;
+    final srsCount = _store.srsCount;
     return Scaffold(
-      appBar: AppBar(title: const Text('結果まとめ')),
+      appBar: AppBar(title: Text(l10n.summaryTitle)),
       body: SafeArea(
         child: Column(
           children: [
@@ -157,9 +108,9 @@ class DrillSummaryScreen extends StatelessWidget {
                     ),
                     child: Column(
                       children: [
-                        const Text(
-                          'セッション完了',
-                          style: TextStyle(
+                        Text(
+                          l10n.sessionComplete,
+                          style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
@@ -167,7 +118,7 @@ class DrillSummaryScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          '$average',
+                          '${_store.averageScore}',
                           style: const TextStyle(
                             fontSize: 46,
                             height: 1.2,
@@ -176,7 +127,10 @@ class DrillSummaryScreen extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          '平均スコア · 正答 $_passingCount/${entries.length}',
+                          l10n.averageScoreLine(
+                            _store.passingCount,
+                            entries.length,
+                          ),
                           style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
@@ -232,7 +186,23 @@ class DrillSummaryScreen extends StatelessWidget {
                                       ),
                                       if (!entries[i].usage.total.isZero)
                                         Text(
-                                          _usageLine(entries[i].usage, pricing),
+                                          l10n.usageLine(
+                                            _formatTokens(
+                                              entries[i]
+                                                  .usage
+                                                  .total
+                                                  .promptTokens,
+                                            ),
+                                            _formatTokens(
+                                              entries[i]
+                                                  .usage
+                                                  .total
+                                                  .billedOutputTokens,
+                                            ),
+                                            formatUsd(
+                                              entries[i].usage.costUsd(pricing),
+                                            ),
+                                          ),
                                           style: const TextStyle(
                                             fontSize: 11,
                                             height: 1.6,
@@ -249,7 +219,7 @@ class DrillSummaryScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 14),
-                  _UsageCard(usage: _totalUsage, pricing: pricing),
+                  _UsageCard(usage: _store.totalUsage, pricing: pricing),
                   if (srsCount > 0) ...[
                     const SizedBox(height: 14),
                     Container(
@@ -270,7 +240,7 @@ class DrillSummaryScreen extends StatelessWidget {
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
-                              'スコア$_passingScore未満の$srsCount問を復習キューに登録しました。明日再出題されます。',
+                              l10n.srsRegisteredNote(passingScore, srsCount),
                               style: const TextStyle(
                                 fontSize: 12,
                                 height: 1.7,
@@ -290,15 +260,15 @@ class DrillSummaryScreen extends StatelessWidget {
                 children: [
                   Expanded(
                     child: SecondaryButton(
-                      label: 'もう一度',
-                      onPressed: () => _retry(context),
+                      label: l10n.again,
+                      onPressed: _retry,
                     ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
                     flex: 2,
                     child: PrimaryButton(
-                      label: 'ホームに戻る',
+                      label: l10n.backToHome,
                       onPressed: () =>
                           Navigator.of(context).popUntil((r) => r.isFirst),
                     ),
@@ -311,15 +281,6 @@ class DrillSummaryScreen extends StatelessWidget {
       ),
     );
   }
-}
-
-/// 1問分のトークン使用量とコストを1行にまとめる
-/// （例: `入力 1,234 · 出力 56 · $0.0012`）。
-String _usageLine(DrillQuestionUsage usage, GeminiPricing pricing) {
-  final total = usage.total;
-  return '入力 ${_formatTokens(total.promptTokens)} · '
-      '出力 ${_formatTokens(total.billedOutputTokens)} · '
-      '${formatUsd(usage.costUsd(pricing))}';
 }
 
 final _tokenFormat = NumberFormat.decimalPattern('en_US');
@@ -335,7 +296,10 @@ class _UsageCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final total = usage.total;
+    String rate(GeminiPricing p) =>
+        l10n.rateDescription(p.inputRateLabel, p.outputRateLabel);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -347,13 +311,17 @@ class _UsageCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.token_outlined, size: 18, color: AppColors.primary),
-              SizedBox(width: 8),
+              const Icon(
+                Icons.token_outlined,
+                size: 18,
+                color: AppColors.primary,
+              ),
+              const SizedBox(width: 8),
               Text(
-                'APIトークン使用量',
-                style: TextStyle(
+                l10n.apiTokenUsage,
+                style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textPrimary,
@@ -363,13 +331,13 @@ class _UsageCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           _UsageRow(
-            label: '文字起こし',
+            label: l10n.usageTranscription,
             usage: usage.transcription,
             cost: pricing.costUsd(usage.transcription),
           ),
           const SizedBox(height: 6),
           _UsageRow(
-            label: '添削',
+            label: l10n.usageCorrection,
             usage: usage.correction,
             cost: pricing.costUsd(usage.correction),
           ),
@@ -377,14 +345,14 @@ class _UsageCard extends StatelessWidget {
           if (usage.speech != TokenUsage.zero) ...[
             const SizedBox(height: 6),
             _UsageRow(
-              label: '読み上げ',
+              label: l10n.usageSpeech,
               usage: usage.speech,
               cost: GeminiPricing.tts.costUsd(usage.speech),
             ),
           ],
           const Divider(height: 20, color: AppColors.border),
           _UsageRow(
-            label: '合計',
+            label: l10n.usageTotal,
             usage: total,
             cost: usage.costUsd(pricing),
             emphasize: true,
@@ -392,7 +360,7 @@ class _UsageCard extends StatelessWidget {
           if (total.thoughtsTokens > 0) ...[
             const SizedBox(height: 4),
             Text(
-              '出力のうち思考トークン ${_formatTokens(total.thoughtsTokens)}',
+              l10n.thoughtTokensNote(_formatTokens(total.thoughtsTokens)),
               style: const TextStyle(
                 fontSize: 11,
                 color: AppColors.textSecondary,
@@ -401,9 +369,16 @@ class _UsageCard extends StatelessWidget {
           ],
           const SizedBox(height: 10),
           Text(
-            '単価: ${pricing.rateDescription}（${pricing.label}）。'
-            '${usage.speech != TokenUsage.zero ? '読み上げは${GeminiPricing.tts.label}の${GeminiPricing.tts.rateDescription}。' : ''}'
-            'Gemini APIの公開価格（Standardティア）から算出した概算で、無料枠は考慮していません。',
+            l10n.pricingNote(
+              rate(pricing),
+              l10n.pricingTierLabel(pricing.tier.name),
+              usage.speech != TokenUsage.zero
+                  ? l10n.pricingSpeechNote(
+                      l10n.pricingTierLabel(GeminiPricing.tts.tier.name),
+                      rate(GeminiPricing.tts),
+                    )
+                  : '',
+            ),
             style: const TextStyle(
               fontSize: 11,
               height: 1.6,
@@ -447,8 +422,10 @@ class _UsageRow extends StatelessWidget {
         SizedBox(width: 72, child: Text(label, style: style)),
         Expanded(
           child: Text(
-            '入力 ${_formatTokens(usage.promptTokens)} · '
-            '出力 ${_formatTokens(usage.billedOutputTokens)}',
+            context.l10n.tokensInOut(
+              _formatTokens(usage.promptTokens),
+              _formatTokens(usage.billedOutputTokens),
+            ),
             style: subStyle,
           ),
         ),

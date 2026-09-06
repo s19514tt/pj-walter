@@ -6,9 +6,9 @@ import 'package:provider/provider.dart';
 import '../../features/content/domain/topic.dart';
 import '../../features/content/domain/content_repository.dart';
 import '../../services/settings_service.dart';
+import '../../core/l10n/l10n.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/app_route.dart';
-import '../../core/utils/theme_labels.dart';
 import '../../core/widgets/app_card.dart';
 import '../../core/widgets/pill_chip.dart';
 import '../../core/widgets/secondary_button.dart';
@@ -65,7 +65,7 @@ class _TopicSelectScreenState extends State<TopicSelectScreen> {
   }
 
   String _themeChipLabel(String? theme) =>
-      theme == null ? 'すべて' : themeLabel(theme);
+      theme == null ? context.l10n.allThemes : context.l10n.themeLabel(theme);
 
   void _openSpeak(Topic topic) {
     Navigator.of(context).push(

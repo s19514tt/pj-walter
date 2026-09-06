@@ -1,85 +1,41 @@
 // DrillScreenのウィジェットテスト。
 //
-// SpeechInputService・TtsServiceはフェイクに差し替え、GeminiServiceは
-// http.testing.MockClientを注入した実インスタンスを使う（実際の通信は行わない）。
+// SpeechInputService・TtsServiceはフェイクに差し替え、添削は
+// http.testing.MockClientを注入した GeminiCorrectionRepository を使う
+// （実際の通信は行わない）。履歴・SRS・統計は Hive 実装の Repository。
 
 import 'dart:convert';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/test/test_flutter_secure_storage_platform.dart';
-import 'package:flutter_secure_storage_platform_interface/flutter_secure_storage_platform_interface.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:get_it/get_it.dart';
 import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:pj_walter/core/data/gemini_client.dart';
 import 'package:pj_walter/core/language/learning_language.dart';
+import 'package:pj_walter/features/composition/data/gemini_correction_repository.dart';
+import 'package:pj_walter/features/composition/data/hive_drill_history_repository.dart';
+import 'package:pj_walter/features/composition/domain/correction_repository.dart';
+import 'package:pj_walter/features/composition/domain/drill_history_repository.dart';
+import 'package:pj_walter/features/composition/domain/record_drill_result.dart';
+import 'package:pj_walter/features/composition/presentation/drill_screen.dart';
+import 'package:pj_walter/features/content/data/asset_content_repository.dart';
+import 'package:pj_walter/features/content/domain/content_repository.dart';
 import 'package:pj_walter/features/content/domain/sentence.dart';
-import 'package:pj_walter/screens/composition/drill_screen.dart';
-import 'package:pj_walter/services/gemini_service.dart';
-import 'package:pj_walter/services/history_service.dart';
-import 'package:pj_walter/services/settings_service.dart';
-import 'package:pj_walter/core/domain/token_usage.dart';
-import 'package:pj_walter/features/speech/domain/speech_input_service.dart';
-import 'package:provider/provider.dart';
+import 'package:pj_walter/features/review/data/hive_srs_repository.dart';
+import 'package:pj_walter/features/review/domain/srs_repository.dart';
+import 'package:pj_walter/features/settings/domain/settings_repository.dart';
+import 'package:pj_walter/features/speech/speech_module.dart';
+import 'package:pj_walter/features/stats/data/hive_study_stats_repository.dart';
+import 'package:pj_walter/features/stats/domain/study_stats_repository.dart';
 
-import '../test_support/fake_tts_service.dart';
-import '../test_support/hive_test_support.dart';
-import '../test_support/test_app.dart';
-
-/// テスト用のフェイク音声入力サービス。
-///
-/// [start]は常に固定のpartialテキストを1回流し、[stop]は
-/// あらかじめ設定した[stopResult]（またはエラー）を[stopUsage]付きで返す。
-class FakeSpeechInputService implements SpeechInputService {
-  String stopResult = 'this is my spoken answer';
-
-  /// 文字起こしと一緒に返すピンイン（中国語モードのテスト用。既定は英語同様null）
-  String? stopReading;
-  Object? stopError;
-  bool startCalled = false;
-  bool stopCalled = false;
-  bool cancelCalled = false;
-
-  /// 文字起こし1回分のトークン使用量（音声入力分は入力300・出力10）
-  TokenUsage stopUsage = const TokenUsage(
-    promptTokens: 300,
-    candidatesTokens: 10,
-  );
-
-  @override
-  Future<bool> get isAvailable async => true;
-
-  @override
-  Future<void> start({
-    void Function(String text)? onPartial,
-    void Function(double level)? onLevel,
-  }) async {
-    startCalled = true;
-    onPartial?.call('partial text...');
-    onLevel?.call(0.5);
-  }
-
-  @override
-  Future<SpeechInputResult> stop() async {
-    stopCalled = true;
-    final error = stopError;
-    if (error != null) throw error;
-    return SpeechInputResult(
-      text: stopResult,
-      reading: stopReading,
-      usage: stopUsage,
-    );
-  }
-
-  @override
-  Future<void> cancel() async {
-    cancelCalled = true;
-  }
-
-  @override
-  void dispose() {}
-}
+import '../../../test_support/fake_settings_repository.dart';
+import '../../../test_support/fake_speech_input_service.dart';
+import '../../../test_support/fake_tts_service.dart';
+import '../../../test_support/hive_test_support.dart';
+import '../../../test_support/test_app.dart';
 
 /// Gemini応答のエンベロープ。usageMetadataはトークン計測のテスト用に固定値
 /// （入力100・出力20・思考5）を付ける。
@@ -117,53 +73,58 @@ Sentence _sentence(int i) => Sentence(
 );
 
 void main() {
-  late SettingsService settings;
-  late HistoryService historyService;
+  late GetIt getIt;
+  late FakeSettingsRepository settings;
+  late DrillHistoryRepository drillHistory;
+  late SrsRepository srs;
 
   setUp(() async {
     await initTestHive();
-    FlutterSecureStoragePlatform.instance = TestFlutterSecureStoragePlatform(
-      {},
+    getIt = GetIt.asNewInstance()..allowReassignment = true;
+    settings = FakeSettingsRepository(apiKey: 'test-api-key');
+    drillHistory = HiveDrillHistoryRepository(
+      await Hive.openBox('drill_results'),
     );
-    final settingsBox = await Hive.openBox('settings');
-    settings = SettingsService(settingsBox: settingsBox);
-    await settings.init();
-    await settings.setApiKey('test-api-key');
-
-    historyService = HistoryService(
-      drillResultsBox: await Hive.openBox('drill_results'),
-      monologueResultsBox: await Hive.openBox('monologue_results'),
-      srsItemsBox: await Hive.openBox('srs_items'),
-      phrasesBox: await Hive.openBox('phrases'),
-      dailyStatsBox: await Hive.openBox('daily_stats'),
-    );
+    srs = HiveSrsRepository(await Hive.openBox('srs_items'));
+    final stats = HiveStudyStatsRepository(await Hive.openBox('daily_stats'));
+    getIt
+      ..registerSingleton<SettingsRepository>(settings)
+      ..registerSingleton<ContentRepository>(AssetContentRepository())
+      ..registerSingleton<DrillHistoryRepository>(drillHistory)
+      ..registerSingleton<SrsRepository>(srs)
+      ..registerSingleton<StudyStatsRepository>(stats)
+      ..registerSingleton<RecordDrillResult>(
+        RecordDrillResult(history: drillHistory, srs: srs, stats: stats),
+      )
+      ..registerSingleton<TtsServiceFactory>((_) => FakeTtsService());
   });
 
   tearDown(() async {
     await tearDownTestHive();
   });
 
+  /// [client] を添削 API の応答に使い、[speechInputService] を録音に使う配線で
+  /// [DrillScreen] を組み立てる。
   Widget buildApp({
     required List<Sentence> sentences,
-    required GeminiService geminiService,
+    required http.Client client,
     required FakeSpeechInputService speechInputService,
     int questionSeconds = 30,
   }) {
-    return localizedApp(
-      home: MultiProvider(
-        providers: [
-          ChangeNotifierProvider<SettingsService>.value(value: settings),
-          ChangeNotifierProvider<HistoryService>.value(value: historyService),
-          Provider<GeminiService>.value(value: geminiService),
-        ],
-        child: DrillScreen(
-          sentences: sentences,
-          level: 700,
-          theme: 'daily',
-          speechInputService: speechInputService,
-          ttsService: FakeTtsService(),
-          questionSeconds: questionSeconds,
+    getIt
+      ..registerSingleton<CorrectionRepository>(
+        GeminiCorrectionRepository(
+          GeminiClient(apiKey: () => settings.apiKey.peek(), client: client),
         ),
+      )
+      ..registerSingleton<SpeechInputServiceFactory>((_) => speechInputService);
+    return scopedApp(
+      getIt: getIt,
+      home: DrillScreen(
+        sentences: sentences,
+        level: 700,
+        theme: 'daily',
+        questionSeconds: questionSeconds,
       ),
     );
   }
@@ -190,16 +151,12 @@ void main() {
         200,
       );
     });
-    final geminiService = GeminiService(
-      settingsService: settings,
-      client: client,
-    );
     final speechInputService = FakeSpeechInputService();
 
     await tester.pumpWidget(
       buildApp(
         sentences: sentences,
-        geminiService: geminiService,
+        client: client,
         speechInputService: speechInputService,
       ),
     );
@@ -240,8 +197,8 @@ void main() {
     expect(find.text('this is my spoken answer'), findsOneWidget);
 
     // 履歴に保存されている
-    expect(historyService.drillHistory, hasLength(1));
-    expect(historyService.drillHistory.first.sentenceId, 's700-001');
+    expect(drillHistory.results.value, hasLength(1));
+    expect(drillHistory.results.value.first.sentenceId, 's700-001');
 
     // 次の問題へ -> 2問目
     //
@@ -277,7 +234,7 @@ void main() {
     expect(find.text('85'), findsNWidgets(3));
     expect(find.textContaining('日本語の例文1'), findsOneWidget);
     expect(find.textContaining('日本語の例文2'), findsOneWidget);
-    expect(historyService.drillHistory, hasLength(2));
+    expect(drillHistory.results.value, hasLength(2));
 
     // トークン使用量: 2問とも音声入力なので
     //   文字起こし = フェイクの (300 / 10) × 2 = 600 / 20
@@ -296,16 +253,12 @@ void main() {
     final client = MockClient((request) async {
       fail('この検証では通信しない');
     });
-    final geminiService = GeminiService(
-      settingsService: settings,
-      client: client,
-    );
     final speechInputService = FakeSpeechInputService();
 
     await tester.pumpWidget(
       buildApp(
         sentences: sentences,
-        geminiService: geminiService,
+        client: client,
         speechInputService: speechInputService,
       ),
     );
@@ -343,16 +296,12 @@ void main() {
         200,
       );
     });
-    final geminiService = GeminiService(
-      settingsService: settings,
-      client: client,
-    );
     final speechInputService = FakeSpeechInputService();
 
     await tester.pumpWidget(
       buildApp(
         sentences: sentences,
-        geminiService: geminiService,
+        client: client,
         speechInputService: speechInputService,
       ),
     );
@@ -374,11 +323,8 @@ void main() {
     expect(speechInputService.stopCalled, isTrue);
     expect(find.text('One-press corrected answer'), findsOneWidget);
     expect(find.text('this is my spoken answer'), findsOneWidget);
-    expect(historyService.drillHistory, hasLength(1));
-    expect(
-      historyService.drillHistory.first.spoken,
-      'this is my spoken answer',
-    );
+    expect(drillHistory.results.value, hasLength(1));
+    expect(drillHistory.results.value.first.spoken, 'this is my spoken answer');
   });
 
   testWidgets('中国語モードでは文字起こしのピンインから声調の気づきを表示し、履歴にも保存する', (tester) async {
@@ -413,10 +359,6 @@ void main() {
         200,
       );
     });
-    final geminiService = GeminiService(
-      settingsService: settings,
-      client: client,
-    );
     final speechInputService = FakeSpeechInputService()
       ..stopResult = '我要睡'
       ..stopReading = 'wǒ yào shuì';
@@ -424,7 +366,7 @@ void main() {
     await tester.pumpWidget(
       buildApp(
         sentences: sentences,
-        geminiService: geminiService,
+        client: client,
         speechInputService: speechInputService,
       ),
     );
@@ -450,7 +392,7 @@ void main() {
     expect(find.text('shuǐ'), findsWidgets);
     expect(find.text('赤字のルビは上＝実際の声調（参考値）／下＝期待された声調'), findsOneWidget);
     // 履歴にも声調の気づきが保存される
-    final saved = historyService.drillHistory.single;
+    final saved = drillHistory.results.value.single;
     expect(saved.language, 'zh');
     expect(saved.toneNotes, hasLength(1));
     expect(saved.toneNotes!.single.expected, 'shuǐ');
@@ -477,7 +419,7 @@ void main() {
     await tester.pumpWidget(
       buildApp(
         sentences: [_sentence(1)],
-        geminiService: GeminiService(settingsService: settings, client: client),
+        client: client,
         speechInputService: speechInputService,
       ),
     );
@@ -492,7 +434,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('気づいた点'), findsNothing);
-    expect(historyService.drillHistory.single.toneNotes, isNull);
+    expect(drillHistory.results.value.single.toneNotes, isNull);
   });
 
   testWidgets('GeminiExceptionが発生するとSnackBarとリトライボタンが表示される', (tester) async {
@@ -504,16 +446,12 @@ void main() {
     final client = MockClient((request) async {
       return http.Response('server error', 500);
     });
-    final geminiService = GeminiService(
-      settingsService: settings,
-      client: client,
-    );
     final speechInputService = FakeSpeechInputService();
 
     await tester.pumpWidget(
       buildApp(
         sentences: sentences,
-        geminiService: geminiService,
+        client: client,
         speechInputService: speechInputService,
       ),
     );
@@ -530,7 +468,7 @@ void main() {
     // 段階表示のstage 1（文字起こしは表示済み・採点はスケルトン）に留まる
     expect(find.text('this is my spoken answer'), findsOneWidget);
     expect(find.text('AI採点中'), findsWidgets);
-    expect(historyService.drillHistory, isEmpty);
+    expect(drillHistory.results.value, isEmpty);
   });
 
   testWidgets('制限時間が0になり回答が空だと時間切れとして自動保存される', (tester) async {
@@ -538,10 +476,6 @@ void main() {
     final client = MockClient((request) async {
       fail('時間切れの採点はローカルで完結するため通信しない');
     });
-    final geminiService = GeminiService(
-      settingsService: settings,
-      client: client,
-    );
     // 録音は自動開始されるため、時間切れ時の自動停止で文字起こしが空
     // （何も話さなかった）ケースを再現する。
     final speechInputService = FakeSpeechInputService()..stopResult = '';
@@ -556,7 +490,7 @@ void main() {
       await tester.pumpWidget(
         buildApp(
           sentences: sentences,
-          geminiService: geminiService,
+          client: client,
           speechInputService: speechInputService,
           // 制限時間を2秒に短縮し、実時間での待ち時間を最小限にする
           // （本番はDrillScreenのデフォルト30秒のまま）。
@@ -580,10 +514,10 @@ void main() {
     expect(find.text('English sentence 1'), findsOneWidget);
 
     // スコア0で履歴・SRSキューに保存されている
-    expect(historyService.drillHistory, hasLength(1));
-    expect(historyService.drillHistory.first.feedback.score, 0);
-    expect(historyService.drillHistory.first.spoken, isEmpty);
-    expect(historyService.allSrsItems, hasLength(1));
+    expect(drillHistory.results.value, hasLength(1));
+    expect(drillHistory.results.value.first.feedback.score, 0);
+    expect(drillHistory.results.value.first.spoken, isEmpty);
+    expect(srs.items.value, hasLength(1));
   });
 
   testWidgets('わからないので飛ばすと確認ダイアログを経て未採点の結果になる', (tester) async {
@@ -595,10 +529,6 @@ void main() {
     final client = MockClient((request) async {
       fail('飛ばした問題は採点しないため通信しない');
     });
-    final geminiService = GeminiService(
-      settingsService: settings,
-      client: client,
-    );
     final speechInputService = FakeSpeechInputService();
 
     // 時間切れのテストと同じ理由で、Hiveの実ファイルI/Oを伴う操作は
@@ -607,7 +537,7 @@ void main() {
       await tester.pumpWidget(
         buildApp(
           sentences: sentences,
-          geminiService: geminiService,
+          client: client,
           speechInputService: speechInputService,
         ),
       );
@@ -622,7 +552,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
       expect(find.text('答える'), findsOneWidget);
-      expect(historyService.drillHistory, isEmpty);
+      expect(drillHistory.results.value, isEmpty);
 
       // 「飛ばす」を選ぶと未採点の結果画面へ進む
       await tester.tap(find.text('わからないので飛ばす'));
@@ -649,10 +579,10 @@ void main() {
     expect(speechInputService.startCalled, isFalse);
 
     // スコア0で履歴に残り、SRS復習キューにも登録される
-    expect(historyService.drillHistory, hasLength(1));
-    expect(historyService.drillHistory.first.feedback.score, 0);
-    expect(historyService.drillHistory.first.spoken, isEmpty);
-    expect(historyService.allSrsItems, hasLength(1));
+    expect(drillHistory.results.value, hasLength(1));
+    expect(drillHistory.results.value.first.feedback.score, 0);
+    expect(drillHistory.results.value.first.spoken, isEmpty);
+    expect(srs.items.value, hasLength(1));
   });
 
   testWidgets('録音中に飛ばすと文字起こしせずに録音を破棄する', (tester) async {
@@ -663,17 +593,13 @@ void main() {
     final client = MockClient((request) async {
       fail('飛ばした問題は文字起こしも採点もしないため通信しない');
     });
-    final geminiService = GeminiService(
-      settingsService: settings,
-      client: client,
-    );
     final speechInputService = FakeSpeechInputService();
 
     await tester.runAsync(() async {
       await tester.pumpWidget(
         buildApp(
           sentences: sentences,
-          geminiService: geminiService,
+          client: client,
           speechInputService: speechInputService,
         ),
       );
@@ -696,22 +622,18 @@ void main() {
     expect(speechInputService.cancelCalled, isTrue);
     expect(speechInputService.stopCalled, isFalse);
     expect(find.text('未採点'), findsOneWidget);
-    expect(historyService.drillHistory, hasLength(1));
+    expect(drillHistory.results.value, hasLength(1));
   });
 
   testWidgets('飛ばす導線はhoverで背景を敷かず、文字と下線だけ濃くなる', (tester) async {
     final client = MockClient((request) async {
       fail('この検証では通信しない');
     });
-    final geminiService = GeminiService(
-      settingsService: settings,
-      client: client,
-    );
 
     await tester.pumpWidget(
       buildApp(
         sentences: [_sentence(1)],
-        geminiService: geminiService,
+        client: client,
         speechInputService: FakeSpeechInputService(),
       ),
     );
@@ -760,39 +682,33 @@ void main() {
     final client = MockClient((request) async {
       fail('この検証では通信しない');
     });
-    final geminiService = GeminiService(
-      settingsService: settings,
-      client: client,
-    );
     final speechInputService = FakeSpeechInputService();
 
     // 戻るボタンを出すため、1枚下に画面がある状態でDrillScreenをpushする。
-    // pushした先からproviderを参照できるよう、MultiProviderはMaterialAppの外側に置く。
+    getIt
+      ..registerSingleton<CorrectionRepository>(
+        GeminiCorrectionRepository(
+          GeminiClient(apiKey: () => settings.apiKey.peek(), client: client),
+        ),
+      )
+      ..registerSingleton<SpeechInputServiceFactory>((_) => speechInputService);
     await tester.pumpWidget(
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider<SettingsService>.value(value: settings),
-          ChangeNotifierProvider<HistoryService>.value(value: historyService),
-          Provider<GeminiService>.value(value: geminiService),
-        ],
-        child: localizedApp(
-          home: Builder(
-            builder: (context) => Scaffold(
-              body: Center(
-                child: ElevatedButton(
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => DrillScreen(
-                        sentences: sentences,
-                        level: 700,
-                        theme: 'daily',
-                        speechInputService: speechInputService,
-                        ttsService: FakeTtsService(),
-                      ),
+      scopedApp(
+        getIt: getIt,
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: Center(
+              child: ElevatedButton(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => DrillScreen(
+                      sentences: sentences,
+                      level: 700,
+                      theme: 'daily',
                     ),
                   ),
-                  child: const Text('開く'),
                 ),
+                child: const Text('開く'),
               ),
             ),
           ),

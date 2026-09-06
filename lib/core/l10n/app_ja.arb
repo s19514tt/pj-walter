@@ -123,5 +123,263 @@
   "settingsSttLabel": "音声認識",
   "settingsSttValue": "話した音声をGeminiに送信して文字起こし",
   "settingsModelNote": "添削・文字起こしは全てこのモデルで行い、APIキーの利用量を消費します。",
-  "settingsMonologueSecondsSection": "独り言のデフォルト時間"
+  "settingsMonologueSecondsSection": "独り言のデフォルト時間",
+  "themeLabel": "{theme, select, daily{日常} business{ビジネス} travel{旅行} other{{theme}}}",
+  "@themeLabel": {
+    "description": "教材テーマの表示名",
+    "placeholders": {
+      "theme": {
+        "type": "String"
+      }
+    }
+  },
+  "allThemes": "すべて",
+  "listening": "聞き取り中",
+  "@listening": {
+    "description": "録音中の状態ラベル"
+  },
+  "beforeListening": "聞き取り前",
+  "@beforeListening": {
+    "description": "録音前の状態ラベル"
+  },
+  "speak": "読み上げ",
+  "stopSpeaking": "停止",
+  "retry": "再試行",
+  "again": "もう一度",
+  "continueLabel": "続ける",
+  "abortSessionTitle": "トレーニングを中断しますか？",
+  "abortSessionBody": "一度中断すると、このセッションは再開できません。",
+  "abortSession": "中断する",
+  "skipQuestionTitle": "この問題を飛ばしますか？",
+  "skipQuestionBody": "録音せずに模範解答と解説へ進みます。この問題は復習キューに登録されます。",
+  "skipQuestion": "飛ばす",
+  "apiKeyMissingTitle": "APIキーが未設定です",
+  "apiKeyMissingBody": "Gemini APIキーが設定されていません。設定画面から登録してください。",
+  "openSettings": "設定を開く",
+  "review": "復習",
+  "scoreOutOf": "/100",
+  "@scoreOutOf": {
+    "description": "スコアリングの分母"
+  },
+  "chooseLevel": "レベルを選ぶ",
+  "chooseTheme": "テーマを選ぶ",
+  "countingSentences": "対象文数を確認しています…",
+  "sentenceCount": "対象文数: {count}文",
+  "@sentenceCount": {
+    "description": "対象文数の表示",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "viewSentences": "教材を見る",
+  "startTraining": "トレーニング開始",
+  "noSentencesForDeck": "対象の教材がありません",
+  "sentenceListTitle": "教材一覧（{deck}・{theme}）",
+  "@sentenceListTitle": {
+    "description": "教材一覧のタイトル",
+    "placeholders": {
+      "deck": {
+        "type": "String"
+      },
+      "theme": {
+        "type": "String"
+      }
+    }
+  },
+  "noMatchingSentences": "該当する教材がありません",
+  "questionProgress": "{current} / {total}",
+  "@questionProgress": {
+    "description": "問題番号",
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "translateThisInto": "この日本語を{language}で",
+  "@translateThisInto": {
+    "description": "問題カードの見出し",
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "answer": "答える",
+  "grade": "採点する",
+  "skipQuestionLink": "わからないので飛ばす",
+  "emptyTranscript": "発話を聞き取れませんでした。もう一度話してください。",
+  "timeoutExplanation": "時間切れで回答できませんでした。模範解答を確認して復習しましょう。",
+  "skipExplanation": "わからないので飛ばした問題です。模範解答を声に出して真似るところから始めましょう。",
+  "yourSpeechTranscript": "あなたの発話（文字起こし）",
+  "recognizing": "認識中",
+  "grading": "AI採点中",
+  "modelAnswerAndComments": "模範解答・添削コメント",
+  "modelAnswer": "模範解答",
+  "explanation": "解説",
+  "comparisonWithModel": "模範解答との比較",
+  "viewResults": "結果を見る",
+  "nextQuestion": "次の問題へ",
+  "verdictPass": "合格",
+  "verdictAlmost": "あと少し",
+  "verdictReview": "要復習",
+  "headlinePass": "よくできました。この調子で次へ進みましょう。",
+  "headlineAlmost": "惜しい！解説を確認して仕上げましょう。",
+  "headlineReview": "復習キューに登録されます。模範解答を確認しましょう。",
+  "headlineToneNotes": "声調が違って聞こえた音節が{count}つあります。赤いルビを確認しましょう。",
+  "@headlineToneNotes": {
+    "description": "声調の気づきがあるときの総評",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "notGraded": "未採点",
+  "skippedBadge": "この問題は飛ばしました",
+  "skippedHeadline": "模範解答と解説を確認しましょう。この問題は復習キューに登録されました。",
+  "yourSpeech": "あなたの発話",
+  "noRecordingNote": "録音がないため、文字起こしと修正版はありません。次に同じ問題が出たときは、模範解答をまねて声に出すところから始めましょう。",
+  "questionText": "問題文",
+  "correctedVersion": "修正版",
+  "noCorrections": "修正なし！そのままでOKです 🎉",
+  "legendRemoved": "削除・誤り",
+  "legendCorrected": "修正版の表現",
+  "rubyToneLegend": "赤字のルビは上＝実際の声調（参考値）／下＝期待された声調",
+  "toneNotesTitle": "気づいた点",
+  "toneNotesNote": "音声認識が聞き取った声調（参考値）が模範解答のピンインと違っていた音節です。聞き取りの誤差も含まれます。",
+  "toneChange": "{expected}声 → {actual}声",
+  "@toneChange": {
+    "description": "声調の気づきのピル",
+    "placeholders": {
+      "expected": {
+        "type": "int"
+      },
+      "actual": {
+        "type": "int"
+      }
+    }
+  },
+  "summaryTitle": "結果まとめ",
+  "sessionComplete": "セッション完了",
+  "averageScoreLine": "平均スコア · 正答 {passing}/{total}",
+  "@averageScoreLine": {
+    "description": "平均スコア行",
+    "placeholders": {
+      "passing": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "usageLine": "入力 {input} · 出力 {output} · {cost}",
+  "@usageLine": {
+    "description": "問ごとのトークン行",
+    "placeholders": {
+      "input": {
+        "type": "String"
+      },
+      "output": {
+        "type": "String"
+      },
+      "cost": {
+        "type": "String"
+      }
+    }
+  },
+  "tokensInOut": "入力 {input} · 出力 {output}",
+  "@tokensInOut": {
+    "description": "入力・出力トークン",
+    "placeholders": {
+      "input": {
+        "type": "String"
+      },
+      "output": {
+        "type": "String"
+      }
+    }
+  },
+  "srsRegisteredNote": "スコア{passing}未満の{count}問を復習キューに登録しました。明日再出題されます。",
+  "@srsRegisteredNote": {
+    "description": "復習キュー登録の案内",
+    "placeholders": {
+      "passing": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "backToHome": "ホームに戻る",
+  "apiTokenUsage": "APIトークン使用量",
+  "usageTranscription": "文字起こし",
+  "usageCorrection": "添削",
+  "usageSpeech": "読み上げ",
+  "usageTotal": "合計",
+  "thoughtTokensNote": "出力のうち思考トークン {count}",
+  "@thoughtTokensNote": {
+    "description": "思考トークン数",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "rateDescription": "入力 {input} / 出力 {output} per 1M tokens",
+  "@rateDescription": {
+    "description": "単価の説明",
+    "placeholders": {
+      "input": {
+        "type": "String"
+      },
+      "output": {
+        "type": "String"
+      }
+    }
+  },
+  "pricingTierLabel": "{tier, select, introductory{2026年12月31日までの導入価格} standard{2027年1月1日以降の標準価格} tts{gemini-3.1-flash-tts-preview} other{{tier}}}",
+  "@pricingTierLabel": {
+    "description": "単価の適用区分",
+    "placeholders": {
+      "tier": {
+        "type": "String"
+      }
+    }
+  },
+  "pricingNote": "単価: {rate}（{tier}）。{speechNote}Gemini APIの公開価格（Standardティア）から算出した概算で、無料枠は考慮していません。",
+  "@pricingNote": {
+    "description": "単価の注記",
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      },
+      "tier": {
+        "type": "String"
+      },
+      "speechNote": {
+        "type": "String"
+      }
+    }
+  },
+  "pricingSpeechNote": "読み上げは{tier}の{rate}。",
+  "@pricingSpeechNote": {
+    "description": "読み上げ単価の注記",
+    "placeholders": {
+      "tier": {
+        "type": "String"
+      },
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "noReviewSentences": "復習対象の教材が見つかりませんでした"
 }

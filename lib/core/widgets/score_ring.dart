@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/l10n.dart';
 import '../theme/app_theme.dart';
 import '../utils/score_colors.dart';
 
@@ -50,7 +51,7 @@ class ScoreRing extends StatelessWidget {
                   ),
                   const SizedBox(width: 2),
                   Text(
-                    '/100',
+                    context.l10n.scoreOutOf,
                     style: TextStyle(
                       fontSize: size * 0.0875,
                       fontWeight: FontWeight.w600,

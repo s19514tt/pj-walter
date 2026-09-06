@@ -1,25 +1,25 @@
 import 'package:flutter/material.dart';
 
-import '../../features/composition/domain/drill_result.dart';
-import '../../core/language/learning_language.dart';
-import '../../features/content/domain/sentence.dart';
-import '../../core/domain/token_usage.dart';
-import '../../features/composition/domain/tone_note.dart';
-import '../../features/speech/domain/tts_service.dart';
-import '../../core/domain/app_failure.dart';
-import '../../core/l10n/l10n.dart';
-import '../../core/theme/app_theme.dart';
-import '../../features/composition/domain/pinyin.dart';
-import '../../core/utils/score_colors.dart';
-import '../../core/utils/word_diff.dart';
-import '../../core/widgets/app_card.dart';
-import '../../core/widgets/bottom_cta_bar.dart';
-import '../../core/widgets/primary_button.dart';
-import '../../core/widgets/secondary_button.dart';
-import '../../core/widgets/skeleton.dart';
-import '../../core/widgets/score_ring.dart';
-import '../../core/widgets/speak_button.dart';
-import '../../core/widgets/stat_badge.dart';
+import '../../../core/domain/app_failure.dart';
+import '../../../core/domain/token_usage.dart';
+import '../../../core/l10n/l10n.dart';
+import '../../../core/language/learning_language.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/score_colors.dart';
+import '../../../core/utils/word_diff.dart';
+import '../../../core/widgets/app_card.dart';
+import '../../../core/widgets/bottom_cta_bar.dart';
+import '../../../core/widgets/primary_button.dart';
+import '../../../core/widgets/score_ring.dart';
+import '../../../core/widgets/secondary_button.dart';
+import '../../../core/widgets/skeleton.dart';
+import '../../../core/widgets/speak_button.dart';
+import '../../../core/widgets/stat_badge.dart';
+import '../../content/domain/sentence.dart';
+import '../../speech/domain/tts_service.dart';
+import '../domain/drill_result.dart';
+import '../domain/pinyin.dart';
+import '../domain/tone_note.dart';
 
 /// 口頭英作文1問分のGemini添削結果の段階表示。
 ///
@@ -103,6 +103,7 @@ class DrillFeedbackView extends StatefulWidget {
 
 class _DrillFeedbackViewState extends State<DrillFeedbackView> {
   /// いま読み上げている文。読み上げていなければnull。
+  /// （どのボタンを停止表示にするかという描画都合のローカル状態）
   ///
   /// 「修正版」「模範解答」のどちらのボタンを停止表示にするかの判定に使う。
   String? _speaking;
@@ -139,9 +140,10 @@ class _DrillFeedbackViewState extends State<DrillFeedbackView> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final feedback = widget.feedback;
     final spoken = widget.spoken;
-    final timedOut = feedback != null && feedback.corrected.isEmpty;
+    final timedOut = feedback != null && feedback.isUnanswered;
     // 声調の気づき。null（未判定）または空（指摘なし）ならカードを出さない。
     // 文字起こしが確定した時点（stage 1）から求まるので、採点を待たずにルビに反映する。
     final toneNotes = timedOut
@@ -189,9 +191,9 @@ class _DrillFeedbackViewState extends State<DrillFeedbackView> {
                 const SizedBox(height: 12),
               ] else if (!timedOut) ...[
                 if (spoken == null)
-                  const SkeletonSectionCard(
-                    title: 'あなたの発話（文字起こし）',
-                    badge: '認識中',
+                  SkeletonSectionCard(
+                    title: l10n.yourSpeechTranscript,
+                    badge: l10n.recognizing,
                   )
                 else if (feedback == null)
                   _PlainTranscriptCard(
@@ -233,12 +235,15 @@ class _DrillFeedbackViewState extends State<DrillFeedbackView> {
               ],
               // 模範解答・添削コメント: 採点完了までスケルトン＋AI採点中バッジ
               if (feedback == null)
-                const SkeletonSectionCard(title: '模範解答・添削コメント', badge: 'AI採点中')
+                SkeletonSectionCard(
+                  title: l10n.modelAnswerAndComments,
+                  badge: l10n.grading,
+                )
               else ...[
                 staggered(
                   _Section(
                     icon: Icons.menu_book_outlined,
-                    title: '模範解答',
+                    title: l10n.modelAnswer,
                     content: widget.sentence.target,
                     // 中国語: 模範解答のピンインを漢字ごとのルビにする
                     reading: withRuby ? widget.sentence.reading : null,
@@ -254,7 +259,7 @@ class _DrillFeedbackViewState extends State<DrillFeedbackView> {
                 staggered(
                   _Section(
                     icon: Icons.lightbulb_outline,
-                    title: '解説',
+                    title: l10n.explanation,
                     content: feedback.explanation,
                   ),
                 ),
@@ -263,7 +268,7 @@ class _DrillFeedbackViewState extends State<DrillFeedbackView> {
                   staggered(
                     _Section(
                       icon: Icons.compare_arrows,
-                      title: '模範解答との比較',
+                      title: l10n.comparisonWithModel,
                       content: feedback.comparison,
                     ),
                   ),
@@ -280,7 +285,7 @@ class _DrillFeedbackViewState extends State<DrillFeedbackView> {
               children: [
                 Expanded(
                   child: SecondaryButton(
-                    label: 'もう一度',
+                    label: l10n.again,
                     onPressed: widget.onRetry,
                   ),
                 ),
@@ -288,7 +293,7 @@ class _DrillFeedbackViewState extends State<DrillFeedbackView> {
                 Expanded(
                   flex: 2,
                   child: PrimaryButton(
-                    label: widget.isLast ? '結果を見る' : '次の問題へ',
+                    label: widget.isLast ? l10n.viewResults : l10n.nextQuestion,
                     onPressed: widget.onNext,
                   ),
                 ),
@@ -311,17 +316,22 @@ class _ScoreCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final color = scoreColor(feedback.score);
     // デザインの3段階判定。合否ライン（70点・SRS登録条件）はisAcceptableに従う
     final (verdict, verdictSurface, defaultHeadline) = feedback.isAcceptable
-        ? ('合格', AppColors.scoreGoodSurface, 'よくできました。この調子で次へ進みましょう。')
+        ? (l10n.verdictPass, AppColors.scoreGoodSurface, l10n.headlinePass)
         : feedback.score >= 50
-        ? ('あと少し', AppColors.scoreMediumSurface, '惜しい！解説を確認して仕上げましょう。')
-        : ('要復習', AppColors.scoreLowSurface, '復習キューに登録されます。模範解答を確認しましょう。');
+        ? (
+            l10n.verdictAlmost,
+            AppColors.scoreMediumSurface,
+            l10n.headlineAlmost,
+          )
+        : (l10n.verdictReview, AppColors.scoreLowSurface, l10n.headlineReview);
     // 声調の気づきがあるときは、デザインの総評と同様に声調へ誘導する一文にする。
     // 気づきが無いときに「声調は問題ありません」とは言わない（見逃しがそのまま嘘になる）。
     final headline = toneNoteCount > 0
-        ? '声調が違って聞こえた音節が$toneNoteCountつあります。赤いルビを確認しましょう。'
+        ? l10n.headlineToneNotes(toneNoteCount)
         : defaultHeadline;
     return AppCard(
       padding: const EdgeInsets.all(20),
@@ -365,6 +375,7 @@ class _SkippedCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return AppCard(
       padding: const EdgeInsets.all(20),
       child: Row(
@@ -376,18 +387,18 @@ class _SkippedCard extends StatelessWidget {
               shape: BoxShape.circle,
               color: AppColors.pageBackground,
             ),
-            child: const Column(
+            child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
+                const Icon(
                   Icons.do_not_disturb_on_outlined,
                   size: 28,
                   color: Color(0xFFB9BDC4),
                 ),
-                SizedBox(height: 7),
+                const SizedBox(height: 7),
                 Text(
-                  '未採点',
-                  style: TextStyle(
+                  l10n.notGraded,
+                  style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF9AA0A6),
@@ -401,14 +412,14 @@ class _SkippedCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const StatBadge(
-                  label: 'この問題は飛ばしました',
-                  surfaceColor: Color(0xFFF0F1F3),
-                  textColor: Color(0xFF5F6368),
+                StatBadge(
+                  label: l10n.skippedBadge,
+                  surfaceColor: const Color(0xFFF0F1F3),
+                  textColor: const Color(0xFF5F6368),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '模範解答と解説を確認しましょう。この問題は復習キューに登録されました。',
+                  l10n.skippedHeadline,
                   style: const TextStyle(
                     fontSize: 12,
                     height: 1.7,
@@ -430,13 +441,14 @@ class _NoRecordingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _SectionLabel(
+          _SectionLabel(
             icon: Icons.mic_off_outlined,
-            title: 'あなたの発話',
+            title: l10n.yourSpeech,
             muted: true,
           ),
           const SizedBox(height: 12),
@@ -446,16 +458,19 @@ class _NoRecordingCard extends StatelessWidget {
               color: const Color(0xFFF7F8FA),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Row(
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.info_outline, size: 17, color: Color(0xFF9AA0A6)),
-                SizedBox(width: 9),
+                const Icon(
+                  Icons.info_outline,
+                  size: 17,
+                  color: Color(0xFF9AA0A6),
+                ),
+                const SizedBox(width: 9),
                 Expanded(
                   child: Text(
-                    '録音がないため、文字起こしと修正版はありません。次に同じ問題が出たときは、'
-                    '模範解答をまねて声に出すところから始めましょう。',
-                    style: TextStyle(
+                    l10n.noRecordingNote,
+                    style: const TextStyle(
                       fontSize: 12,
                       height: 1.8,
                       color: AppColors.textSecondary,
@@ -521,17 +536,17 @@ class _PlainTranscriptCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'あなたの発話（文字起こし）',
-                  style: TextStyle(
+                  context.l10n.yourSpeechTranscript,
+                  style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                     color: AppColors.textSecondary,
                   ),
                 ),
               ),
-              const ProgressBadge(label: 'AI採点中'),
+              ProgressBadge(label: context.l10n.grading),
             ],
           ),
           const SizedBox(height: 8),
@@ -654,7 +669,10 @@ class _QuestionCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _SectionLabel(icon: Icons.help_outline, title: '問題文'),
+          _SectionLabel(
+            icon: Icons.help_outline,
+            title: context.l10n.questionText,
+          ),
           const SizedBox(height: 8),
           Text(
             ja,
@@ -717,6 +735,7 @@ class _DiffCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final diff = diffWords(spoken, corrected);
     final hasChanges = diff.any((s) => s.type != DiffSegmentType.same);
     final spokenSegments = diff
@@ -730,9 +749,9 @@ class _DiffCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _SectionLabel(
+          _SectionLabel(
             icon: Icons.record_voice_over_outlined,
-            title: 'あなたの発話',
+            title: l10n.yourSpeech,
           ),
           const SizedBox(height: 8),
           if (withRuby)
@@ -766,7 +785,7 @@ class _DiffCard extends StatelessWidget {
                 children: [
                   _SectionLabel(
                     icon: Icons.edit,
-                    title: '修正版',
+                    title: l10n.correctedVersion,
                     trailing: correctedTrailing,
                   ),
                   const SizedBox(height: 8),
@@ -798,10 +817,10 @@ class _DiffCard extends StatelessWidget {
                   size: 20,
                 ),
                 const SizedBox(width: 8),
-                const Expanded(
+                Expanded(
                   child: Text(
-                    '修正なし！そのままでOKです 🎉',
-                    style: TextStyle(
+                    l10n.noCorrections,
+                    style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
                       color: AppColors.success,
@@ -811,18 +830,18 @@ class _DiffCard extends StatelessWidget {
               ],
             ),
           const SizedBox(height: 12),
-          const Row(
+          Row(
             children: [
               _LegendSwatch(
                 fill: AppColors.scoreLowSurface,
-                border: Color(0xFFF3B4B4),
-                label: '削除・誤り',
+                border: const Color(0xFFF3B4B4),
+                label: l10n.legendRemoved,
               ),
-              SizedBox(width: 14),
+              const SizedBox(width: 14),
               _LegendSwatch(
                 fill: AppColors.scoreGoodSurface,
-                border: Color(0xFF9AD9BC),
-                label: '修正版の表現',
+                border: const Color(0xFF9AD9BC),
+                label: l10n.legendCorrected,
               ),
             ],
           ),
@@ -830,9 +849,9 @@ class _DiffCard extends StatelessWidget {
           // 「声調OK」のような肯定的な断定は出さない。
           if (withRuby && toneNotes.isNotEmpty) ...[
             const SizedBox(height: 6),
-            const Text(
-              '赤字のルビは上＝実際の声調（参考値）／下＝期待された声調',
-              style: TextStyle(
+            Text(
+              l10n.rubyToneLegend,
+              style: const TextStyle(
                 fontSize: 11,
                 height: 1.6,
                 color: AppColors.textSecondary,
@@ -1318,15 +1337,16 @@ class _ToneNotesCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _SectionLabel(icon: Icons.hearing, title: '気づいた点'),
+          _SectionLabel(icon: Icons.hearing, title: l10n.toneNotesTitle),
           const SizedBox(height: 8),
-          const Text(
-            '音声認識が聞き取った声調（参考値）が模範解答のピンインと違っていた音節です。聞き取りの誤差も含まれます。',
-            style: TextStyle(
+          Text(
+            l10n.toneNotesNote,
+            style: const TextStyle(
               fontSize: 12,
               height: 1.6,
               color: AppColors.textSecondary,
@@ -1361,7 +1381,7 @@ class _ToneNoteRow extends StatelessWidget {
             borderRadius: BorderRadius.circular(AppTheme.pillRadius),
           ),
           child: Text(
-            '${note.expectedTone}声 → ${note.actualTone}声',
+            context.l10n.toneChange(note.expectedTone, note.actualTone),
             style: const TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.bold,

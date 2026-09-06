@@ -1,21 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:signals_flutter/signals_flutter.dart';
 
-import '../../features/content/domain/sentence.dart';
-import '../../features/content/domain/content_repository.dart';
-import '../../core/theme/app_theme.dart';
-import '../../core/utils/theme_labels.dart';
-import '../../core/widgets/app_card.dart';
-import '../../services/settings_service.dart';
-import '../../core/language/learning_language.dart';
+import '../../../core/di/store_factory.dart';
+import '../../../core/l10n/l10n.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_card.dart';
+import '../../content/domain/sentence.dart';
+import 'sentence_list_store.dart';
 
 /// 選択レベル×テーマの教材一覧。
 ///
-/// 各文はAppCardで日本語文を表示し、タップで英文＋tipsを展開表示する。
+/// 各文はAppCardで日本語文を表示し、タップで学習言語の文＋tipsを展開表示する。
 class SentenceListScreen extends StatefulWidget {
   const SentenceListScreen({super.key, required this.level, this.theme});
 
-  /// TOEICレベル（700 / 800）
+  /// デッキレベル（英語 700 / 800、中国語 3 / 4）
   final int level;
 
   /// テーマ（null なら全テーマ）
@@ -26,38 +25,47 @@ class SentenceListScreen extends StatefulWidget {
 }
 
 class _SentenceListScreenState extends State<SentenceListScreen> {
-  late final Future<List<Sentence>> _sentencesFuture;
-  late final LanguageProfile _profile;
+  late final SentenceListStore _store;
 
   @override
   void initState() {
     super.initState();
-    final repository = context.read<ContentRepository>();
-    _profile = context.read<SettingsService>().languageProfile;
-    _sentencesFuture = repository.sentences(
-      profile: _profile,
-      level: widget.level,
-      theme: widget.theme,
-    );
+    _store = StoreFactory.of(
+      context,
+    ).sentenceList(level: widget.level, theme: widget.theme);
+  }
+
+  @override
+  void dispose() {
+    _store.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final themeText = widget.theme == null ? 'すべて' : themeLabel(widget.theme!);
+    final l10n = context.l10n;
+    final theme = widget.theme;
+    final themeText = theme == null ? l10n.allThemes : l10n.themeLabel(theme);
     return Scaffold(
-      appBar: AppBar(title: Text('教材一覧（TOEIC ${widget.level}点台・$themeText）')),
-      body: FutureBuilder<List<Sentence>>(
-        future: _sentencesFuture,
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
+      appBar: AppBar(
+        title: Text(
+          l10n.sentenceListTitle(
+            l10n.deckLevelLabel(_store.profile.code, widget.level),
+            themeText,
+          ),
+        ),
+      ),
+      body: SignalBuilder(
+        builder: (context) {
+          final sentences = _store.sentences.value.value;
+          if (sentences == null) {
             return const Center(child: CircularProgressIndicator());
           }
-          final sentences = snapshot.data!;
           if (sentences.isEmpty) {
-            return const Center(
+            return Center(
               child: Text(
-                '該当する教材がありません',
-                style: TextStyle(color: AppColors.textSecondary),
+                l10n.noMatchingSentences,
+                style: const TextStyle(color: AppColors.textSecondary),
               ),
             );
           }
@@ -74,7 +82,7 @@ class _SentenceListScreenState extends State<SentenceListScreen> {
   }
 }
 
-/// 教材1文のカード。タップで英文＋tipsを開閉する。
+/// 教材1文のカード。タップで学習言語の文＋tipsを開閉する。
 class _SentenceCard extends StatefulWidget {
   const _SentenceCard({required this.sentence});
 
@@ -85,6 +93,7 @@ class _SentenceCard extends StatefulWidget {
 }
 
 class _SentenceCardState extends State<_SentenceCard> {
+  // 開閉は描画都合のローカル状態（業務状態ではない）
   bool _expanded = false;
 
   @override

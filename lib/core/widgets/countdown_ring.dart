@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../l10n/l10n.dart';
 import '../theme/app_theme.dart';
 
 /// スピーキング画面共通の円形カウントダウンリング。
@@ -162,7 +163,7 @@ class _CountdownRingState extends State<CountdownRing>
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      _active ? '聞き取り中' : widget.idleLabel,
+                      _active ? context.l10n.listening : widget.idleLabel,
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w500,

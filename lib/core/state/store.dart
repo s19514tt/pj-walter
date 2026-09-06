@@ -52,7 +52,11 @@ abstract class Store {
   /// Store の寿命に紐づく [FutureSignal] を作る。
   ///
   /// 非同期の読み込み状態（loading / data / error）はこれで表し、画面に
-  /// bool を手書きしない。[dependencies] の signal が変わると再実行される。
+  /// bool を手書きしない。[dependencies] の signal が変わると loading に戻して
+  /// [fn] を実行し直す（[fn] の中では依存 signal を `peek()` で読む）。
+  ///
+  /// signals_core 7 の `AsyncSignalOptions.dependencies` は初期値が null の
+  /// signal の最初の変化を無視するため使わず、ここで effect を張って `reset()` する。
   @protected
   FutureSignal<T> createFutureSignal<T>(
     Future<T> Function() fn, {
@@ -63,13 +67,22 @@ abstract class Store {
     _checkNotDisposed();
     final f = FutureSignal<T>(
       fn,
-      options: AsyncSignalOptions<T>(
-        dependencies: dependencies,
-        lazy: lazy,
-        name: name,
-      ),
+      options: AsyncSignalOptions<T>(lazy: lazy, name: name),
     );
     _disposers.add(f.dispose);
+    if (dependencies.isNotEmpty) {
+      var first = true;
+      createEffect(() {
+        for (final dependency in dependencies) {
+          dependency.value;
+        }
+        if (first) {
+          first = false;
+          return;
+        }
+        untracked(f.reset);
+      }, name: name == null ? null : '$name.dependencies');
+    }
     return f;
   }
 

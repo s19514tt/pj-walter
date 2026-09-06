@@ -196,7 +196,8 @@ UI・Store・UseCase はインタフェースだけを見ているので、差�
    Store に登録し、`Store.dispose()` が一括で破棄する（`effect` の cleanup も呼ぶ）。`dispose` 後の Store は使わない
 2. **画面スコープの Store は `State.initState` で `StoreFactory.of(context)` から生成し、`State.dispose` で
    必ず `store.dispose()` を呼ぶ。** `build` の中で Store や signal を作らない。Store が `Timer` や
-   `SpeechInputService` のような外部リソースを持つときも `dispose` で解放する
+   `SpeechInputService` のような外部リソースを持つときも `dispose` で解放する。Store の生成に ARB の文言や
+   ロケール（InheritedWidget 由来）が要るときだけ、最初の `didChangeDependencies` で生成する（`DrillScreen`）
 3. **アプリスコープの signal は Repository が持つ。** 一覧（履歴・SRS・フレーズ帳・設定）は Repository が
    `ReadonlySignal` として公開し、書き込みのたびに更新する。Store はそれを `computed` で派生させる
    だけで、コピーを持たない（画面をまたぐ更新が自動で伝わる）。Repository はアプリ寿命なので破棄しない
@@ -205,7 +206,8 @@ UI・Store・UseCase はインタフェースだけを見ているので、差�
    `AsyncSignalOptions.dependencies`
 5. **UI は `SignalBuilder` の中でだけ `.value` を読む。** `build` の外（`initState` やコールバック）で
    読むときは `peek()` / `untracked` を使い、意図しない購読を作らない。`effect` は Store の中だけで使い、
-   画面から `effect` を張らない
+   画面から `effect` を張らない。SnackBar・ダイアログ・画面遷移のような一回きりの出来事は Store が
+   `Signal<XxxNotice?>`（`DrillStore.notice`）に流し、画面は `initState` で `subscribe` して `dispose` で解除する
 6. Store は Flutter に依存してよい（`presentation` 層）が、`BuildContext` を保持しない。ナビゲーションや
    SnackBar は画面側が Store のメソッドの戻り値・signal の変化を受けて行う
 

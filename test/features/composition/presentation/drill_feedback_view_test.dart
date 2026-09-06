@@ -8,12 +8,12 @@ import 'package:pj_walter/core/language/learning_language.dart';
 import 'package:pj_walter/features/content/domain/sentence.dart';
 import 'package:pj_walter/core/domain/app_failure.dart';
 import 'package:pj_walter/core/domain/token_usage.dart';
-import 'package:pj_walter/screens/composition/drill_feedback_view.dart';
+import 'package:pj_walter/features/composition/presentation/drill_feedback_view.dart';
 import 'package:pj_walter/core/theme/app_theme.dart';
 import 'package:pj_walter/core/widgets/speak_button.dart';
 
-import '../test_support/fake_tts_service.dart';
-import '../test_support/test_app.dart';
+import '../../../test_support/fake_tts_service.dart';
+import '../../../test_support/test_app.dart';
 
 Sentence _sentence() => const Sentence(
   id: 's700-001',

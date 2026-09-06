@@ -4,12 +4,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pj_walter/core/domain/token_usage.dart';
-import 'package:pj_walter/screens/composition/drill_summary_screen.dart';
+import 'package:pj_walter/features/composition/presentation/drill_summary_screen.dart';
+import 'package:pj_walter/core/data/gemini_client.dart';
 import 'package:pj_walter/core/domain/gemini_pricing.dart';
-import 'package:pj_walter/services/gemini_service.dart';
-import '../test_support/test_app.dart';
+import 'package:get_it/get_it.dart';
+import 'package:pj_walter/features/content/data/asset_content_repository.dart';
+import 'package:pj_walter/features/content/domain/content_repository.dart';
+import 'package:pj_walter/features/settings/domain/settings_repository.dart';
+
+import '../../../test_support/fake_settings_repository.dart';
+import '../../../test_support/test_app.dart';
 
 void main() {
+  late GetIt getIt;
+
+  setUp(() {
+    getIt = GetIt.asNewInstance()
+      ..registerSingleton<SettingsRepository>(FakeSettingsRepository())
+      ..registerSingleton<ContentRepository>(AssetContentRepository());
+  });
+
   testWidgets('用途別・合計のトークン数と、単価から算出したコストが表示される', (tester) async {
     await tester.binding.setSurfaceSize(const Size(400, 1600));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -56,7 +70,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      localizedApp(
+      scopedApp(
+        getIt: getIt,
         home: const DrillSummaryScreen(
           level: 700,
           theme: 'daily',
@@ -107,7 +122,8 @@ void main() {
     const pricing = GeminiPricing.introductory;
 
     await tester.pumpWidget(
-      localizedApp(
+      scopedApp(
+        getIt: getIt,
         home: const DrillSummaryScreen(
           level: 700,
           theme: 'daily',
@@ -130,7 +146,7 @@ void main() {
     final expectedTotal =
         pricing.costUsd(correction) + GeminiPricing.tts.costUsd(speech);
     expect(find.text(formatUsd(expectedTotal)), findsWidgets);
-    expect(find.textContaining(GeminiService.ttsModelName), findsOneWidget);
+    expect(find.textContaining(GeminiClient.ttsModelName), findsOneWidget);
   });
 
   test('読み上げが無ければ合計コストはテキスト単価だけで決まる', () {

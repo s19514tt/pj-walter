@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../l10n/l10n.dart';
+
 import '../../features/review/domain/srs_item.dart';
-import '../../screens/composition/drill_screen.dart';
+import '../../features/composition/presentation/drill_screen.dart';
 import '../../features/review/domain/review_question_resolver.dart';
 import '../../features/content/domain/content_repository.dart';
 import 'app_route.dart';
@@ -33,7 +35,7 @@ class ReviewSessionLauncher {
     if (sentences.isEmpty) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('復習対象の教材が見つかりませんでした')));
+      ).showSnackBar(SnackBar(content: Text(context.l10n.noReviewSentences)));
       return;
     }
 

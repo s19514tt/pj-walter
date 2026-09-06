@@ -15,6 +15,8 @@ import 'package:pj_walter/services/history_service.dart';
 import 'package:pj_walter/features/content/data/asset_content_repository.dart';
 import 'package:pj_walter/features/content/domain/content_repository.dart';
 import 'package:pj_walter/services/settings_service.dart';
+import 'package:get_it/get_it.dart';
+import 'package:pj_walter/features/settings/domain/settings_repository.dart';
 import 'package:provider/provider.dart';
 
 import 'test_support/hive_test_support.dart';
@@ -38,13 +40,22 @@ Future<SettingsService> _buildSettingsService() async {
 // Providerはmain.dartと同じくMaterialAppの外側に置く。home:の内側に置くと
 // push先の画面（デッキ選択など）からProviderが見えない。
 Widget _buildApp(HistoryService historyService, SettingsService settings) {
-  return MultiProvider(
-    providers: [
-      ChangeNotifierProvider<HistoryService>.value(value: historyService),
-      ChangeNotifierProvider<SettingsService>.value(value: settings),
-      Provider<ContentRepository>(create: (_) => AssetContentRepository()),
-    ],
-    child: localizedApp(home: const HomeScreen()),
+  final content = AssetContentRepository();
+  // push 先（デッキ選択）は Store 化済みなので AppScope も要る
+  final getIt = GetIt.asNewInstance()
+    ..registerSingleton<SettingsRepository>(settings.repository)
+    ..registerSingleton<ContentRepository>(content);
+  return scopedApp(
+    getIt: getIt,
+    home: const HomeScreen(),
+    wrap: (app) => MultiProvider(
+      providers: [
+        ChangeNotifierProvider<HistoryService>.value(value: historyService),
+        ChangeNotifierProvider<SettingsService>.value(value: settings),
+        Provider<ContentRepository>.value(value: content),
+      ],
+      child: app,
+    ),
   );
 }
 
