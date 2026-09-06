@@ -6,7 +6,7 @@ import '../core/utils/app_route.dart';
 import '../core/widgets/app_card.dart';
 import '../core/widgets/section_header.dart';
 import '../features/composition/presentation/deck_select_screen.dart';
-import 'monologue/topic_select_screen.dart';
+import '../features/monologue/presentation/topic_select_screen.dart';
 import 'package:provider/provider.dart';
 import '../core/language/learning_language.dart';
 import '../services/settings_service.dart';

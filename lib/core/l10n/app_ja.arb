@@ -381,5 +381,61 @@
       }
     }
   },
-  "noReviewSentences": "復習対象の教材が見つかりませんでした"
+  "noReviewSentences": "復習対象の教材が見つかりませんでした",
+  "chooseDuration": "発話時間を選ぶ",
+  "pickRandomTopic": "ランダムに選ぶ",
+  "chooseTopic": "お題を選ぶ",
+  "noMatchingTopics": "該当するお題がありません",
+  "speakAboutThisTopic": "このお題について話す",
+  "startSpeaking": "話しはじめる",
+  "seeFeedback": "フィードバックを見る",
+  "timeUpBeforeSpeaking": "時間切れになりました。「話しはじめる」で開始してください。",
+  "feedbackTitle": "フィードバック",
+  "transcript": "文字起こし",
+  "transcriptWithDuration": "文字起こし（{duration}）",
+  "@transcriptWithDuration": {
+    "description": "発話時間付きの文字起こし見出し",
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "correctionSuggestions": "修正提案",
+  "usefulPhrases": "使えるフレーズ",
+  "overallFeedback": "総評",
+  "done": "完了",
+  "fluency": "流暢さ",
+  "speechAmount": "発話量",
+  "wordCount": "{count}語",
+  "@wordCount": {
+    "description": "発話の語数",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "correctionCount": "修正点",
+  "itemCount": "{count}件",
+  "@itemCount": {
+    "description": "件数",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "phraseCount": "フレーズ",
+  "pieceCount": "{count}個",
+  "@pieceCount": {
+    "description": "個数",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "savePhrase": "＋保存",
+  "phraseSaved": "保存済"
 }

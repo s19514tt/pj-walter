@@ -461,4 +461,84 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get noReviewSentences => '復習対象の教材が見つかりませんでした';
+
+  @override
+  String get chooseDuration => '発話時間を選ぶ';
+
+  @override
+  String get pickRandomTopic => 'ランダムに選ぶ';
+
+  @override
+  String get chooseTopic => 'お題を選ぶ';
+
+  @override
+  String get noMatchingTopics => '該当するお題がありません';
+
+  @override
+  String get speakAboutThisTopic => 'このお題について話す';
+
+  @override
+  String get startSpeaking => '話しはじめる';
+
+  @override
+  String get seeFeedback => 'フィードバックを見る';
+
+  @override
+  String get timeUpBeforeSpeaking => '時間切れになりました。「話しはじめる」で開始してください。';
+
+  @override
+  String get feedbackTitle => 'フィードバック';
+
+  @override
+  String get transcript => '文字起こし';
+
+  @override
+  String transcriptWithDuration(String duration) {
+    return '文字起こし（$duration）';
+  }
+
+  @override
+  String get correctionSuggestions => '修正提案';
+
+  @override
+  String get usefulPhrases => '使えるフレーズ';
+
+  @override
+  String get overallFeedback => '総評';
+
+  @override
+  String get done => '完了';
+
+  @override
+  String get fluency => '流暢さ';
+
+  @override
+  String get speechAmount => '発話量';
+
+  @override
+  String wordCount(int count) {
+    return '$count語';
+  }
+
+  @override
+  String get correctionCount => '修正点';
+
+  @override
+  String itemCount(int count) {
+    return '$count件';
+  }
+
+  @override
+  String get phraseCount => 'フレーズ';
+
+  @override
+  String pieceCount(int count) {
+    return '$count個';
+  }
+
+  @override
+  String get savePhrase => '＋保存';
+
+  @override
+  String get phraseSaved => '保存済';
 }

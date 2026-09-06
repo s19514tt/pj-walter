@@ -9,8 +9,17 @@ import '../../features/composition/presentation/drill_summary_store.dart';
 import '../../features/composition/presentation/sentence_list_store.dart';
 import '../../features/content/domain/content_repository.dart';
 import '../../features/content/domain/sentence.dart';
+import '../../features/content/domain/topic.dart';
+import '../../features/monologue/domain/monologue_result.dart';
+import '../../features/monologue/domain/monologue_review_repository.dart';
+import '../../features/monologue/domain/record_monologue_result.dart';
+import '../../features/monologue/presentation/monologue_feedback_store.dart';
+import '../../features/monologue/presentation/monologue_speak_store.dart';
+import '../../features/monologue/presentation/topic_select_store.dart';
+import '../../features/review/domain/phrase_repository.dart';
 import '../../features/settings/domain/settings_repository.dart';
 import '../../features/settings/presentation/settings_store.dart';
+import '../../features/speech/domain/speech_input_service.dart';
 import '../../features/speech/speech_module.dart';
 import '../domain/gemini_pricing.dart';
 import 'store_factory.dart';
@@ -71,6 +80,47 @@ class GetItStoreFactory implements StoreFactory {
       questionSeconds: questionSeconds,
     );
   }
+
+  @override
+  TopicSelectStore topicSelect() => TopicSelectStore(
+    content: _getIt<ContentRepository>(),
+    settings: _getIt<SettingsRepository>(),
+  );
+
+  @override
+  MonologueSpeakStore monologueSpeak({
+    required Topic topic,
+    required int seconds,
+  }) {
+    final settings = _getIt<SettingsRepository>();
+    return MonologueSpeakStore(
+      topic: topic,
+      seconds: seconds,
+      speechInput: _getIt<SpeechInputServiceFactory>()(
+        settings.settings.peek().languageProfile,
+      ),
+      settings: settings,
+    );
+  }
+
+  @override
+  MonologueFeedbackStore monologueFeedback({
+    required Topic topic,
+    required int seconds,
+    required String uiLocale,
+    MonologueResult? initialResult,
+    SpeechInputService? speechInput,
+  }) => MonologueFeedbackStore(
+    topic: topic,
+    seconds: seconds,
+    uiLocale: uiLocale,
+    review: _getIt<MonologueReviewRepository>(),
+    recordResult: _getIt<RecordMonologueResult>(),
+    phrases: _getIt<PhraseRepository>(),
+    settings: _getIt<SettingsRepository>(),
+    initialResult: initialResult,
+    speechInput: speechInput,
+  );
 
   @override
   DrillSummaryStore drillSummary({

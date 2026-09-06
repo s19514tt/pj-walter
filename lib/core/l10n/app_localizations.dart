@@ -781,6 +781,150 @@ abstract class AppLocalizations {
   /// In ja, this message translates to:
   /// **'復習対象の教材が見つかりませんでした'**
   String get noReviewSentences;
+
+  /// No description provided for @chooseDuration.
+  ///
+  /// In ja, this message translates to:
+  /// **'発話時間を選ぶ'**
+  String get chooseDuration;
+
+  /// No description provided for @pickRandomTopic.
+  ///
+  /// In ja, this message translates to:
+  /// **'ランダムに選ぶ'**
+  String get pickRandomTopic;
+
+  /// No description provided for @chooseTopic.
+  ///
+  /// In ja, this message translates to:
+  /// **'お題を選ぶ'**
+  String get chooseTopic;
+
+  /// No description provided for @noMatchingTopics.
+  ///
+  /// In ja, this message translates to:
+  /// **'該当するお題がありません'**
+  String get noMatchingTopics;
+
+  /// No description provided for @speakAboutThisTopic.
+  ///
+  /// In ja, this message translates to:
+  /// **'このお題について話す'**
+  String get speakAboutThisTopic;
+
+  /// No description provided for @startSpeaking.
+  ///
+  /// In ja, this message translates to:
+  /// **'話しはじめる'**
+  String get startSpeaking;
+
+  /// No description provided for @seeFeedback.
+  ///
+  /// In ja, this message translates to:
+  /// **'フィードバックを見る'**
+  String get seeFeedback;
+
+  /// No description provided for @timeUpBeforeSpeaking.
+  ///
+  /// In ja, this message translates to:
+  /// **'時間切れになりました。「話しはじめる」で開始してください。'**
+  String get timeUpBeforeSpeaking;
+
+  /// No description provided for @feedbackTitle.
+  ///
+  /// In ja, this message translates to:
+  /// **'フィードバック'**
+  String get feedbackTitle;
+
+  /// No description provided for @transcript.
+  ///
+  /// In ja, this message translates to:
+  /// **'文字起こし'**
+  String get transcript;
+
+  /// 発話時間付きの文字起こし見出し
+  ///
+  /// In ja, this message translates to:
+  /// **'文字起こし（{duration}）'**
+  String transcriptWithDuration(String duration);
+
+  /// No description provided for @correctionSuggestions.
+  ///
+  /// In ja, this message translates to:
+  /// **'修正提案'**
+  String get correctionSuggestions;
+
+  /// No description provided for @usefulPhrases.
+  ///
+  /// In ja, this message translates to:
+  /// **'使えるフレーズ'**
+  String get usefulPhrases;
+
+  /// No description provided for @overallFeedback.
+  ///
+  /// In ja, this message translates to:
+  /// **'総評'**
+  String get overallFeedback;
+
+  /// No description provided for @done.
+  ///
+  /// In ja, this message translates to:
+  /// **'完了'**
+  String get done;
+
+  /// No description provided for @fluency.
+  ///
+  /// In ja, this message translates to:
+  /// **'流暢さ'**
+  String get fluency;
+
+  /// No description provided for @speechAmount.
+  ///
+  /// In ja, this message translates to:
+  /// **'発話量'**
+  String get speechAmount;
+
+  /// 発話の語数
+  ///
+  /// In ja, this message translates to:
+  /// **'{count}語'**
+  String wordCount(int count);
+
+  /// No description provided for @correctionCount.
+  ///
+  /// In ja, this message translates to:
+  /// **'修正点'**
+  String get correctionCount;
+
+  /// 件数
+  ///
+  /// In ja, this message translates to:
+  /// **'{count}件'**
+  String itemCount(int count);
+
+  /// No description provided for @phraseCount.
+  ///
+  /// In ja, this message translates to:
+  /// **'フレーズ'**
+  String get phraseCount;
+
+  /// 個数
+  ///
+  /// In ja, this message translates to:
+  /// **'{count}個'**
+  String pieceCount(int count);
+
+  /// No description provided for @savePhrase.
+  ///
+  /// In ja, this message translates to:
+  /// **'＋保存'**
+  String get savePhrase;
+
+  /// No description provided for @phraseSaved.
+  ///
+  /// In ja, this message translates to:
+  /// **'保存済'**
+  String get phraseSaved;
 }
 
 class _AppLocalizationsDelegate
