@@ -43,5 +43,11 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
+        <!-- 添削結果の読み上げ（flutter_tts）で端末のTTSエンジンを探すために必要。
+             Android 11以降のパッケージ可視性の制限で、これが無いとエンジンが
+             見つからず読み上げできない。 -->
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE"/>
+        </intent>
     </queries>
 </manifest>

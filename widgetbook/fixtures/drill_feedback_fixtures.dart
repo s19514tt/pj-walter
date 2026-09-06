@@ -9,7 +9,6 @@ import 'package:flutter/material.dart';
 import 'package:pj_walter/models/drill_result.dart';
 import 'package:pj_walter/models/learning_language.dart';
 import 'package:pj_walter/models/sentence.dart';
-import 'package:pj_walter/models/token_usage.dart';
 import 'package:pj_walter/screens/composition/drill_feedback_view.dart';
 import 'package:pj_walter/services/tts_service.dart';
 
@@ -115,7 +114,7 @@ DrillFeedbackView _view({
 /// ここからは参照しない）。
 class _SilentTtsService implements TtsService {
   @override
-  Future<SpeakResult> speak(String text) async => (usage: TokenUsage.zero);
+  Future<void> speak(String text, {VoidCallback? onSpeakingStarted}) async {}
 
   @override
   Future<void> stop() async {}

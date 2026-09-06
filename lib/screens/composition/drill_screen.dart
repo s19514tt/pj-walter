@@ -76,7 +76,7 @@ class DrillScreen extends StatefulWidget {
   final SpeechInputService? speechInputService;
 
   /// 添削結果の読み上げに使う音声合成。テスト注入用で、省略時は
-  /// 本番用の[GeminiTtsService]を自動生成する。
+  /// 本番用の[FlutterTtsService]を自動生成する。
   final TtsService? ttsService;
 
   /// 1問あたりの制限時間（秒）。テスト注入用で、省略時は[_questionSeconds]（30秒）。
@@ -116,7 +116,6 @@ class _DrillScreenState extends State<DrillScreen> {
   /// 現在の問で消費したトークン（「もう一度」でやり直した分も加算）
   TokenUsage _transcriptionUsage = TokenUsage.zero;
   TokenUsage _correctionUsage = TokenUsage.zero;
-  TokenUsage _speechUsage = TokenUsage.zero;
 
   Sentence get _current => widget.sentences[_index];
 
@@ -131,8 +130,7 @@ class _DrillScreenState extends State<DrillScreen> {
         );
     _tts =
         widget.ttsService ??
-        GeminiTtsService(
-          geminiService: context.read<GeminiService>(),
+        FlutterTtsService(
           profile: context.read<SettingsService>().languageProfile,
         );
     // カウントダウンは画面表示と同時に開始する（「読む時間」もカウントに
@@ -425,7 +423,6 @@ class _DrillScreenState extends State<DrillScreen> {
           usage: DrillQuestionUsage(
             transcription: _transcriptionUsage,
             correction: _correctionUsage,
-            speech: _speechUsage,
           ),
         ),
       );
@@ -461,7 +458,6 @@ class _DrillScreenState extends State<DrillScreen> {
       _level = 0;
       _transcriptionUsage = TokenUsage.zero;
       _correctionUsage = TokenUsage.zero;
-      _speechUsage = TokenUsage.zero;
     });
     // 次の問題もカウントダウンは表示と同時に開始する
     _startTimer();
@@ -526,7 +522,6 @@ class _DrillScreenState extends State<DrillScreen> {
                 onNext: _next,
                 onRetry: _retryCurrent,
                 ttsService: _tts,
-                onSpeechUsage: (usage) => _speechUsage = _speechUsage + usage,
                 isLast: _index >= widget.sentences.length - 1,
               )
             : _buildQuestion(context),

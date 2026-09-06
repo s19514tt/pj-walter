@@ -1,16 +1,9 @@
 import 'dart:async';
-import 'dart:typed_data';
 
-import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 
 import '../models/learning_language.dart';
-import '../models/token_usage.dart';
-import 'gemini_service.dart';
-
-/// [TtsService.speak]の結果（読み上げに消費したトークン使用量）。
-///
-/// 同じ文をキャッシュから再生した場合は[TokenUsage.zero]（API呼び出し無し）。
-typedef SpeakResult = ({TokenUsage usage});
 
 /// 読み上げ（TTS）に失敗した際に投げられる例外。
 ///
@@ -26,14 +19,17 @@ class TtsException implements Exception {
 
 /// 学習言語の文を読み上げる音声合成の抽象化。
 ///
-/// 実装は[GeminiTtsService]（Gemini TTSで音声を生成して端末で再生）のみ。
+/// 実装は[FlutterTtsService]（端末OSのTTSエンジン）のみ。
 /// UI側はこのインターフェースだけを見ればよい（テストではフェイクに差し替える）。
 abstract class TtsService {
-  /// [text]を読み上げる。再生が終わる（または中断される）まで待つ。
+  /// [text]を読み上げる。読み上げが終わる（または中断される）まで待つ。
   ///
   /// すでに読み上げ中の場合は、それを止めてから新しい文を読み始める。
-  /// 音声の生成・再生に失敗した場合は[TtsException]を投げる。
-  Future<SpeakResult> speak(String text);
+  /// 実際に音が鳴り始めた時点で[onSpeakingStarted]を呼ぶ。押してから音が出る
+  /// までにはエンジンの準備時間があるので、UIはそれまでを「準備中」として
+  /// 読み上げ中と出し分けられる（`SpeakButtonState`）。
+  /// エンジンが使えない・読み上げに失敗した場合は[TtsException]を投げる。
+  Future<void> speak(String text, {VoidCallback? onSpeakingStarted});
 
   /// 読み上げ中なら中断する。読み上げていない場合は何もしない。
   Future<void> stop();
@@ -42,121 +38,134 @@ abstract class TtsService {
   void dispose();
 }
 
-/// Gemini TTSで音声を生成し、端末で再生する実装。
+/// 端末OSの音声合成エンジンを使う実装。
 ///
-/// [GeminiService.synthesizeSpeech]が返すWAVを`audioplayers`で鳴らす。
-/// 端末のTTSエンジンに依存しないため、対応言語・声質がプラットフォームで
-/// ぶれない（中国語の音声が入っていない端末でも読み上げられる）。
+/// 言語は[LanguageProfile.ttsLanguage]（`en-US` / `zh-CN`）を設定する。
+/// 音声をサーバーで生成しないので、APIコストも生成待ちも無く、押してから
+/// 鳴り始めるまでが速い（生成待ちが長かったGemini TTSから戻した）。
 ///
-/// 音声出力は入力テキストより単価が高い（[GeminiPricing.tts]）ので、
-/// 同じ文の2回目以降はメモリ上のキャッシュから再生してAPIを呼ばない。
-/// 添削画面は「修正版」「模範解答」の2文だけを繰り返し読むため、
-/// キャッシュ件数の上限は設けていない（画面を離れると破棄される）。
-class GeminiTtsService implements TtsService {
-  // コンストラクタの公開パラメータ名（geminiService/profile）と内部フィールド名
-  // をあえて分けているため、initializing formalは使わない
+/// `awaitSpeakCompletion(true)`により[speak]は読み上げ完了まで待つので、
+/// 呼び出し側はそのまま「読み上げ中」の表示に使える。
+class FlutterTtsService implements TtsService {
+  // コンストラクタの公開パラメータ名（profile）と内部フィールド名（_profile）を
+  // あえて分けているため、initializing formalは使わない
   // （使うとパラメータ名がprivateになり外部から渡せなくなる）。
-  GeminiTtsService({
-    required GeminiService geminiService,
+  FlutterTtsService({
     required LanguageProfile profile,
-    AudioPlayer? player,
+    FlutterTts? tts,
     // ignore: prefer_initializing_formals
-  }) : _gemini = geminiService,
-       // ignore: prefer_initializing_formals
-       _profile = profile,
-       _player = player ?? AudioPlayer();
+  }) : _profile = profile,
+       _tts = tts ?? FlutterTts();
 
-  final GeminiService _gemini;
   final LanguageProfile _profile;
-  final AudioPlayer _player;
+  final FlutterTts _tts;
 
-  /// 生成済みのWAV（キーは読み上げた文）
-  final _cache = <String, Uint8List>{};
-
-  /// 再生中の[speak]を待たせているCompleter。
-  ///
-  /// `audioplayers`は`stop()`では`onPlayerComplete`を流さないため、
-  /// 「再生完了」と「[stop]による中断」の両方でこれを完了させて
-  /// [speak]の待ちを解く（そうしないと停止後に永久に待ち続ける）。
-  Completer<void>? _playback;
-  StreamSubscription<void>? _completeSubscription;
+  /// 言語・速度などの初期設定が済んでいるか（初回[speak]で一度だけ行う）
+  bool _configured = false;
 
   /// 破棄済みかどうか。破棄後の[speak]は何もしない。
   bool _disposed = false;
 
-  @override
-  Future<SpeakResult> speak(String text) async {
-    if (_disposed || text.trim().isEmpty) return (usage: TokenUsage.zero);
-
-    var usage = TokenUsage.zero;
-    var wav = _cache[text];
-    if (wav == null) {
-      try {
-        final result = await _gemini.synthesizeSpeech(
-          profile: _profile,
-          text: text,
-        );
-        wav = result.wavBytes;
-        usage = result.usage;
-      } on GeminiException catch (error) {
-        // GeminiExceptionのmessageはそのままUIに出せる日本語なので流用する。
-        throw TtsException(error.message);
-      }
-      if (_disposed) return (usage: usage);
-      _cache[text] = wav;
-    }
-
-    await _playAndWait(wav);
-    return (usage: usage);
-  }
-
-  /// [wav]を再生し、再生完了または[stop]による中断まで待つ。
+  /// 再生中の[speak]を待たせているCompleter。
   ///
-  /// 呼び出し側はこの待ちをそのまま「読み上げ中」の表示に使える。
-  Future<void> _playAndWait(Uint8List wav) async {
-    // 直前の読み上げが残っていると重なって聞こえるため、必ず止めてから鳴らす。
+  /// 中断（[stop]）でエンジンが完了イベントを流さない場合があるため、
+  /// [stop]側からもこれを完了させて[speak]の待ちを必ず解く
+  /// （そうしないとボタンが「停止」表示のまま戻らなくなる）。
+  Completer<void>? _playback;
+
+  /// いま待っている[speak]に渡された「鳴り始めた」通知先
+  VoidCallback? _onSpeakingStarted;
+
+  @override
+  Future<void> speak(String text, {VoidCallback? onSpeakingStarted}) async {
+    if (_disposed || text.trim().isEmpty) return;
+    await _configure();
+    if (_disposed) return;
+    // 直前の読み上げが残っていると重なって聞こえるため、必ず止めてから話す。
     await stop();
     final playback = Completer<void>();
     _playback = playback;
+    _onSpeakingStarted = onSpeakingStarted;
     try {
-      _completeSubscription = _player.onPlayerComplete.listen((_) {
-        if (!playback.isCompleted) playback.complete();
-      });
-      await _player.play(BytesSource(wav, mimeType: 'audio/wav'));
+      // speak()は読み上げ完了で返るが、中断時に返らない実装のプラットフォームが
+      // あるため、[stop]が解くCompleterと競争させて待ちが残らないようにする。
+      final speaking = _tts.speak(text);
+      // 競争に負けた側の例外が未処理にならないように受けておく。
+      unawaited(speaking.catchError((Object _) => null));
+      await Future.any([speaking, playback.future]);
     } catch (_) {
+      throw TtsException('読み上げできませんでした。端末の音声エンジンの設定を確認してください。');
+    } finally {
       _finishPlayback();
-      throw TtsException('音声を再生できませんでした。端末の音量・サイレントモードを確認してください。');
     }
-    await playback.future;
-    _finishPlayback();
   }
 
-  /// 再生の待ちを解き、完了通知の購読を解除する。
+  /// 再生の待ちを解き、通知先を捨てる。
   void _finishPlayback() {
     if (_playback?.isCompleted == false) _playback!.complete();
     _playback = null;
-    unawaited(_completeSubscription?.cancel());
-    _completeSubscription = null;
+    _onSpeakingStarted = null;
   }
 
   @override
   Future<void> stop() async {
+    if (_disposed || !_configured) return;
     try {
-      await _player.stop();
+      await _tts.stop();
     } catch (_) {
       // 停止の失敗はユーザーに見せる必要がないため握りつぶす。
     }
-    // stop()ではonPlayerCompleteが流れないので、待っている[speak]を自分で解く。
+    // 中断では完了イベントが流れないことがあるので、自分で待ちを解く。
     _finishPlayback();
   }
 
   @override
   void dispose() {
     _disposed = true;
-    _cache.clear();
     // 待っている[speak]を解いてから破棄する（解かないと永久に待ち続ける）。
     _finishPlayback();
-    // 画面を離れた後も再生が続かないように破棄する。
-    unawaited(_player.dispose());
+    // 画面を離れた後も読み上げが続かないように止める。
+    _tts.stop().catchError((Object _) => null);
+  }
+
+  /// 言語・速度・音量の設定を一度だけ行う。
+  ///
+  /// 学習言語のボイスが端末に入っていない場合は[TtsException]を投げ、
+  /// 画面側で「この端末では読み上げできない」旨を出せるようにする。
+  Future<void> _configure() async {
+    if (_configured) return;
+    final bool? available;
+    try {
+      available = await _tts.isLanguageAvailable(_profile.ttsLanguage);
+    } catch (_) {
+      throw TtsException('読み上げできませんでした。端末の音声エンジンの設定を確認してください。');
+    }
+    if (available == false) {
+      throw TtsException('${_profile.label}の音声がこの端末にありません。端末の音声エンジンを確認してください。');
+    }
+    // 実際に音が鳴り始めた時点を拾って「準備中」→「読み上げ中」に切り替える。
+    _tts.setStartHandler(() => _onSpeakingStarted?.call());
+    // iOSは直前の録音でオーディオセッションが録音用のままになっていることが
+    // あり、そのままでは読み上げが無音になる。再生用のカテゴリに切り替える。
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
+      await _tts.setIosAudioCategory(
+        IosTextToSpeechAudioCategory.playback,
+        const [],
+      );
+    }
+    await _tts.setLanguage(_profile.ttsLanguage);
+    // 学習用途では標準速度だと速いため、少しゆっくり読ませる。
+    await _tts.setSpeechRate(_slowSpeechRate);
+    await _tts.setVolume(1);
+    await _tts.setPitch(1);
+    // speak()が読み上げ完了まで待つようにする（UIの「読み上げ中」表示に使う）。
+    await _tts.awaitSpeakCompletion(true);
+    _configured = true;
   }
 }
+
+/// 「標準よりやや遅い」読み上げ速度。
+///
+/// Android/iOSはプラグイン側で0.5が等速に揃えられているのに対し、
+/// WebはWeb Speech APIの値がそのまま使われ1.0が等速なのでスケールが違う。
+const double _slowSpeechRate = kIsWeb ? 0.9 : 0.45;
