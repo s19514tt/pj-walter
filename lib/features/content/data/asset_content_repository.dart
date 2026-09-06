@@ -2,26 +2,24 @@ import 'dart:convert';
 
 import 'package:flutter/services.dart' show rootBundle;
 
-import '../core/language/learning_language.dart';
-import '../features/content/domain/sentence.dart';
-import '../features/content/data/sentence_dto.dart';
-import '../features/content/data/topic_dto.dart';
-import '../features/content/domain/topic.dart';
+import '../../../core/language/learning_language.dart';
+import '../domain/content_repository.dart';
+import '../domain/sentence.dart';
+import '../domain/topic.dart';
+import 'sentence_dto.dart';
+import 'topic_dto.dart';
 
-/// 教材JSON（`assets/data/{言語}/`）のロード・キャッシュ・フィルタを担うリポジトリ。
+/// [ContentRepository] のアセット実装（`assets/data/{言語}/`）。
 ///
 /// アセットのパスは[LanguageProfile]が決めるため、言語が増えても
 /// このクラスに手を入れる必要はない。一度読み込んだ結果は
 /// 言語×レベルごとにメモリへキャッシュする。
-class SentenceRepository {
+class AssetContentRepository implements ContentRepository {
   final Map<String, List<Sentence>> _sentenceCache = {};
   final Map<String, List<Topic>> _topicCache = {};
 
-  /// 指定言語・レベルの教材文一覧を取得する。
-  ///
-  /// [theme] を指定すると `daily` / `business` / `travel` でフィルタする。
-  /// null または未指定の場合は全テーマを返す。
-  Future<List<Sentence>> sentencesFor({
+  @override
+  Future<List<Sentence>> sentences({
     required LanguageProfile profile,
     required int level,
     String? theme,
@@ -31,10 +29,7 @@ class SentenceRepository {
     return sentences.where((s) => s.theme == theme).toList();
   }
 
-  /// 指定言語の独り言お題一覧を取得する。
-  ///
-  /// [theme] を指定すると `daily` / `business` / `travel` でフィルタする。
-  /// null または未指定の場合は全テーマを返す。
+  @override
   Future<List<Topic>> topics({
     required LanguageProfile profile,
     String? theme,

@@ -20,7 +20,7 @@ import 'package:pj_walter/services/gemini_service.dart';
 import 'package:pj_walter/services/history_service.dart';
 import 'package:pj_walter/services/settings_service.dart';
 import 'package:pj_walter/core/domain/token_usage.dart';
-import 'package:pj_walter/services/speech_input_service.dart';
+import 'package:pj_walter/features/speech/domain/speech_input_service.dart';
 import 'package:provider/provider.dart';
 
 import '../test_support/fake_tts_service.dart';
@@ -52,11 +52,11 @@ class FakeSpeechInputService implements SpeechInputService {
 
   @override
   Future<void> start({
-    required void Function(String text) onPartial,
+    void Function(String text)? onPartial,
     void Function(double level)? onLevel,
   }) async {
     startCalled = true;
-    onPartial('partial text...');
+    onPartial?.call('partial text...');
     onLevel?.call(0.5);
   }
 

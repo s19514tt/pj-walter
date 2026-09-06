@@ -11,7 +11,8 @@ import 'package:pj_walter/features/composition/domain/drill_result.dart';
 import 'package:pj_walter/features/monologue/domain/monologue_result.dart';
 import 'package:pj_walter/screens/stats_screen.dart';
 import 'package:pj_walter/services/history_service.dart';
-import 'package:pj_walter/services/sentence_repository.dart';
+import 'package:pj_walter/features/content/data/asset_content_repository.dart';
+import 'package:pj_walter/features/content/domain/content_repository.dart';
 import 'package:provider/provider.dart';
 
 import 'test_support/hive_test_support.dart';
@@ -30,7 +31,7 @@ Widget _buildApp(HistoryService historyService) {
     home: MultiProvider(
       providers: [
         ChangeNotifierProvider<HistoryService>.value(value: historyService),
-        Provider<SentenceRepository>(create: (_) => SentenceRepository()),
+        Provider<ContentRepository>(create: (_) => AssetContentRepository()),
       ],
       child: const StatsScreen(),
     ),

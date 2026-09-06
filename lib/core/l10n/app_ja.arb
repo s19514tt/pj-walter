@@ -4,26 +4,58 @@
   "languageName": "{code, select, en{英語} zh{中国語} other{{code}}}",
   "@languageName": {
     "description": "学習言語の表示名",
-    "placeholders": {"code": {"type": "String"}}
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
   },
   "compositionTitle": "{code, select, en{口頭英作文} zh{口頭中国語作文} other{口頭作文}}",
   "@compositionTitle": {
     "description": "口頭作文トレーニングの呼び名（学習言語ごと）",
-    "placeholders": {"code": {"type": "String"}}
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
   },
   "monologueTitle": "{code, select, en{独り言英会話} zh{独り言中国語} other{独り言}}",
   "@monologueTitle": {
     "description": "独り言トレーニングの呼び名（学習言語ごと）",
-    "placeholders": {"code": {"type": "String"}}
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
   },
   "deckLevelLabel": "{code, select, en{TOEIC{level}点台} zh{HSK{level}級} other{{level}}}",
   "@deckLevelLabel": {
     "description": "デッキ選択に出すレベル名",
-    "placeholders": {"code": {"type": "String"}, "level": {"type": "int"}}
+    "placeholders": {
+      "code": {
+        "type": "String"
+      },
+      "level": {
+        "type": "int"
+      }
+    }
   },
   "readingLabel": "{reading, select, pinyin{ピンイン} other{{reading}}}",
   "@readingLabel": {
     "description": "読み表記の名前",
-    "placeholders": {"reading": {"type": "String"}}
+    "placeholders": {
+      "reading": {
+        "type": "String"
+      }
+    }
+  },
+  "failureMessage": "{kind, select, apiKeyMissing{APIキーが設定されていません。設定画面からAPIキーを登録してください。} apiKeyInvalid{APIキーが無効です。設定画面で正しいAPIキーを設定してください。} rateLimited{リクエストが多すぎます。しばらく待ってから再度お試しください。} badRequest{リクエストが不正です。入力内容を確認してください。} serverError{サーバーでエラーが発生しました。しばらくしてから再度お試しください。} unexpectedStatus{通信エラーが発生しました。しばらくしてから再度お試しください。} timeout{通信がタイムアウトしました。電波状況を確認して再度お試しください。} network{通信エラーが発生しました。ネットワーク接続を確認してください。} invalidResponse{応答を解析できませんでした。時間を置いて再度お試しください。} emptyResponse{文字起こし結果が返ってきませんでした。もう一度お試しください。} noSpeech{音声を聞き取れませんでした。もう一度お試しください。} noAudio{読み上げ音声を取得できませんでした。時間を置いて再度お試しください。} micPermission{マイクの権限が許可されていません。設定でマイクを許可してください。} playback{音声を再生できませんでした。端末の音量・サイレントモードを確認してください。} other{エラーが発生しました。もう一度お試しください。}}",
+  "@failureMessage": {
+    "description": "AppFailure.kind → ユーザー向け文言",
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
   }
 }

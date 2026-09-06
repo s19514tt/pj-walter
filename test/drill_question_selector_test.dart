@@ -5,7 +5,7 @@ import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pj_walter/features/content/domain/sentence.dart';
-import 'package:pj_walter/services/drill_question_selector.dart';
+import 'package:pj_walter/features/composition/domain/drill_question_selector.dart';
 
 Sentence _sentence(int i) => Sentence(
   id: 's700-${i.toString().padLeft(3, '0')}',

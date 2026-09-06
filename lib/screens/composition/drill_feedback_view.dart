@@ -5,9 +5,11 @@ import '../../core/language/learning_language.dart';
 import '../../features/content/domain/sentence.dart';
 import '../../core/domain/token_usage.dart';
 import '../../features/composition/domain/tone_note.dart';
-import '../../services/tts_service.dart';
+import '../../features/speech/domain/tts_service.dart';
+import '../../core/domain/app_failure.dart';
+import '../../core/l10n/l10n.dart';
 import '../../core/theme/app_theme.dart';
-import '../../core/utils/pinyin.dart';
+import '../../features/composition/domain/pinyin.dart';
 import '../../core/utils/score_colors.dart';
 import '../../core/utils/word_diff.dart';
 import '../../core/widgets/app_card.dart';
@@ -124,11 +126,11 @@ class _DrillFeedbackViewState extends State<DrillFeedbackView> {
     try {
       final (:usage) = await widget.ttsService.speak(text);
       if (usage != TokenUsage.zero) widget.onSpeechUsage?.call(usage);
-    } on TtsException catch (error) {
+    } on AppFailure catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.message)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.failureMessage(error.kind.name))),
+      );
     } finally {
       // 別の文の読み上げに切り替わっている場合は、そちらの表示を消さない。
       if (mounted && _speaking == text) setState(() => _speaking = null);

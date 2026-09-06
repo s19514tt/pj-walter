@@ -6,9 +6,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pj_walter/features/composition/domain/drill_result.dart';
 import 'package:pj_walter/core/language/learning_language.dart';
 import 'package:pj_walter/features/content/domain/sentence.dart';
+import 'package:pj_walter/core/domain/app_failure.dart';
 import 'package:pj_walter/core/domain/token_usage.dart';
 import 'package:pj_walter/screens/composition/drill_feedback_view.dart';
-import 'package:pj_walter/services/tts_service.dart';
 import 'package:pj_walter/core/theme/app_theme.dart';
 import 'package:pj_walter/core/widgets/speak_button.dart';
 
@@ -291,7 +291,8 @@ void main() {
       explanation: '解説',
       comparison: '比較',
     );
-    final tts = FakeTtsService()..error = TtsException('読み上げできませんでした。');
+    final tts = FakeTtsService()
+      ..error = const AppFailure(FailureKind.playback);
 
     await tester.pumpWidget(
       _wrap(
@@ -310,7 +311,8 @@ void main() {
     await tester.tap(find.byType(SpeakButton).first);
     await tester.pumpAndSettle();
 
-    expect(find.text('読み上げできませんでした。'), findsOneWidget);
+    // AppFailure.kind が ARB の文言（failureMessage）に変換されて表示される
+    expect(find.textContaining('音声を再生できませんでした'), findsOneWidget);
     expect(find.text('停止'), findsNothing);
   });
 

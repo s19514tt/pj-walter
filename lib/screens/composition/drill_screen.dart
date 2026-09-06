@@ -10,12 +10,15 @@ import '../../core/domain/token_usage.dart';
 import '../../services/gemini_service.dart';
 import '../../services/history_service.dart';
 import '../../services/settings_service.dart';
-import '../../services/speech_input_service.dart';
-import '../../services/tts_service.dart';
+import '../../features/speech/data/audio_player_tts_service.dart';
+import '../../features/speech/data/recorder_speech_input_service.dart';
+import '../../features/speech/domain/speech_input_service.dart';
+import '../../features/speech/domain/tts_service.dart';
 import '../../core/l10n/l10n.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/domain/app_failure.dart';
 import '../../core/utils/app_route.dart';
-import '../../core/utils/pinyin.dart';
+import '../../features/composition/domain/pinyin.dart';
 import '../../core/widgets/abort_session_dialog.dart';
 import '../../core/widgets/bottom_cta_bar.dart';
 import '../../core/widgets/countdown_ring.dart';
@@ -133,14 +136,14 @@ class _DrillScreenState extends State<DrillScreen> {
     super.initState();
     _speechInput =
         widget.speechInputService ??
-        createSpeechInputService(
-          geminiService: context.read<GeminiService>(),
+        RecorderSpeechInputService(
+          transcription: context.read<GeminiService>().transcription,
           profile: context.read<SettingsService>().languageProfile,
         );
     _tts =
         widget.ttsService ??
-        GeminiTtsService(
-          geminiService: context.read<GeminiService>(),
+        AudioPlayerTtsService(
+          tts: context.read<GeminiService>().tts,
           profile: context.read<SettingsService>().languageProfile,
         );
     // カウントダウンは画面表示と同時に開始する（「読む時間」もカウントに
@@ -240,8 +243,8 @@ class _DrillScreenState extends State<DrillScreen> {
       // 部分認識テキストは表示しない（画面は日本語文・残り時間・主ボタンのみ）
       await _speechInput.start(onPartial: (_) {});
       setState(() => _recording = true);
-    } on SpeechInputException catch (e) {
-      _showSnack(e.message);
+    } on AppFailure catch (e) {
+      _showFailure(e);
     }
   }
 
@@ -262,11 +265,8 @@ class _DrillScreenState extends State<DrillScreen> {
         _transcriptionUsage = _transcriptionUsage + result.usage;
       });
       return true;
-    } on SpeechInputException catch (e) {
-      _showSnack(e.message);
-      return false;
-    } on GeminiException catch (e) {
-      _showSnack(e.message);
+    } on AppFailure catch (e) {
+      _showFailure(e);
       return false;
     } finally {
       if (mounted) setState(() => _processingSpeech = false);
@@ -285,6 +285,11 @@ class _DrillScreenState extends State<DrillScreen> {
       _skipped = false;
     });
     _startTimer();
+  }
+
+  void _showFailure(AppFailure failure) {
+    if (!mounted) return;
+    _showSnack(context.l10n.failureMessage(failure.kind.name));
   }
 
   void _showSnack(String message) {
@@ -392,11 +397,11 @@ class _DrillScreenState extends State<DrillScreen> {
         _correctionUsage = _correctionUsage + correction.usage;
         _grading = false;
       });
-    } on GeminiException catch (e) {
+    } on AppFailure catch (e) {
       // 採点失敗: stage 1（文字起こし表示）のまま留まり、再試行できるようにする
       if (!mounted) return;
       setState(() => _grading = false);
-      _showRetrySnack(e.message);
+      _showRetrySnack(context.l10n.failureMessage(e.kind.name));
     }
   }
 

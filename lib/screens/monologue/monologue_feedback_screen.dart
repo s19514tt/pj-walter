@@ -7,7 +7,9 @@ import '../../features/review/domain/phrase.dart';
 import '../../features/content/domain/topic.dart';
 import '../../services/gemini_service.dart';
 import '../../services/history_service.dart';
-import '../../services/speech_input_service.dart';
+import '../../features/speech/domain/speech_input_service.dart';
+import '../../core/domain/app_failure.dart';
+import '../../core/l10n/l10n.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/abort_session_dialog.dart';
 import '../../core/widgets/app_card.dart';
@@ -88,11 +90,9 @@ class _MonologueFeedbackScreenState extends State<MonologueFeedbackScreen> {
     String transcript;
     try {
       transcript = (await speech.stop()).text;
-    } on SpeechInputException catch (e) {
-      _failAndExit(e.message);
-      return;
-    } on GeminiException catch (e) {
-      _failAndExit(e.message);
+    } on AppFailure catch (e) {
+      if (!mounted) return;
+      _failAndExit(context.l10n.failureMessage(e.kind.name));
       return;
     } finally {
       speech.dispose();
@@ -119,13 +119,14 @@ class _MonologueFeedbackScreenState extends State<MonologueFeedbackScreen> {
     try {
       // 独り言ではトークン使用量の表示はまだ行わない（口頭作文のまとめ画面のみ）。
       final profile = context.read<SettingsService>().languageProfile;
-      final (:feedback, usage: _) = await gemini.reviewMonologue(
+      final review = await gemini.reviewMonologue(
         profile: profile,
         topicJa: widget.topic.ja,
         topicTarget: widget.topic.target,
         seconds: widget.seconds,
         transcript: transcript,
       );
+      final feedback = review.feedback;
       final result = MonologueResult(
         id: const Uuid().v4(),
         topicId: widget.topic.id,
@@ -141,12 +142,12 @@ class _MonologueFeedbackScreenState extends State<MonologueFeedbackScreen> {
         _result = result;
         _grading = false;
       });
-    } on GeminiException catch (e) {
+    } on AppFailure catch (e) {
       if (!mounted) return;
       setState(() => _grading = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(e.message),
+          content: Text(context.l10n.failureMessage(e.kind.name)),
           action: SnackBarAction(label: '再試行', onPressed: _grade),
         ),
       );

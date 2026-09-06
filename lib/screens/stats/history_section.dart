@@ -6,7 +6,7 @@ import '../../features/composition/domain/drill_result.dart';
 import '../../features/monologue/domain/monologue_result.dart';
 import '../../features/content/domain/sentence.dart';
 import '../../features/content/domain/topic.dart';
-import '../../services/sentence_repository.dart';
+import '../../features/content/domain/content_repository.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/score_colors.dart';
 import '../../core/widgets/app_card.dart';
@@ -49,9 +49,9 @@ class _HistorySectionState extends State<HistorySection> {
   void _showDetail(_HistoryEntry entry) {
     // showModalBottomSheetは新しいルート（Overlayの兄弟エントリ）にbuilderの
     // 内容を差し込むため、その中のcontextからは呼び出し元のProviderを辿れない。
-    // そのため、ルートがまだ辿れるここでSentenceRepositoryを読んでおき、
+    // そのため、ルートがまだ辿れるここでContentRepositoryを読んでおき、
     // ウィジェットの引数として渡す。
-    final repository = context.read<SentenceRepository>();
+    final repository = context.read<ContentRepository>();
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -193,7 +193,7 @@ class _DrillDetailSheet extends StatelessWidget {
   const _DrillDetailSheet({required this.result, required this.repository});
 
   final DrillResult result;
-  final SentenceRepository repository;
+  final ContentRepository repository;
 
   @override
   Widget build(BuildContext context) {
@@ -204,7 +204,7 @@ class _DrillDetailSheet extends StatelessWidget {
       score: result.feedback.score,
       children: [
         FutureBuilder<List<Sentence>>(
-          future: repository.sentencesFor(
+          future: repository.sentences(
             profile: LanguageProfile.ofCode(result.language),
             level: result.level,
           ),
@@ -239,7 +239,7 @@ class _MonologueDetailSheet extends StatelessWidget {
   const _MonologueDetailSheet({required this.result, required this.repository});
 
   final MonologueResult result;
-  final SentenceRepository repository;
+  final ContentRepository repository;
 
   @override
   Widget build(BuildContext context) {

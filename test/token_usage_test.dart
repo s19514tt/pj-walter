@@ -3,7 +3,7 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pj_walter/core/domain/token_usage.dart';
-import 'package:pj_walter/services/gemini_pricing.dart';
+import 'package:pj_walter/core/domain/gemini_pricing.dart';
 
 void main() {
   group('TokenUsage', () {

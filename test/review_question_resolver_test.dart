@@ -4,7 +4,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pj_walter/features/content/domain/sentence.dart';
 import 'package:pj_walter/features/review/domain/srs_item.dart';
-import 'package:pj_walter/services/review_question_resolver.dart';
+import 'package:pj_walter/features/review/domain/review_question_resolver.dart';
 
 Sentence _sentence({required String id, int level = 700}) => Sentence(
   id: id,

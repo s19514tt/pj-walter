@@ -830,7 +830,7 @@ packages:
     source: hosted
     version: "3.0.0"
   signals_core:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: signals_core
       sha256: "04d7ccb0265264191a4e2666050031129f47c2bbf4ac3f31f6586889a9903b62"

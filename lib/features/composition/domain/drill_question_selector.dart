@@ -1,10 +1,10 @@
 import 'dart:math';
 
-import '../features/content/domain/sentence.dart';
+import '../../content/domain/sentence.dart';
 
 /// 口頭英作文ドリル1セッション分の出題文選択ロジック。
 ///
-/// [SentenceRepository]が返すリストはunmodifiableなため、シャッフル前に
+/// [ContentRepository]が返すリストはunmodifiableなため、シャッフル前に
 /// 必ずコピーを作成する（呼び出し元のリストを破壊しないため）。
 class DrillQuestionSelector {
   const DrillQuestionSelector({this.count = 10});

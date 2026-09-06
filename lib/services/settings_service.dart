@@ -1,101 +1,57 @@
+// 旧 provider ベースの画面のための一時的なファサード。
+// 画面が Store（signals）へ移行し終わったら削除する。
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive/hive.dart';
 
 import '../core/language/learning_language.dart';
+import '../features/settings/data/hive_settings_repository.dart';
+import '../features/settings/domain/settings_repository.dart';
 
-/// アプリ設定の読み書きを担うサービス。
-///
-/// - Gemini APIキーは`flutter_secure_storage`に安全に保存し、メモリにキャッシュする
-/// - 学習言語・独り言デフォルト秒数はHiveの`settings` boxに保存する
-///
-/// 使用するGeminiモデルは[GeminiService.modelName]で固定（設定不可）、
-/// 音声認識はGemini録音方式のみ（端末STTはPR17で廃止）。
-///
-/// テスト容易性のため、secure storageとHive boxはコンストラクタ注入できる。
+/// [SettingsRepository] を `ChangeNotifier` として見せる移行用ファサード。
 class SettingsService extends ChangeNotifier {
   SettingsService({
     FlutterSecureStorage? secureStorage,
     required Box settingsBox,
-  }) : _secureStorage = secureStorage ?? const FlutterSecureStorage(),
-       _box = settingsBox;
+  }) : this.of(
+         HiveSettingsRepository(
+           settingsBox: settingsBox,
+           secureStorage: secureStorage,
+         ),
+       );
 
-  /// secure storageに保存するAPIキーのキー名
-  static const apiKeyStorageKey = 'gemini_api_key';
+  SettingsService.of(this.repository) {
+    _cleanups = [
+      repository.settings.subscribe((_) => notifyListeners()),
+      repository.apiKey.subscribe((_) => notifyListeners()),
+    ];
+  }
 
-  static const _monologueSecondsKey = 'monologueSeconds';
-  static const _learningLanguageKey = 'learningLanguage';
+  final SettingsRepository repository;
+  late final List<void Function()> _cleanups;
 
-  /// 過去バージョンで使っていた設定キー。[init]時に削除する
-  /// （モデル選択・音声認識方式の設定はPR17で廃止）。
-  static const _legacyKeys = ['modelName', 'sttMode'];
+  String? get apiKey => repository.apiKey.value;
+  bool get hasApiKey => apiKey != null && apiKey!.isNotEmpty;
+  int get monologueSeconds => repository.settings.value.monologueSeconds;
+  LearningLanguage get learningLanguage =>
+      repository.settings.value.learningLanguage;
+  LanguageProfile get languageProfile =>
+      repository.settings.value.languageProfile;
 
-  static const defaultMonologueSeconds = 60;
-  static const defaultLearningLanguage = LearningLanguage.english;
+  Future<void> init() => repository.load();
+  Future<void> setApiKey(String key) => repository.setApiKey(key);
+  Future<void> deleteApiKey() => repository.deleteApiKey();
+  Future<void> setMonologueSeconds(int seconds) =>
+      repository.setMonologueSeconds(seconds);
+  Future<void> setLearningLanguage(LearningLanguage language) =>
+      repository.setLearningLanguage(language);
 
-  final FlutterSecureStorage _secureStorage;
-  final Box _box;
-
-  String? _apiKey;
-  int _monologueSeconds = defaultMonologueSeconds;
-  LearningLanguage _learningLanguage = defaultLearningLanguage;
-
-  /// 現在キャッシュされているAPIキー（未設定ならnull）
-  String? get apiKey => _apiKey;
-
-  /// APIキーが設定済みかどうか
-  bool get hasApiKey => _apiKey != null && _apiKey!.isNotEmpty;
-
-  /// 独り言トレーニングのデフォルト発話時間（秒）
-  int get monologueSeconds => _monologueSeconds;
-
-  /// 現在の学習対象言語
-  LearningLanguage get learningLanguage => _learningLanguage;
-
-  /// 現在の学習言語に対応する設定一式
-  LanguageProfile get languageProfile => LanguageProfile.of(_learningLanguage);
-
-  /// secure storageとHive boxから設定をロードする。アプリ起動時に一度呼ぶ。
-  Future<void> init() async {
-    _apiKey = await _secureStorage.read(key: apiKeyStorageKey);
-    _monologueSeconds =
-        (_box.get(_monologueSecondsKey) as int?) ?? defaultMonologueSeconds;
-    final languageName = _box.get(_learningLanguageKey) as String?;
-    _learningLanguage = LearningLanguage.values.firstWhere(
-      (language) => language.name == languageName,
-      orElse: () => defaultLearningLanguage,
-    );
-    for (final key in _legacyKeys) {
-      if (_box.containsKey(key)) await _box.delete(key);
+  @override
+  void dispose() {
+    for (final cleanup in _cleanups) {
+      cleanup();
     }
-    notifyListeners();
-  }
-
-  /// APIキーを保存する。
-  Future<void> setApiKey(String key) async {
-    await _secureStorage.write(key: apiKeyStorageKey, value: key);
-    _apiKey = key;
-    notifyListeners();
-  }
-
-  /// APIキーを削除する。
-  Future<void> deleteApiKey() async {
-    await _secureStorage.delete(key: apiKeyStorageKey);
-    _apiKey = null;
-    notifyListeners();
-  }
-
-  /// 独り言トレーニングのデフォルト発話時間（秒）を変更する。
-  Future<void> setMonologueSeconds(int seconds) async {
-    _monologueSeconds = seconds;
-    await _box.put(_monologueSecondsKey, seconds);
-    notifyListeners();
-  }
-
-  /// 学習対象言語を切り替える。
-  Future<void> setLearningLanguage(LearningLanguage language) async {
-    _learningLanguage = language;
-    await _box.put(_learningLanguageKey, language.name);
-    notifyListeners();
+    super.dispose();
   }
 }

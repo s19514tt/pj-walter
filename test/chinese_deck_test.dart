@@ -12,7 +12,8 @@ import 'package:pj_walter/core/language/learning_language.dart';
 import 'package:pj_walter/features/review/data/srs_item_dto.dart';
 import 'package:pj_walter/features/review/domain/srs_item.dart';
 import 'package:pj_walter/services/history_service.dart';
-import 'package:pj_walter/services/sentence_repository.dart';
+import 'package:pj_walter/features/content/data/asset_content_repository.dart';
+import 'package:pj_walter/features/content/domain/content_repository.dart';
 import 'package:pj_walter/services/settings_service.dart';
 
 import 'test_support/hive_test_support.dart';
@@ -20,14 +21,14 @@ import 'test_support/hive_test_support.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  late SentenceRepository repository;
+  late ContentRepository repository;
 
   setUp(() async {
     await initTestHive();
     FlutterSecureStoragePlatform.instance = TestFlutterSecureStoragePlatform(
       {},
     );
-    repository = SentenceRepository();
+    repository = AssetContentRepository();
   });
 
   tearDown(() async {
@@ -36,11 +37,11 @@ void main() {
 
   group('中国語教材', () {
     test('HSK3・HSK4のデッキがロードでき、レベルが一致する', () async {
-      final hsk3 = await repository.sentencesFor(
+      final hsk3 = await repository.sentences(
         profile: LanguageProfile.chinese,
         level: 3,
       );
-      final hsk4 = await repository.sentencesFor(
+      final hsk4 = await repository.sentences(
         profile: LanguageProfile.chinese,
         level: 4,
       );
@@ -53,7 +54,7 @@ void main() {
 
     test('全ての文が日本語・中国語・ピンイン・解説を持つ', () async {
       for (final level in [3, 4]) {
-        final sentences = await repository.sentencesFor(
+        final sentences = await repository.sentences(
           profile: LanguageProfile.chinese,
           level: level,
         );
@@ -69,7 +70,7 @@ void main() {
 
     test('各デッキが300文ある', () async {
       for (final level in [3, 4]) {
-        final sentences = await repository.sentencesFor(
+        final sentences = await repository.sentences(
           profile: LanguageProfile.chinese,
           level: level,
         );
@@ -79,7 +80,7 @@ void main() {
 
     test('日本語文・中国語文がデッキ内で重複しない', () async {
       for (final level in [3, 4]) {
-        final sentences = await repository.sentencesFor(
+        final sentences = await repository.sentences(
           profile: LanguageProfile.chinese,
           level: level,
         );
@@ -100,7 +101,7 @@ void main() {
     test('どのテーマでも1セッション分（10問）以上そろっている', () async {
       for (final level in [3, 4]) {
         for (final theme in ['daily', 'business', 'travel']) {
-          final sentences = await repository.sentencesFor(
+          final sentences = await repository.sentences(
             profile: LanguageProfile.chinese,
             level: level,
             theme: theme,
@@ -117,7 +118,7 @@ void main() {
     test('IDが教材全体で一意である', () async {
       final ids = <String>[];
       for (final level in [3, 4]) {
-        final sentences = await repository.sentencesFor(
+        final sentences = await repository.sentences(
           profile: LanguageProfile.chinese,
           level: level,
         );
@@ -130,14 +131,14 @@ void main() {
     test('IDが英語教材のIDと衝突しない（SRSキューが混ざらない）', () async {
       final chinese = [
         for (final level in [3, 4])
-          ...await repository.sentencesFor(
+          ...await repository.sentences(
             profile: LanguageProfile.chinese,
             level: level,
           ),
       ].map((s) => s.id).toSet();
       final english = [
         for (final level in [700, 800])
-          ...await repository.sentencesFor(
+          ...await repository.sentences(
             profile: LanguageProfile.english,
             level: level,
           ),
@@ -149,7 +150,7 @@ void main() {
     test('テーマが3分類のいずれかに収まっている', () async {
       const themes = {'daily', 'business', 'travel'};
       for (final level in [3, 4]) {
-        final sentences = await repository.sentencesFor(
+        final sentences = await repository.sentences(
           profile: LanguageProfile.chinese,
           level: level,
         );
@@ -160,11 +161,11 @@ void main() {
     });
 
     test('テーマで絞り込める', () async {
-      final all = await repository.sentencesFor(
+      final all = await repository.sentences(
         profile: LanguageProfile.chinese,
         level: 3,
       );
-      final businessOnly = await repository.sentencesFor(
+      final businessOnly = await repository.sentences(
         profile: LanguageProfile.chinese,
         level: 3,
         theme: 'business',
@@ -188,10 +189,8 @@ void main() {
 
     test('その言語に無いレベルを要求すると例外になる', () async {
       expect(
-        () => repository.sentencesFor(
-          profile: LanguageProfile.chinese,
-          level: 700,
-        ),
+        () =>
+            repository.sentences(profile: LanguageProfile.chinese, level: 700),
         throwsArgumentError,
       );
     });
@@ -240,13 +239,7 @@ void main() {
 
   group('復習キューの言語分離', () {
     test('dueSrsItemsは指定した学習言語のアイテムだけを返す', () async {
-      final history = HistoryService(
-        drillResultsBox: await Hive.openBox('drill_results'),
-        monologueResultsBox: await Hive.openBox('monologue_results'),
-        srsItemsBox: await Hive.openBox('srs_items'),
-        phrasesBox: await Hive.openBox('phrases'),
-        dailyStatsBox: await Hive.openBox('daily_stats'),
-      );
+      await Hive.openBox('srs_items');
       final today = DateTime.now();
       final due = DateTime(today.year, today.month, today.day);
       for (final item in [
@@ -273,6 +266,14 @@ void main() {
           'srs_items',
         ).put(item.sentenceId, SrsItemDto.fromEntity(item).toJson());
       }
+      // Repository は生成時に box を読むので、書き込み後に組み立てる
+      final history = HistoryService(
+        drillResultsBox: await Hive.openBox('drill_results'),
+        monologueResultsBox: await Hive.openBox('monologue_results'),
+        srsItemsBox: await Hive.openBox('srs_items'),
+        phrasesBox: await Hive.openBox('phrases'),
+        dailyStatsBox: await Hive.openBox('daily_stats'),
+      );
 
       expect(history.dueSrsItems().length, 2);
       expect(history.dueSrsItems(language: 'zh').map((i) => i.sentenceId), [

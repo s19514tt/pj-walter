@@ -3,10 +3,11 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
 
 import 'core/l10n/l10n.dart';
+import 'features/content/data/asset_content_repository.dart';
 import 'screens/shell.dart';
 import 'services/gemini_service.dart';
 import 'services/history_service.dart';
-import 'services/sentence_repository.dart';
+import 'features/content/domain/content_repository.dart';
 import 'services/settings_service.dart';
 import 'core/theme/app_theme.dart';
 
@@ -70,7 +71,9 @@ class MyApp extends StatelessWidget {
           update: (context, settings, previous) =>
               GeminiService(settingsService: settings),
         ),
-        Provider<SentenceRepository>(create: (context) => SentenceRepository()),
+        Provider<ContentRepository>(
+          create: (context) => AssetContentRepository(),
+        ),
       ],
       child: MaterialApp(
         onGenerateTitle: (context) => context.l10n.appTitle,

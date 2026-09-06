@@ -3,9 +3,9 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/domain/token_usage.dart';
-import '../../services/drill_question_selector.dart';
-import '../../services/gemini_pricing.dart';
-import '../../services/sentence_repository.dart';
+import '../../features/composition/domain/drill_question_selector.dart';
+import '../../core/domain/gemini_pricing.dart';
+import '../../features/content/domain/content_repository.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/app_route.dart';
 import '../../core/widgets/bottom_cta_bar.dart';
@@ -116,8 +116,8 @@ class DrillSummaryScreen extends StatelessWidget {
       entries.where((e) => e.score >= _passingScore).length;
 
   Future<void> _retry(BuildContext context) async {
-    final repository = context.read<SentenceRepository>();
-    final sentences = await repository.sentencesFor(
+    final repository = context.read<ContentRepository>();
+    final sentences = await repository.sentences(
       profile: context.read<SettingsService>().languageProfile,
       level: level,
       theme: theme,

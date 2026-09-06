@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../features/content/domain/topic.dart';
-import '../../services/sentence_repository.dart';
+import '../../features/content/domain/content_repository.dart';
 import '../../services/settings_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/app_route.dart';
@@ -52,11 +52,10 @@ class _TopicSelectScreenState extends State<TopicSelectScreen> {
     _topicsFuture = _loadTopics();
   }
 
-  Future<List<Topic>> _loadTopics() =>
-      context.read<SentenceRepository>().topics(
-        profile: context.read<SettingsService>().languageProfile,
-        theme: _theme,
-      );
+  Future<List<Topic>> _loadTopics() => context.read<ContentRepository>().topics(
+    profile: context.read<SettingsService>().languageProfile,
+    theme: _theme,
+  );
 
   void _setTheme(String? theme) {
     setState(() {

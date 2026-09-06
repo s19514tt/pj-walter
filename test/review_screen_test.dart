@@ -13,7 +13,8 @@ import 'package:pj_walter/features/review/data/srs_item_dto.dart';
 import 'package:pj_walter/features/review/domain/phrase.dart';
 import 'package:pj_walter/screens/review_screen.dart';
 import 'package:pj_walter/services/history_service.dart';
-import 'package:pj_walter/services/sentence_repository.dart';
+import 'package:pj_walter/features/content/data/asset_content_repository.dart';
+import 'package:pj_walter/features/content/domain/content_repository.dart';
 import 'package:pj_walter/services/settings_service.dart';
 import 'package:provider/provider.dart';
 
@@ -41,7 +42,7 @@ Widget _buildApp(HistoryService historyService, SettingsService settings) {
     providers: [
       ChangeNotifierProvider<HistoryService>.value(value: historyService),
       ChangeNotifierProvider<SettingsService>.value(value: settings),
-      Provider<SentenceRepository>(create: (_) => SentenceRepository()),
+      Provider<ContentRepository>(create: (_) => AssetContentRepository()),
     ],
     child: localizedApp(home: const ReviewScreen()),
   );
@@ -111,6 +112,8 @@ void main() {
           item.copyWith(dueDate: DateTime(today.year, today.month, today.day)),
         ).toJson(),
       );
+      // Repository は生成時に box を読むので、書き換えた後に組み立て直す
+      historyService = await _buildHistoryService();
     });
 
     await tester.pumpWidget(_buildApp(historyService, settings));

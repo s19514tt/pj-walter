@@ -3,8 +3,8 @@ import 'package:provider/provider.dart';
 
 import '../../features/review/domain/srs_item.dart';
 import '../../screens/composition/drill_screen.dart';
-import '../../services/review_question_resolver.dart';
-import '../../services/sentence_repository.dart';
+import '../../features/review/domain/review_question_resolver.dart';
+import '../../features/content/domain/content_repository.dart';
 import 'app_route.dart';
 import '../language/learning_language.dart';
 
@@ -20,10 +20,10 @@ class ReviewSessionLauncher {
 
   /// [dueItems]を出題し、復習セッション（[DrillScreen]）が終わるまで待つ。
   Future<void> start(BuildContext context, List<SrsItem> dueItems) async {
-    final repository = context.read<SentenceRepository>();
+    final repository = context.read<ContentRepository>();
     final sentences = await resolver.resolve(
       items: dueItems,
-      sentencesForDeck: (language, level) => repository.sentencesFor(
+      sentencesForDeck: (language, level) => repository.sentences(
         profile: LanguageProfile.ofCode(language),
         level: level,
       ),

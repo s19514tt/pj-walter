@@ -1,7 +1,8 @@
 import 'dart:async';
 
+import 'package:pj_walter/core/domain/app_failure.dart';
 import 'package:pj_walter/core/domain/token_usage.dart';
-import 'package:pj_walter/services/tts_service.dart';
+import 'package:pj_walter/features/speech/domain/tts_service.dart';
 
 /// 読み上げの呼び出しを記録するだけの[TtsService]。
 ///
@@ -18,7 +19,7 @@ class FakeTtsService implements TtsService {
   int disposeCount = 0;
 
   /// [speak]で投げる例外。nullなら正常に完了する。
-  TtsException? error;
+  AppFailure? error;
 
   /// [speak]が返すトークン使用量（読み上げ1回分）
   TokenUsage usage = TokenUsage.zero;

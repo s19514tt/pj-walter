@@ -52,6 +52,7 @@ dependencies:
   json_annotation: ^4.12.0
   flutter_localizations:
     sdk: flutter
+  signals_core: ^7.0.0
   # 添削結果（修正版・模範解答）の読み上げ。端末OSのTTSエンジンを使うため
   # 追加のAPIコスト・ネットワークが不要で、Android/iOS/Webの3プラットフォームに対応。
 dev_dependencies:

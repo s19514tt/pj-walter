@@ -8,7 +8,7 @@ import 'package:pj_walter/features/composition/domain/drill_result.dart';
 import 'package:pj_walter/core/language/learning_language.dart';
 import 'package:pj_walter/features/content/domain/sentence.dart';
 import 'package:pj_walter/features/composition/domain/tone_note.dart';
-import 'package:pj_walter/core/utils/pinyin.dart';
+import 'package:pj_walter/features/composition/domain/pinyin.dart';
 import 'package:pj_walter/core/utils/word_diff.dart';
 
 List<String> _bases(String pinyin) =>

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../features/content/domain/sentence.dart';
-import '../../services/sentence_repository.dart';
+import '../../features/content/domain/content_repository.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/theme_labels.dart';
 import '../../core/widgets/app_card.dart';
@@ -32,9 +32,9 @@ class _SentenceListScreenState extends State<SentenceListScreen> {
   @override
   void initState() {
     super.initState();
-    final repository = context.read<SentenceRepository>();
+    final repository = context.read<ContentRepository>();
     _profile = context.read<SettingsService>().languageProfile;
-    _sentencesFuture = repository.sentencesFor(
+    _sentencesFuture = repository.sentences(
       profile: _profile,
       level: widget.level,
       theme: widget.theme,

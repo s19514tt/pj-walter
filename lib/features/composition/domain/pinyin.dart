@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
 
-import '../../features/composition/domain/drill_result.dart';
-import '../language/learning_language.dart';
-import '../../features/content/domain/sentence.dart';
-import '../../features/composition/domain/tone_note.dart';
+import '../../../core/language/learning_language.dart';
+import '../../content/domain/sentence.dart';
+import 'drill_result.dart';
+import 'tone_note.dart';
 
 /// ピンインの音節分割・声調抽出・声調差分（DESIGN.md「声調フィードバック」参照）。
 ///

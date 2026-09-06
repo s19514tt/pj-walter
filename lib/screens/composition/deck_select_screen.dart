@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../services/drill_question_selector.dart';
-import '../../services/sentence_repository.dart';
+import '../../features/composition/domain/drill_question_selector.dart';
+import '../../features/content/domain/content_repository.dart';
 import '../../core/l10n/l10n.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/app_route.dart';
@@ -44,8 +44,8 @@ class _DeckSelectScreenState extends State<DeckSelectScreen> {
   }
 
   Future<int> _loadCount() async {
-    final repository = context.read<SentenceRepository>();
-    final sentences = await repository.sentencesFor(
+    final repository = context.read<ContentRepository>();
+    final sentences = await repository.sentences(
       profile: _profile,
       level: _level,
       theme: _theme,
@@ -57,8 +57,8 @@ class _DeckSelectScreenState extends State<DeckSelectScreen> {
       theme == null ? 'すべて' : themeLabel(theme);
 
   Future<void> _startTraining() async {
-    final repository = context.read<SentenceRepository>();
-    final sentences = await repository.sentencesFor(
+    final repository = context.read<ContentRepository>();
+    final sentences = await repository.sentences(
       profile: _profile,
       level: _level,
       theme: _theme,

@@ -6,7 +6,10 @@ import 'package:provider/provider.dart';
 import '../../features/content/domain/topic.dart';
 import '../../services/gemini_service.dart';
 import '../../services/settings_service.dart';
-import '../../services/speech_input_service.dart';
+import '../../features/speech/data/recorder_speech_input_service.dart';
+import '../../features/speech/domain/speech_input_service.dart';
+import '../../core/domain/app_failure.dart';
+import '../../core/l10n/l10n.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/app_route.dart';
 import '../../core/widgets/abort_session_dialog.dart';
@@ -64,8 +67,8 @@ class _MonologueSpeakScreenState extends State<MonologueSpeakScreen> {
     _secondsLeft = widget.seconds;
     _speechInput =
         widget.speechInputService ??
-        createSpeechInputService(
-          geminiService: context.read<GeminiService>(),
+        RecorderSpeechInputService(
+          transcription: context.read<GeminiService>().transcription,
           profile: context.read<SettingsService>().languageProfile,
         );
     // カウントダウンは画面表示と同時に開始する（読む時間もカウントに含まれる）。
@@ -88,8 +91,9 @@ class _MonologueSpeakScreenState extends State<MonologueSpeakScreen> {
       // 部分認識テキストは表示しない（画面はお題・残り時間・主ボタンのみ）
       await _speechInput.start(onPartial: (_) {});
       setState(() => _recording = true);
-    } on SpeechInputException catch (e) {
-      _showSnack(e.message);
+    } on AppFailure catch (e) {
+      if (!mounted) return;
+      _showSnack(context.l10n.failureMessage(e.kind.name));
     }
   }
 

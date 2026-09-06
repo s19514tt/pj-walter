@@ -11,7 +11,7 @@ import 'package:pj_walter/core/language/learning_language.dart';
 import 'package:pj_walter/features/content/domain/sentence.dart';
 import 'package:pj_walter/core/domain/token_usage.dart';
 import 'package:pj_walter/screens/composition/drill_feedback_view.dart';
-import 'package:pj_walter/services/tts_service.dart';
+import 'package:pj_walter/features/speech/domain/tts_service.dart';
 
 /// ストーリー1件（名前＋ウィジェットの組み立て）。
 class Story {
