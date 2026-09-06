@@ -1,16 +1,12 @@
 import 'dart:async';
-import 'dart:typed_data';
+import 'dart:convert';
 
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 
 import '../models/learning_language.dart';
-import '../models/token_usage.dart';
-import 'gemini_service.dart';
-
-/// [TtsService.speak]の結果（読み上げに消費したトークン使用量）。
-///
-/// 同じ文をキャッシュから再生した場合は[TokenUsage.zero]（API呼び出し無し）。
-typedef SpeakResult = ({TokenUsage usage});
+import 'settings_service.dart';
 
 /// 読み上げ（TTS）に失敗した際に投げられる例外。
 ///
@@ -26,14 +22,17 @@ class TtsException implements Exception {
 
 /// 学習言語の文を読み上げる音声合成の抽象化。
 ///
-/// 実装は[GeminiTtsService]（Gemini TTSで音声を生成して端末で再生）のみ。
+/// 実装は[CloudTtsService]（Google Cloud Text-to-Speech）のみ。
 /// UI側はこのインターフェースだけを見ればよい（テストではフェイクに差し替える）。
 abstract class TtsService {
-  /// [text]を読み上げる。再生が終わる（または中断される）まで待つ。
+  /// [text]を読み上げる。読み上げが終わる（または中断される）まで待つ。
   ///
   /// すでに読み上げ中の場合は、それを止めてから新しい文を読み始める。
-  /// 音声の生成・再生に失敗した場合は[TtsException]を投げる。
-  Future<SpeakResult> speak(String text);
+  /// 実際に音が鳴り始めた時点で[onSpeakingStarted]を呼ぶ。押してから音が出る
+  /// までには音声の生成と取得の時間があるので、UIはそれまでを「生成中」として
+  /// 読み上げ中と出し分けられる（`SpeakButtonState`）。
+  /// 生成・再生に失敗した場合は[TtsException]を投げる。
+  Future<void> speak(String text, {VoidCallback? onSpeakingStarted});
 
   /// 読み上げ中なら中断する。読み上げていない場合は何もしない。
   Future<void> stop();
@@ -42,35 +41,60 @@ abstract class TtsService {
   void dispose();
 }
 
-/// Gemini TTSで音声を生成し、端末で再生する実装。
+/// Google Cloud Text-to-Speech で音声を生成し、端末で再生する実装。
 ///
-/// [GeminiService.synthesizeSpeech]が返すWAVを`audioplayers`で鳴らす。
-/// 端末のTTSエンジンに依存しないため、対応言語・声質がプラットフォームで
-/// ぶれない（中国語の音声が入っていない端末でも読み上げられる）。
+/// Gemini TTS（`gemini-3.1-flash-tts-preview`）から乗り換えた理由は速度。
+/// Gemini TTS はLLMが音声トークンを生成するため押してから鳴るまでが長い。
+/// Cloud TTS は専用の合成エンジンで、WaveNet 音声なら短文で 300ms 前後
+/// （計測値は DESIGN.md「読み上げ（TTS）」の表を参照）。
 ///
-/// 音声出力は入力テキストより単価が高い（[GeminiPricing.tts]）ので、
-/// 同じ文の2回目以降はメモリ上のキャッシュから再生してAPIを呼ばない。
-/// 添削画面は「修正版」「模範解答」の2文だけを繰り返し読むため、
-/// キャッシュ件数の上限は設けていない（画面を離れると破棄される）。
-class GeminiTtsService implements TtsService {
-  // コンストラクタの公開パラメータ名（geminiService/profile）と内部フィールド名
-  // をあえて分けているため、initializing formalは使わない
+/// 音声は[LanguageProfile.ttsVoiceName]（WaveNet）で固定する。Neural2 の方が
+/// 速いが**中国語（cmn-CN）の音声が存在しない**ため、このアプリでは使えない。
+///
+/// 課金は文字数（$16 / 100万文字、月100万文字まで無料）。同じ文の2回目以降は
+/// メモリ上のキャッシュから再生してAPIを呼ばない。添削画面は「修正版」
+/// 「模範解答」の2文だけを繰り返し読むため、キャッシュ件数の上限は設けて
+/// いない（画面を離れると破棄される）。
+class CloudTtsService implements TtsService {
+  // コンストラクタの公開パラメータ名（settingsService/profile）と内部
+  // フィールド名をあえて分けているため、initializing formalは使わない
   // （使うとパラメータ名がprivateになり外部から渡せなくなる）。
-  GeminiTtsService({
-    required GeminiService geminiService,
+  CloudTtsService({
+    required SettingsService settingsService,
     required LanguageProfile profile,
+    http.Client? client,
     AudioPlayer? player,
     // ignore: prefer_initializing_formals
-  }) : _gemini = geminiService,
+  }) : _settings = settingsService,
        // ignore: prefer_initializing_formals
        _profile = profile,
-       _player = player ?? AudioPlayer();
+       _client = client ?? http.Client(),
+       _injectedPlayer = player;
 
-  final GeminiService _gemini;
+  static const _endpoint =
+      'https://texttospeech.googleapis.com/v1/text:synthesize';
+  static const _timeout = Duration(seconds: 15);
+
+  /// 読み上げ速度（1.0が等速）。学習用途では等速だと速いので少し落とす。
+  /// Cloud TTS が受け付ける範囲は 0.25〜4.0。
+  static const speakingRate = 0.85;
+
+  /// 音声フォーマット。MP3はWAVより転送量が小さく、鳴り始めるまでが速い。
+  static const audioEncoding = 'MP3';
+
+  final SettingsService _settings;
   final LanguageProfile _profile;
-  final AudioPlayer _player;
+  final http.Client _client;
 
-  /// 生成済みのWAV（キーは読み上げた文）
+  /// コンストラクタで渡されたプレイヤー（テスト用。省略時はnull）
+  final AudioPlayer? _injectedPlayer;
+  AudioPlayer? _lazyPlayer;
+
+  /// 再生に使うプレイヤー。生成がプラットフォームチャンネルに触るため、
+  /// 実際に鳴らすときまで作らない（音声合成だけを試すテストでは作られない）。
+  AudioPlayer get _player => _injectedPlayer ?? (_lazyPlayer ??= AudioPlayer());
+
+  /// 生成済みの音声（キーは読み上げた文）
   final _cache = <String, Uint8List>{};
 
   /// 再生中の[speak]を待たせているCompleter。
@@ -85,35 +109,75 @@ class GeminiTtsService implements TtsService {
   bool _disposed = false;
 
   @override
-  Future<SpeakResult> speak(String text) async {
-    if (_disposed || text.trim().isEmpty) return (usage: TokenUsage.zero);
+  Future<void> speak(String text, {VoidCallback? onSpeakingStarted}) async {
+    if (_disposed || text.trim().isEmpty) return;
 
-    var usage = TokenUsage.zero;
-    var wav = _cache[text];
-    if (wav == null) {
-      try {
-        final result = await _gemini.synthesizeSpeech(
-          profile: _profile,
-          text: text,
-        );
-        wav = result.wavBytes;
-        usage = result.usage;
-      } on GeminiException catch (error) {
-        // GeminiExceptionのmessageはそのままUIに出せる日本語なので流用する。
-        throw TtsException(error.message);
-      }
-      if (_disposed) return (usage: usage);
-      _cache[text] = wav;
+    var audio = _cache[text];
+    if (audio == null) {
+      audio = await synthesize(text);
+      if (_disposed) return;
+      _cache[text] = audio;
     }
 
-    await _playAndWait(wav);
-    return (usage: usage);
+    await _playAndWait(audio, onSpeakingStarted);
   }
 
-  /// [wav]を再生し、再生完了または[stop]による中断まで待つ。
+  /// [text]をCloud TTSで合成し、再生できる音声バイト列（MP3）を返す。
+  @visibleForTesting
+  Future<Uint8List> synthesize(String text) async {
+    final apiKey = _requireApiKey();
+    final body = jsonEncode({
+      'input': {'text': text},
+      'voice': {
+        'languageCode': _profile.ttsLanguageCode,
+        'name': _profile.ttsVoiceName,
+      },
+      'audioConfig': {
+        'audioEncoding': audioEncoding,
+        'speakingRate': speakingRate,
+      },
+    });
+
+    final http.Response response;
+    try {
+      response = await _client
+          .post(
+            Uri.parse(_endpoint),
+            headers: {
+              'Content-Type': 'application/json',
+              'x-goog-api-key': apiKey,
+            },
+            body: body,
+          )
+          .timeout(_timeout);
+    } on TimeoutException {
+      throw TtsException('読み上げの生成がタイムアウトしました。電波状況を確認して再度お試しください。');
+    } catch (_) {
+      throw TtsException('読み上げの生成に失敗しました。ネットワーク接続を確認してください。');
+    }
+    _checkStatus(response);
+
+    final String? audioContent;
+    try {
+      final decoded =
+          jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+      audioContent = decoded['audioContent'] as String?;
+    } catch (_) {
+      throw TtsException('読み上げ音声を取得できませんでした。時間を置いて再度お試しください。');
+    }
+    if (audioContent == null || audioContent.isEmpty) {
+      throw TtsException('読み上げ音声を取得できませんでした。時間を置いて再度お試しください。');
+    }
+    return base64Decode(audioContent);
+  }
+
+  /// [audio]を再生し、再生完了または[stop]による中断まで待つ。
   ///
   /// 呼び出し側はこの待ちをそのまま「読み上げ中」の表示に使える。
-  Future<void> _playAndWait(Uint8List wav) async {
+  Future<void> _playAndWait(
+    Uint8List audio,
+    VoidCallback? onSpeakingStarted,
+  ) async {
     // 直前の読み上げが残っていると重なって聞こえるため、必ず止めてから鳴らす。
     await stop();
     final playback = Completer<void>();
@@ -122,11 +186,13 @@ class GeminiTtsService implements TtsService {
       _completeSubscription = _player.onPlayerComplete.listen((_) {
         if (!playback.isCompleted) playback.complete();
       });
-      await _player.play(BytesSource(wav, mimeType: 'audio/wav'));
+      await _player.play(BytesSource(audio, mimeType: 'audio/mpeg'));
     } catch (_) {
       _finishPlayback();
       throw TtsException('音声を再生できませんでした。端末の音量・サイレントモードを確認してください。');
     }
+    // play()が返った時点で音が出ている。ここで「生成中」→「読み上げ中」。
+    onSpeakingStarted?.call();
     await playback.future;
     _finishPlayback();
   }
@@ -142,7 +208,8 @@ class GeminiTtsService implements TtsService {
   @override
   Future<void> stop() async {
     try {
-      await _player.stop();
+      // 一度も鳴らしていなければプレイヤーは存在しないので、作らずに済ませる。
+      if (_injectedPlayer != null || _lazyPlayer != null) await _player.stop();
     } catch (_) {
       // 停止の失敗はユーザーに見せる必要がないため握りつぶす。
     }
@@ -156,7 +223,41 @@ class GeminiTtsService implements TtsService {
     _cache.clear();
     // 待っている[speak]を解いてから破棄する（解かないと永久に待ち続ける）。
     _finishPlayback();
-    // 画面を離れた後も再生が続かないように破棄する。
-    unawaited(_player.dispose());
+    // 画面を離れた後も再生が続かないように破棄する（未生成なら何もしない）。
+    final player = _injectedPlayer ?? _lazyPlayer;
+    if (player != null) unawaited(player.dispose());
+  }
+
+  /// 読み上げに使うAPIキー。Cloud TTS 用が未設定ならGeminiのキーを使う
+  /// （同じGoogle Cloudプロジェクトのキーなら1つで足りるため）。
+  String _requireApiKey() {
+    final apiKey = _settings.ttsApiKey;
+    if (apiKey == null || apiKey.isEmpty) {
+      throw TtsException('APIキーが設定されていません。設定画面からAPIキーを登録してください。');
+    }
+    return apiKey;
+  }
+
+  void _checkStatus(http.Response response) {
+    if (response.statusCode == 200) return;
+    switch (response.statusCode) {
+      case 401:
+      case 403:
+        // Cloud TTS はGeminiと別のAPIなので、キーが有効でも
+        // 「APIが有効化されていない」だけで403が返る。両方を案内する。
+        throw TtsException(
+          '読み上げのAPIキーが使えません。Google Cloud で Cloud Text-to-Speech API '
+          'を有効化し、そのプロジェクトのAPIキーを設定画面に登録してください。',
+        );
+      case 429:
+        throw TtsException('読み上げのリクエストが多すぎます。しばらく待ってから再度お試しください。');
+      case 400:
+        throw TtsException('読み上げのリクエストが不正です。時間を置いて再度お試しください。');
+      default:
+        if (response.statusCode >= 500) {
+          throw TtsException('読み上げサーバーでエラーが発生しました。しばらくしてから再度お試しください。');
+        }
+        throw TtsException('読み上げに失敗しました（エラーコード: ${response.statusCode}）。');
+    }
   }
 }

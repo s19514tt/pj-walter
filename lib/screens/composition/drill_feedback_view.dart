@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../models/drill_result.dart';
 import '../../models/learning_language.dart';
 import '../../models/sentence.dart';
-import '../../models/token_usage.dart';
 import '../../models/tone_note.dart';
 import '../../services/tts_service.dart';
 import '../../theme/app_theme.dart';
@@ -37,9 +36,10 @@ import '../../widgets/stat_badge.dart';
 ///
 /// スコアカードの直下には出題された日本語文（問題文）を常に表示する。採点を
 /// 待っている間も何に答えたのかを見失わないようにするため、段階表示の対象外。
-/// 「修正版」「模範解答」には[SpeakButton]を置き、[ttsService]（Gemini TTS）で
-/// 学習言語の発音を確認できるようにする。読み上げで消費したトークンは
-/// [onSpeechUsage]で親に渡し、まとめ画面のコスト表示に含める。
+/// 「修正版」「模範解答」には[SpeakButton]を置き、[ttsService]（Cloud TTS）
+/// で学習言語の発音を確認できるようにする。2つのボタンは
+/// 読み上げる文が一致することがある（修正不要だった場合は修正版＝模範解答）
+/// ため、状態は文ではなくボタン（[_SpeechSlot]）ごとに持つ。
 class DrillFeedbackView extends StatefulWidget {
   const DrillFeedbackView({
     super.key,
@@ -51,7 +51,6 @@ class DrillFeedbackView extends StatefulWidget {
     required this.ttsService,
     this.profile = LanguageProfile.english,
     this.spokenReading,
-    this.onSpeechUsage,
     this.isLast = false,
   });
 
@@ -79,10 +78,6 @@ class DrillFeedbackView extends StatefulWidget {
   /// 「修正版」「模範解答」の読み上げに使う音声合成
   final TtsService ttsService;
 
-  /// 読み上げでGeminiが消費したトークンの通知。
-  /// キャッシュから再生した場合は[TokenUsage.zero]なので呼ばれない。
-  final void Function(TokenUsage usage)? onSpeechUsage;
-
   /// 最終問題かどうか（プライマリボタンのラベルに反映）
   final bool isLast;
 
@@ -91,10 +86,14 @@ class DrillFeedbackView extends StatefulWidget {
 }
 
 class _DrillFeedbackViewState extends State<DrillFeedbackView> {
-  /// いま読み上げている文。読み上げていなければnull。
+  /// いま読み上げ（準備中を含む）に使っているボタン。何もしていなければnull。
   ///
-  /// 「修正版」「模範解答」のどちらのボタンを停止表示にするかの判定に使う。
-  String? _speaking;
+  /// 読み上げている文で判定すると、修正版と模範解答が同じ文のときに
+  /// 2つのボタンが同時に反応してしまうため、ボタンの識別子で持つ。
+  _SpeechSlot? _activeSlot;
+
+  /// [_activeSlot]のボタンの状態（生成中→読み上げ中）
+  SpeakButtonState _speakState = SpeakButtonState.idle;
 
   @override
   void dispose() {
@@ -104,27 +103,53 @@ class _DrillFeedbackViewState extends State<DrillFeedbackView> {
     super.dispose();
   }
 
-  /// [text]の読み上げをトグルする。読み上げ中の文をもう一度押すと停止する。
-  Future<void> _toggleSpeak(String text) async {
-    if (_speaking == text) {
+  /// [slot]のボタンで[text]の読み上げをトグルする。
+  ///
+  /// 同じボタンをもう一度押すと止まり、別のボタンを押すとそちらに読み上げが
+  /// 移る（[TtsService.speak]が前の読み上げを止める）。
+  Future<void> _toggleSpeak(_SpeechSlot slot, String text) async {
+    if (_activeSlot == slot) {
       await widget.ttsService.stop();
-      if (mounted) setState(() => _speaking = null);
+      if (mounted) setState(_clearSlot);
       return;
     }
-    setState(() => _speaking = text);
+    setState(() => _setSlot(slot, SpeakButtonState.preparing));
     try {
-      final (:usage) = await widget.ttsService.speak(text);
-      if (usage != TokenUsage.zero) widget.onSpeechUsage?.call(usage);
+      await widget.ttsService.speak(
+        text,
+        // 実際に鳴り始めた時点で「生成中」→「停止」に切り替える。
+        onSpeakingStarted: () {
+          if (mounted && _activeSlot == slot) {
+            setState(() => _setSlot(slot, SpeakButtonState.speaking));
+          }
+        },
+      );
     } on TtsException catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(error.message)));
     } finally {
-      // 別の文の読み上げに切り替わっている場合は、そちらの表示を消さない。
-      if (mounted && _speaking == text) setState(() => _speaking = null);
+      // 別のボタンの読み上げに切り替わっている場合は、そちらの表示を消さない。
+      if (mounted && _activeSlot == slot) setState(_clearSlot);
     }
   }
+
+  /// 読み上げ中のボタンと状態をまとめて差し替える（[setState]の中で呼ぶ）
+  void _setSlot(_SpeechSlot slot, SpeakButtonState state) {
+    _activeSlot = slot;
+    _speakState = state;
+  }
+
+  /// どのボタンも読み上げていない状態に戻す（[setState]の中で呼ぶ）
+  void _clearSlot() {
+    _activeSlot = null;
+    _speakState = SpeakButtonState.idle;
+  }
+
+  /// [slot]のボタンに渡す状態。他のボタンの読み上げ中は待機表示のままにする。
+  SpeakButtonState _stateOf(_SpeechSlot slot) =>
+      _activeSlot == slot ? _speakState : SpeakButtonState.idle;
 
   @override
   Widget build(BuildContext context) {
@@ -195,8 +220,11 @@ class _DrillFeedbackViewState extends State<DrillFeedbackView> {
                       correctedReading: feedback.correctedReading,
                       toneNotes: toneNotes ?? const [],
                       correctedTrailing: SpeakButton(
-                        speaking: _speaking == feedback.corrected,
-                        onPressed: () => _toggleSpeak(feedback.corrected),
+                        state: _stateOf(_SpeechSlot.corrected),
+                        onPressed: () => _toggleSpeak(
+                          _SpeechSlot.corrected,
+                          feedback.corrected,
+                        ),
                       ),
                     ),
                   ),
@@ -224,8 +252,11 @@ class _DrillFeedbackViewState extends State<DrillFeedbackView> {
                     tips: widget.sentence.tips,
                     highlight: timedOut,
                     trailing: SpeakButton(
-                      speaking: _speaking == widget.sentence.target,
-                      onPressed: () => _toggleSpeak(widget.sentence.target),
+                      state: _stateOf(_SpeechSlot.model),
+                      onPressed: () => _toggleSpeak(
+                        _SpeechSlot.model,
+                        widget.sentence.target,
+                      ),
                     ),
                   ),
                 ),
@@ -1156,4 +1187,16 @@ class _ToneNoteRow extends StatelessWidget {
       ],
     );
   }
+}
+
+/// 読み上げボタンの置き場所。
+///
+/// 修正版と模範解答は同じ文になることがある（修正の必要が無かった場合）ため、
+/// 「どちらのボタンを押したか」は文ではなくこの識別子で区別する。
+enum _SpeechSlot {
+  /// 「あなたの発話」カードの修正版
+  corrected,
+
+  /// 「模範解答」カード
+  model,
 }

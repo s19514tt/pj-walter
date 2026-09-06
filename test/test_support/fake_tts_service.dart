@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:pj_walter/models/token_usage.dart';
+import 'package:flutter/foundation.dart';
 import 'package:pj_walter/services/tts_service.dart';
 
 /// 読み上げの呼び出しを記録するだけの[TtsService]。
@@ -20,27 +20,38 @@ class FakeTtsService implements TtsService {
   /// [speak]で投げる例外。nullなら正常に完了する。
   TtsException? error;
 
-  /// [speak]が返すトークン使用量（読み上げ1回分）
-  TokenUsage usage = TokenUsage.zero;
-
   /// [speak]を完了させずに保留させるかどうか（読み上げ中の表示の検証用）。
   ///
   /// trueにすると[speak]は[completeSpeaking]が呼ばれるまで返らない。
   bool pending = false;
 
+  /// [speak]の直後に「鳴り始めた」通知を出すかどうか。
+  ///
+  /// falseにすると通知は[startSpeaking]を呼ぶまで出ないので、
+  /// 「準備中」表示のまま止められる。
+  bool startImmediately = true;
+
   Completer<void>? _pendingSpeak;
+  VoidCallback? _onSpeakingStarted;
 
   @override
-  Future<SpeakResult> speak(String text) async {
+  Future<void> speak(String text, {VoidCallback? onSpeakingStarted}) async {
     spoken.add(text);
     final error = this.error;
     if (error != null) throw error;
+    _onSpeakingStarted = onSpeakingStarted;
+    if (startImmediately) startSpeaking();
     if (pending) {
       final completer = Completer<void>();
       _pendingSpeak = completer;
       await completer.future;
     }
-    return (usage: usage);
+  }
+
+  /// 保留中の[speak]に「鳴り始めた」通知を出す。
+  void startSpeaking() {
+    _onSpeakingStarted?.call();
+    _onSpeakingStarted = null;
   }
 
   /// 保留中の[speak]を完了させる。
@@ -52,6 +63,7 @@ class FakeTtsService implements TtsService {
   @override
   Future<void> stop() async {
     stopCount++;
+    _onSpeakingStarted = null;
     _pendingSpeak?.complete();
     _pendingSpeak = null;
   }

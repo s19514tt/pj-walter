@@ -23,7 +23,6 @@ class DrillQuestionUsage {
   const DrillQuestionUsage({
     this.transcription = TokenUsage.zero,
     this.correction = TokenUsage.zero,
-    this.speech = TokenUsage.zero,
   });
 
   /// 使用量ゼロ（時間切れなど、API呼び出しが無かった問）
@@ -35,26 +34,15 @@ class DrillQuestionUsage {
   /// 添削
   final TokenUsage correction;
 
-  /// 添削結果の読み上げ（TTSモデル。単価が別なので分けて持つ）
-  final TokenUsage speech;
-
   /// 用途を問わない合計
-  TokenUsage get total => transcription + correction + speech;
+  TokenUsage get total => transcription + correction;
 
-  /// [textPricing]（文字起こし・添削）と[GeminiPricing.tts]（読み上げ）を
-  /// 用途ごとに使い分けた概算コスト（USD）。
-  ///
-  /// 読み上げは別モデル・別単価なので、合計トークンに単価を1つ掛けると
-  /// 実際の請求とずれる。必ず用途ごとに計算して足し合わせる。
-  double costUsd(GeminiPricing textPricing) =>
-      textPricing.costUsd(transcription) +
-      textPricing.costUsd(correction) +
-      GeminiPricing.tts.costUsd(speech);
+  /// [pricing]で計算した概算コスト（USD）
+  double costUsd(GeminiPricing pricing) => pricing.costUsd(total);
 
   DrillQuestionUsage operator +(DrillQuestionUsage other) => DrillQuestionUsage(
     transcription: transcription + other.transcription,
     correction: correction + other.correction,
-    speech: speech + other.speech,
   );
 }
 
@@ -373,15 +361,6 @@ class _UsageCard extends StatelessWidget {
             usage: usage.correction,
             cost: pricing.costUsd(usage.correction),
           ),
-          // 読み上げはTTSモデル（単価が別）なので行を分ける
-          if (usage.speech != TokenUsage.zero) ...[
-            const SizedBox(height: 6),
-            _UsageRow(
-              label: '読み上げ',
-              usage: usage.speech,
-              cost: GeminiPricing.tts.costUsd(usage.speech),
-            ),
-          ],
           const Divider(height: 20, color: AppColors.border),
           _UsageRow(
             label: '合計',
@@ -402,7 +381,6 @@ class _UsageCard extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             '単価: ${pricing.rateDescription}（${pricing.label}）。'
-            '${usage.speech != TokenUsage.zero ? '読み上げは${GeminiPricing.tts.label}の${GeminiPricing.tts.rateDescription}。' : ''}'
             'Gemini APIの公開価格（Standardティア）から算出した概算で、無料枠は考慮していません。',
             style: const TextStyle(
               fontSize: 11,

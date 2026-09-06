@@ -38,6 +38,8 @@ class LanguageProfile {
     required this.levels,
     required this.readingLabel,
     required this.wordSeparated,
+    required this.ttsLanguageCode,
+    required this.ttsVoiceName,
   });
 
   /// この設定が対象とする言語
@@ -77,6 +79,18 @@ class LanguageProfile {
   /// falseの中国語では空白分割が使えないため、差分表示を文字単位で行う。
   final bool wordSeparated;
 
+  /// Cloud TTS に渡す言語コード（例: `en-US` / `cmn-CN`）。
+  ///
+  /// 中国語は教材側の `zh` ではなく、Cloud TTS の表記である `cmn-CN`（北京語）。
+  final String ttsLanguageCode;
+
+  /// Cloud TTS に渡す音声名。
+  ///
+  /// WaveNet に揃えている。Neural2 の方が速いが**中国語の音声が無い**ため
+  /// 使えず、Chirp 3: HD は声は自然だがCloud TTSの中では最も遅い。
+  /// 言語が変わっても声質の印象が揃うよう、どちらも女性の声を選んでいる。
+  final String ttsVoiceName;
+
   static const english = LanguageProfile(
     language: LearningLanguage.english,
     code: 'en',
@@ -90,6 +104,8 @@ class LanguageProfile {
     ],
     readingLabel: null,
     wordSeparated: true,
+    ttsLanguageCode: 'en-US',
+    ttsVoiceName: 'en-US-Wavenet-F',
   );
 
   static const chinese = LanguageProfile(
@@ -105,6 +121,8 @@ class LanguageProfile {
     ],
     readingLabel: 'ピンイン',
     wordSeparated: false,
+    ttsLanguageCode: 'cmn-CN',
+    ttsVoiceName: 'cmn-CN-Wavenet-A',
   );
 
   static const values = <LanguageProfile>[english, chinese];

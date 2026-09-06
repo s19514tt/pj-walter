@@ -6,7 +6,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pj_walter/models/drill_result.dart';
 import 'package:pj_walter/models/learning_language.dart';
 import 'package:pj_walter/models/sentence.dart';
-import 'package:pj_walter/models/token_usage.dart';
 import 'package:pj_walter/screens/composition/drill_feedback_view.dart';
 import 'package:pj_walter/services/tts_service.dart';
 import 'package:pj_walter/theme/app_theme.dart';
@@ -43,6 +42,12 @@ const _zhFeedback = CompositionFeedback(
 );
 
 Widget _wrap(Widget child) => MaterialApp(home: Scaffold(body: child));
+
+/// 画面に出ている[index]番目（0=修正版・1=模範解答）の読み上げボタンの状態。
+SpeakButtonState _stateOfButton(WidgetTester tester, int index) => tester
+    .widgetList<SpeakButton>(find.byType(SpeakButton))
+    .elementAt(index)
+    .state;
 
 /// ルビ付きカードは縦に長く、既定のテスト画面では下のカードがListViewの
 /// 描画範囲外（未構築）になるため、画面を縦に広げる。
@@ -345,7 +350,51 @@ void main() {
     expect(tts.spoken, ['English sentence']);
   });
 
-  testWidgets('読み上げで消費したトークンが親に通知される', (tester) async {
+  testWidgets('修正版と模範解答が同じ文でも、押したボタンだけが読み上げ表示になる', (tester) async {
+    // 添削が模範解答どおりに直した場合、修正版と模範解答は同じ文になる。
+    // 状態を文で持つと2つのボタンが同時に反応してしまうので、押した方だけが
+    // 読み上げ表示になることを確かめる。
+    const feedback = CompositionFeedback(
+      score: 100,
+      isAcceptable: true,
+      corrected: 'English sentence',
+      explanationJa: '解説',
+      comparisonJa: '比較',
+    );
+    final tts = FakeTtsService()..pending = true;
+
+    await _tall(tester);
+    await tester.pumpWidget(
+      _wrap(
+        DrillFeedbackView(
+          sentence: _sentence(),
+          spoken: 'English sentences',
+          feedback: feedback,
+          onNext: () {},
+          onRetry: () {},
+          ttsService: tts,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(SpeakButton), findsNWidgets(2));
+
+    // 修正版だけが読み上げ中になる
+    await tester.tap(find.byType(SpeakButton).first);
+    await tester.pumpAndSettle();
+    expect(_stateOfButton(tester, 0), SpeakButtonState.speaking);
+    expect(_stateOfButton(tester, 1), SpeakButtonState.idle);
+
+    // 模範解答に切り替えると、そちらだけが読み上げ中になる
+    await tester.tap(find.byType(SpeakButton).last);
+    await tester.pumpAndSettle();
+    expect(_stateOfButton(tester, 0), SpeakButtonState.idle);
+    expect(_stateOfButton(tester, 1), SpeakButtonState.speaking);
+    expect(tts.spoken, ['English sentence', 'English sentence']);
+  });
+
+  testWidgets('押してから鳴り始めるまでは生成中表示になる', (tester) async {
     const feedback = CompositionFeedback(
       score: 85,
       isAcceptable: true,
@@ -353,10 +402,10 @@ void main() {
       explanationJa: '解説',
       comparisonJa: '比較',
     );
-    // 1回目はGeminiを呼ぶので使用量が返る
+    // 鳴り始めの通知を手動にして、生成中の状態で止められるようにする
     final tts = FakeTtsService()
-      ..usage = const TokenUsage(promptTokens: 20, candidatesTokens: 900);
-    final reported = <TokenUsage>[];
+      ..pending = true
+      ..startImmediately = false;
 
     await tester.pumpWidget(
       _wrap(
@@ -367,23 +416,63 @@ void main() {
           onNext: () {},
           onRetry: () {},
           ttsService: tts,
-          onSpeechUsage: reported.add,
         ),
       ),
     );
     await tester.pumpAndSettle();
 
     await tester.tap(find.byType(SpeakButton).first);
-    await tester.pumpAndSettle();
-    expect(reported, [
-      const TokenUsage(promptTokens: 20, candidatesTokens: 900),
-    ]);
+    // 準備中のスピナーは無限アニメーションなのでpumpAndSettleは使えない
+    await tester.pump();
+    expect(find.text('生成中'), findsOneWidget);
+    expect(find.text('停止'), findsNothing);
 
-    // キャッシュ再生（使用量ゼロ）は通知しない
-    tts.usage = TokenUsage.zero;
-    await tester.tap(find.byType(SpeakButton).first);
+    // 実際に鳴り始めたら「停止」に変わる
+    tts.startSpeaking();
+    await tester.pump();
+    expect(find.text('生成中'), findsNothing);
+    expect(find.text('停止'), findsOneWidget);
+
+    // 読み上げが終わると待機表示に戻る
+    tts.completeSpeaking();
     await tester.pumpAndSettle();
-    expect(reported.length, 1);
+    expect(find.text('読み上げ'), findsNWidgets(2));
+  });
+
+  testWidgets('生成中に同じボタンを押すと読み上げを取りやめる', (tester) async {
+    const feedback = CompositionFeedback(
+      score: 85,
+      isAcceptable: true,
+      corrected: 'I had toast this morning.',
+      explanationJa: '解説',
+      comparisonJa: '比較',
+    );
+    final tts = FakeTtsService()
+      ..pending = true
+      ..startImmediately = false;
+
+    await tester.pumpWidget(
+      _wrap(
+        DrillFeedbackView(
+          sentence: _sentence(),
+          spoken: 'I eat toast this morning',
+          feedback: feedback,
+          onNext: () {},
+          onRetry: () {},
+          ttsService: tts,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(SpeakButton).first);
+    await tester.pump();
+    expect(find.text('生成中'), findsOneWidget);
+
+    await tester.tap(find.text('生成中'));
+    await tester.pumpAndSettle();
+    expect(tts.stopCount, 1);
+    expect(find.text('読み上げ'), findsNWidgets(2));
   });
 
   group('気づいた点（声調）カード', () {

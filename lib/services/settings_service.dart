@@ -6,7 +6,8 @@ import '../models/learning_language.dart';
 
 /// アプリ設定の読み書きを担うサービス。
 ///
-/// - Gemini APIキーは`flutter_secure_storage`に安全に保存し、メモリにキャッシュする
+/// - Gemini APIキー・Cloud TTS APIキーは`flutter_secure_storage`に安全に保存し、
+///   メモリにキャッシュする
 /// - 学習言語・独り言デフォルト秒数はHiveの`settings` boxに保存する
 ///
 /// 使用するGeminiモデルは[GeminiService.modelName]で固定（設定不可）、
@@ -20,8 +21,15 @@ class SettingsService extends ChangeNotifier {
   }) : _secureStorage = secureStorage ?? const FlutterSecureStorage(),
        _box = settingsBox;
 
-  /// secure storageに保存するAPIキーのキー名
+  /// secure storageに保存するGemini APIキーのキー名
   static const apiKeyStorageKey = 'gemini_api_key';
+
+  /// secure storageに保存するCloud TTS APIキーのキー名。
+  ///
+  /// 読み上げ（Cloud Text-to-Speech）はGeminiとは別のAPIなので、キーを分けて
+  /// 登録できるようにしてある。同じGoogle CloudプロジェクトのキーでCloud TTS
+  /// を有効化しているなら登録は不要（[ttsApiKey]がGeminiのキーを流用する）。
+  static const ttsApiKeyStorageKey = 'cloud_tts_api_key';
 
   static const _monologueSecondsKey = 'monologueSeconds';
   static const _learningLanguageKey = 'learningLanguage';
@@ -37,6 +45,7 @@ class SettingsService extends ChangeNotifier {
   final Box _box;
 
   String? _apiKey;
+  String? _ttsApiKey;
   int _monologueSeconds = defaultMonologueSeconds;
   LearningLanguage _learningLanguage = defaultLearningLanguage;
 
@@ -45,6 +54,18 @@ class SettingsService extends ChangeNotifier {
 
   /// APIキーが設定済みかどうか
   bool get hasApiKey => _apiKey != null && _apiKey!.isNotEmpty;
+
+  /// 読み上げ（Cloud TTS）専用に登録されたAPIキー（未設定ならnull）
+  String? get cloudTtsApiKey => _ttsApiKey;
+
+  /// 専用のCloud TTS APIキーが登録されているかどうか
+  bool get hasCloudTtsApiKey => _ttsApiKey != null && _ttsApiKey!.isNotEmpty;
+
+  /// 読み上げに使うAPIキー。専用キーが無ければGeminiのキーを流用する。
+  ///
+  /// AI StudioのキーとCloud TTSが同じGoogle Cloudプロジェクトにあるなら
+  /// 1つで足りる。別プロジェクトのキーが必要な場合だけ設定画面で登録する。
+  String? get ttsApiKey => hasCloudTtsApiKey ? _ttsApiKey : _apiKey;
 
   /// 独り言トレーニングのデフォルト発話時間（秒）
   int get monologueSeconds => _monologueSeconds;
@@ -58,6 +79,7 @@ class SettingsService extends ChangeNotifier {
   /// secure storageとHive boxから設定をロードする。アプリ起動時に一度呼ぶ。
   Future<void> init() async {
     _apiKey = await _secureStorage.read(key: apiKeyStorageKey);
+    _ttsApiKey = await _secureStorage.read(key: ttsApiKeyStorageKey);
     _monologueSeconds =
         (_box.get(_monologueSecondsKey) as int?) ?? defaultMonologueSeconds;
     final languageName = _box.get(_learningLanguageKey) as String?;
@@ -82,6 +104,21 @@ class SettingsService extends ChangeNotifier {
   Future<void> deleteApiKey() async {
     await _secureStorage.delete(key: apiKeyStorageKey);
     _apiKey = null;
+    notifyListeners();
+  }
+
+  /// 読み上げ（Cloud TTS）専用のAPIキーを保存する。
+  Future<void> setCloudTtsApiKey(String key) async {
+    await _secureStorage.write(key: ttsApiKeyStorageKey, value: key);
+    _ttsApiKey = key;
+    notifyListeners();
+  }
+
+  /// 読み上げ（Cloud TTS）専用のAPIキーを削除する。
+  /// 削除後は[ttsApiKey]がGeminiのキーを流用する。
+  Future<void> deleteCloudTtsApiKey() async {
+    await _secureStorage.delete(key: ttsApiKeyStorageKey);
+    _ttsApiKey = null;
     notifyListeners();
   }
 
