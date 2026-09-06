@@ -58,9 +58,6 @@ class _MonologueSpeakScreenState extends State<MonologueSpeakScreen> {
   /// 渡した後はこの画面のdisposeで音声サービスを破棄しない。
   bool _handedOff = false;
 
-  /// 入力音量（0.0〜1.0、なめらかに追従させた値）。リングの線幅に反映する。
-  double _level = 0;
-
   @override
   void initState() {
     super.initState();
@@ -87,18 +84,9 @@ class _MonologueSpeakScreenState extends State<MonologueSpeakScreen> {
   /// 触らない（recに入った時点でリセットしてはいけない）。
   Future<void> _startRecording() async {
     if (!mounted || _recording || _secondsLeft <= 0) return;
-    setState(() => _level = 0);
     try {
       // 部分認識テキストは表示しない（画面はお題・残り時間・主ボタンのみ）
-      await _speechInput.start(
-        onPartial: (_) {},
-        // 音量はリング線幅（8〜14px）に反映。生値の揺れをならすため
-        // 前回値と半々でブレンドして追従させる。
-        onLevel: (level) {
-          if (!mounted || !_recording) return;
-          setState(() => _level = _level + (level - _level) * 0.5);
-        },
-      );
+      await _speechInput.start(onPartial: (_) {});
       setState(() => _recording = true);
     } on SpeechInputException catch (e) {
       _showSnack(e.message);
@@ -303,7 +291,6 @@ class _MonologueSpeakScreenState extends State<MonologueSpeakScreen> {
                           label: _formatTime(_secondsLeft),
                           recording: _recording,
                           idleLabel: '聞き取り前',
-                          level: _level,
                           dimmed: pre,
                           urgent: urgent,
                         ),

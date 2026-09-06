@@ -37,6 +37,7 @@ class FakeSpeechInputService implements SpeechInputService {
   Object? stopError;
   bool startCalled = false;
   bool stopCalled = false;
+  bool cancelCalled = false;
 
   /// 文字起こし1回分のトークン使用量（音声入力分は入力300・出力10）
   TokenUsage stopUsage = const TokenUsage(
@@ -67,6 +68,11 @@ class FakeSpeechInputService implements SpeechInputService {
       reading: stopReading,
       usage: stopUsage,
     );
+  }
+
+  @override
+  Future<void> cancel() async {
+    cancelCalled = true;
   }
 
   @override
@@ -576,6 +582,119 @@ void main() {
     expect(historyService.drillHistory.first.feedback.score, 0);
     expect(historyService.drillHistory.first.spoken, isEmpty);
     expect(historyService.allSrsItems, hasLength(1));
+  });
+
+  testWidgets('わからないので飛ばすと確認ダイアログを経て未採点の結果になる', (tester) async {
+    // 未採点カード＋模範解答・解説まで一度に構築させるためビューポートを縦に広げる
+    await tester.binding.setSurfaceSize(const Size(400, 2000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final sentences = [_sentence(1)];
+    final client = MockClient((request) async {
+      fail('飛ばした問題は採点しないため通信しない');
+    });
+    final geminiService = GeminiService(
+      settingsService: settings,
+      client: client,
+    );
+    final speechInputService = FakeSpeechInputService();
+
+    // 時間切れのテストと同じ理由で、Hiveの実ファイルI/Oを伴う操作は
+    // tester.runAsync()内（実のZone）で行う。
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        buildApp(
+          sentences: sentences,
+          geminiService: geminiService,
+          speechInputService: speechInputService,
+        ),
+      );
+      await tester.pump();
+
+      // 「続ける」を選んだら出題画面のまま。何も保存されない
+      await tester.tap(find.text('わからないので飛ばす'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text('この問題を飛ばしますか？'), findsOneWidget);
+      await tester.tap(find.text('続ける'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text('答える'), findsOneWidget);
+      expect(historyService.drillHistory, isEmpty);
+
+      // 「飛ばす」を選ぶと未採点の結果画面へ進む
+      await tester.tap(find.text('わからないので飛ばす'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.tap(find.text('飛ばす'));
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+    });
+    await tester.pump();
+    // 残りの有限アニメーション（カード出現）を流し切る
+    await tester.pump(const Duration(milliseconds: 900));
+
+    // 未採点表示＋模範解答・解説。スコアも差分カードも出さない
+    expect(find.text('未採点'), findsOneWidget);
+    expect(find.text('この問題は飛ばしました'), findsOneWidget);
+    expect(
+      find.text('わからないので飛ばした問題です。模範解答を声に出して真似るところから始めましょう。'),
+      findsOneWidget,
+    );
+    expect(find.text('English sentence 1'), findsOneWidget);
+    expect(find.text('修正版'), findsNothing);
+    expect(find.text('要復習'), findsNothing);
+    // 録音は一度も始まっていない
+    expect(speechInputService.startCalled, isFalse);
+
+    // スコア0で履歴に残り、SRS復習キューにも登録される
+    expect(historyService.drillHistory, hasLength(1));
+    expect(historyService.drillHistory.first.feedback.score, 0);
+    expect(historyService.drillHistory.first.spoken, isEmpty);
+    expect(historyService.allSrsItems, hasLength(1));
+  });
+
+  testWidgets('録音中に飛ばすと文字起こしせずに録音を破棄する', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(400, 2000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final sentences = [_sentence(1)];
+    final client = MockClient((request) async {
+      fail('飛ばした問題は文字起こしも採点もしないため通信しない');
+    });
+    final geminiService = GeminiService(
+      settingsService: settings,
+      client: client,
+    );
+    final speechInputService = FakeSpeechInputService();
+
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        buildApp(
+          sentences: sentences,
+          geminiService: geminiService,
+          speechInputService: speechInputService,
+        ),
+      );
+      await tester.pump();
+
+      await tester.tap(find.text('答える'));
+      await tester.pump();
+      expect(speechInputService.startCalled, isTrue);
+
+      await tester.tap(find.text('わからないので飛ばす'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.tap(find.text('飛ばす'));
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+    });
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 900));
+
+    // stop()（＝Geminiへ送る文字起こし）ではなくcancel()で捨てている
+    expect(speechInputService.cancelCalled, isTrue);
+    expect(speechInputService.stopCalled, isFalse);
+    expect(find.text('未採点'), findsOneWidget);
+    expect(historyService.drillHistory, hasLength(1));
   });
 
   testWidgets('セッション中に戻ると中断確認ダイアログが出る', (tester) async {

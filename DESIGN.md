@@ -138,6 +138,37 @@ assets/data/
 - `widgets/mic_button.dart` の `MicButton`: ドリル・独り言共通のマイク操作ボタン（直径88px既定）。未録音時はprimaryGradient背景＋オレンジ影（blur16、alpha 0.2）。録音中は外側に広がる半透明オレンジのパルスリングを1.2秒周期で繰り返しアニメーション（無限ループ。テストで`pumpAndSettle()`を使うと収束しないため、明示的に`pump(duration)`で扱う）
 - `utils/app_route.dart` の `appRoute()`: 250msの軽いスライド（右から）＋フェードの`PageRouteBuilder`。主要な画面遷移で`MaterialPageRoute`の代わりに使用
 
+### スピーキング画面のカウントダウンリング
+
+`widgets/countdown_ring.dart` の `CountdownRing`（口頭英作文のドリル・独り言スピーキング共通）:
+
+- 200×200のボックスに半径`size * 0.45`（＝直径180）・線幅8のリング。トラックは`#EDEEF1`固定
+- 12時起点で**時計回りに消費**（先端を12時に固定し、空きを時計回りに広げる）。
+  1秒刻みの更新は`TweenAnimationBuilder`のlinear補間で滑らかにする
+- 弧・数値の色は pre=`#B9BDC4` / rec=primary / 残りわずか（urgent）=`scoreLow`。
+  状態ドットとラベルは pre=グレー＋「聞き取り前」、rec=赤＋「聞き取り中」
+- **聞き取りを開始した瞬間に、リング全体が一度弾む**（デザインの`ringPop`）:
+  620msで 1.0 →（38%地点）1.11 → 1.08 と進み、聞き取り中は1.08倍のまま保持する。
+  preへ戻すと等倍に戻る。線幅・半径は変えない（音量に反応させて太らせるのは廃止した。
+  デザインに無いうえ、リングが常に脈打っていると残り時間が読み取りづらいため）
+
+### わからないので飛ばす（口頭英作文のドリルのみ）
+
+答えが浮かばないまま制限時間を眺め続けずに模範解答へ進める逃げ道。独り言英会話には無い。
+
+- ドリル画面のリング下に「わからないので飛ばす」を下線付きテキストリンクで置く
+  （主ボタン「答える／採点する」より弱く見せる）。pre・rec のどちらでも押せる
+- 押すと `widgets/skip_question_dialog.dart` の `confirmSkipQuestion()` で必ず確認する
+  （「この問題を飛ばしますか？」／続ける・飛ばす）。誤タップで学習機会を失わせない
+- 「飛ばす」を選ぶと、録音中なら `SpeechInputService.cancel()` で音声を**文字起こしせずに破棄**する
+  （Geminiに送らないのでトークンを消費しない）。そのうえで時間切れと同じく
+  ローカル生成のスコア0の`CompositionFeedback`（`corrected`は空）で結果画面へ進む。
+  score<70 なので既存ロジックのままSRS復習キューに載る
+- 結果画面（`DrillFeedbackView`）は `skipped: true` で受け取り、スコアリングの代わりに
+  グレーの「未採点」カード（バッジ「この問題は飛ばしました」）を出し、「あなたの発話」の位置には
+  録音が無かったことの説明カードを置く。模範解答・解説はそのまま表示する
+  （飛ばしても学べる画面にする。罰を与える見せ方はしない）。フッターは通常どおり「もう一度／次の問題へ」
+
 ### 口頭中国語作文の添削画面（ピンインのルビ＋声調フィードバック）
 
 デザイン `SpeakingApp-Chinese.dc.html` に従い、中国語（`profile.readingLabel != null`）の添削画面では
@@ -370,6 +401,9 @@ APIキーだけは `flutter_secure_storage`（キー名 `gemini_api_key`）。
 - record の `startStream` でPCM16をメモリに蓄積 → 停止後に16kHz monoへ変換・WAV化して GeminiService.transcribe() → テキスト
 - 返り値 `SpeechInputResult` は `text`・`usage` に加えて `reading`（中国語の声調付きピンイン。英語では null）を透過する
 - 録音中は `onPartial` に「聞き取り中…」の固定文言、`onLevel` に正規化した入力音量を流す
+  （`onLevel` は任意。現在の画面はどちらも表示に使っていない）
+- `cancel()` は録音を止めて溜めた音声を捨てる（文字起こししない）。「わからないので飛ばす」のように
+  結果が要らないと決まったときに使い、`stop()` と違ってGeminiを呼ばないのでトークンを消費しない
 - 権限拒否・録音失敗時は日本語エラーメッセージ（`SpeechInputException`）を返し、画面側は録り直しの導線を用意する
 - 端末STT（speech_to_text）はPR17で廃止（設定項目も削除）
 
@@ -415,8 +449,8 @@ APIキーだけは `flutter_secure_storage`（キー名 `gemini_api_key`）。
 - 意図して見た目を変えたときだけ `--update-goldens` で画像を更新し、差分を PR で確認する
 
 現在の対象: `DrillFeedbackView`（中国語の声調の気づき1件／なし／語数違い／複数／儿化／ルビ不整合／
-修正版ピンイン記号なし／stage 0・1／時間切れ、英語の差分あり／なし）。共通ウィジェット（`ScoreRing` /
-`CountdownRing`）は Widgetbook のみ。
+修正版ピンイン記号なし／stage 0・1／時間切れ、英語の差分あり／なし／飛ばした問題の未採点）。
+共通ウィジェット（`ScoreRing` / `CountdownRing`）は Widgetbook のみ。
 
 ## コーディング規約
 

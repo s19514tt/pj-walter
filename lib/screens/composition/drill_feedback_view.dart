@@ -30,6 +30,11 @@ import '../../widgets/stat_badge.dart';
 /// feedbackの`corrected`が空文字（時間切れで回答できなかった場合）は
 /// 「あなたの発話」差分カードを非表示にし、模範解答＋tipsを主役として表示する。
 ///
+/// [skipped]（「わからないので飛ばす」で未回答のまま進んだ場合）は、スコア
+/// リングの代わりに「未採点」カードを出し、「あなたの発話」の位置には録音が
+/// 無かったことの説明を置く。模範解答・解説はそのまま表示する
+/// （飛ばしても学べるようにするのが目的で、罰を与える画面にはしない）。
+///
 /// 中国語（[LanguageProfile.readingLabel]が非null）では、模範解答のピンインと
 /// [spokenReading]の音節列が一致し、かつ声調の食い違いが1件以上あるときだけ
 /// stage 2で「気づいた点」カードを出す（DESIGN.md「声調フィードバック」の
@@ -51,6 +56,7 @@ class DrillFeedbackView extends StatefulWidget {
     required this.ttsService,
     this.profile = LanguageProfile.english,
     this.spokenReading,
+    this.skipped = false,
     this.onSpeechUsage,
     this.isLast = false,
   });
@@ -69,6 +75,9 @@ class DrillFeedbackView extends StatefulWidget {
 
   /// Geminiによる添削結果。nullは採点待ち（stage 0〜1）。
   final CompositionFeedback? feedback;
+
+  /// 「わからないので飛ばす」で未回答のまま進んだ問題かどうか。
+  final bool skipped;
 
   /// 「次の問題へ」（最終問題では「結果を見る」）タップ時のコールバック
   final VoidCallback onNext;
@@ -154,8 +163,11 @@ class _DrillFeedbackViewState extends State<DrillFeedbackView> {
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              // スコアカード: 採点完了（stage 2）まではスケルトン
-              if (feedback == null)
+              // スコアカード: 採点完了（stage 2）まではスケルトン。
+              // 飛ばした問題は採点していないので「未採点」カードに差し替える。
+              if (widget.skipped)
+                const _SkippedCard()
+              else if (feedback == null)
                 const _ScoreSkeletonCard()
               else
                 _ScoreCard(
@@ -170,7 +182,10 @@ class _DrillFeedbackViewState extends State<DrillFeedbackView> {
               //   stage 0 = スケルトン＋認識中バッジ
               //   stage 1 = 素の認識テキストのみ（差分・凡例なし）
               //   stage 2 = 差分ハイライト＋凡例
-              if (!timedOut) ...[
+              if (widget.skipped) ...[
+                staggered(const _NoRecordingCard()),
+                const SizedBox(height: 12),
+              ] else if (!timedOut) ...[
                 if (spoken == null)
                   const SkeletonSectionCard(
                     title: 'あなたの発話（文字起こし）',
@@ -335,6 +350,121 @@ class _ScoreCard extends StatelessWidget {
   }
 }
 
+/// 「わからないので飛ばす」で未回答のまま進んだ問題の、スコアカード相当。
+///
+/// スコアは付けていないので数字は出さず、グレーの「未採点」表示にする。
+/// 復習キューに入ったことをここで伝え、模範解答・解説へ目を向けさせる。
+class _SkippedCard extends StatelessWidget {
+  const _SkippedCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      padding: const EdgeInsets.all(20),
+      child: Row(
+        children: [
+          Container(
+            width: 116,
+            height: 116,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.pageBackground,
+            ),
+            child: const Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.do_not_disturb_on_outlined,
+                  size: 28,
+                  color: Color(0xFFB9BDC4),
+                ),
+                SizedBox(height: 7),
+                Text(
+                  '未採点',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF9AA0A6),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 18),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const StatBadge(
+                  label: 'この問題は飛ばしました',
+                  surfaceColor: Color(0xFFF0F1F3),
+                  textColor: Color(0xFF5F6368),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '模範解答と解説を確認しましょう。この問題は復習キューに登録されました。',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    height: 1.7,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 飛ばした問題の「あなたの発話」カード（録音が無いことの説明）。
+class _NoRecordingCard extends StatelessWidget {
+  const _NoRecordingCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _SectionLabel(
+            icon: Icons.mic_off_outlined,
+            title: 'あなたの発話',
+            muted: true,
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF7F8FA),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.info_outline, size: 17, color: Color(0xFF9AA0A6)),
+                SizedBox(width: 9),
+                Expanded(
+                  child: Text(
+                    '録音がないため、文字起こしと修正版はありません。次に同じ問題が出たときは、'
+                    '模範解答をまねて声に出すところから始めましょう。',
+                    style: TextStyle(
+                      fontSize: 12,
+                      height: 1.8,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// スコアカードのスケルトン（リング位置に円プレースホルダー）。
 class _ScoreSkeletonCard extends StatelessWidget {
   const _ScoreSkeletonCard();
@@ -464,25 +594,37 @@ class _FadeInCardState extends State<_FadeInCard> {
 ///
 /// [trailing]を渡すと行の右端に寄せて並べる（読み上げボタンなど）。
 class _SectionLabel extends StatelessWidget {
-  const _SectionLabel({required this.icon, required this.title, this.trailing});
+  const _SectionLabel({
+    required this.icon,
+    required this.title,
+    this.trailing,
+    this.muted = false,
+  });
 
   final IconData icon;
   final String title;
   final Widget? trailing;
+
+  /// 中身が無いカードの見出し（アイコン・文字をグレーに落とす）
+  final bool muted;
 
   @override
   Widget build(BuildContext context) {
     final trailing = this.trailing;
     return Row(
       children: [
-        Icon(icon, size: 18, color: AppColors.primary),
+        Icon(
+          icon,
+          size: 18,
+          color: muted ? const Color(0xFFB9BDC4) : AppColors.primary,
+        ),
         const SizedBox(width: 8),
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
+            color: muted ? AppColors.textSecondary : AppColors.textPrimary,
           ),
         ),
         if (trailing != null) ...[const Spacer(), trailing],

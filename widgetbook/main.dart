@@ -94,7 +94,6 @@ class PjWalterWidgetbook extends StatelessWidget {
                       label: '18',
                       recording: true,
                       idleLabel: '聞き取り前',
-                      level: 0.5,
                     ),
                   ),
                 ),

@@ -19,6 +19,7 @@ import '../../widgets/abort_session_dialog.dart';
 import '../../widgets/bottom_cta_bar.dart';
 import '../../widgets/countdown_ring.dart';
 import '../../widgets/primary_button.dart';
+import '../../widgets/skip_question_dialog.dart';
 import '../settings_screen.dart';
 import 'drill_feedback_view.dart';
 import 'drill_summary_screen.dart';
@@ -32,6 +33,9 @@ const _urgentSeconds = 5;
 /// 時間切れで回答できなかった場合に保存する添削結果
 const _timeoutExplanation = '時間切れで回答できませんでした。模範解答を確認して復習しましょう。';
 
+/// 「わからないので飛ばす」で未回答のまま進んだ場合に保存する添削結果
+const _skipExplanation = 'わからないので飛ばした問題です。模範解答を声に出して真似るところから始めましょう。';
+
 /// 口頭英作文ドリルの進行画面。
 ///
 /// [sentences]を1問ずつ出題する。問題表示と同時に[SpeechInputService]による
@@ -39,6 +43,8 @@ const _timeoutExplanation = '時間切れで回答できませんでした。模
 /// ボタン1つだけで、録音停止＝採点：ボタン一押し（または時間切れ）で
 /// 聞き取り終了→文字起こし→Gemini添削まで一気に行う。編集用の入力欄は無い。
 /// 聞き取りに失敗した場合のみ「録り直す」導線を出す。
+/// 答えが浮かばないときは「わからないので飛ばす」（確認ダイアログ付き）で
+/// 未採点のまま模範解答・解説へ進める。
 /// 各問の文字起こし・添削で消費したトークン数を[DrillSummaryEntry.usage]に
 /// 積み（同じ問のやり直し分も加算）、全問終了後は[DrillSummaryScreen]へ
 /// 遷移して使用量とコストを表示する。
@@ -110,8 +116,9 @@ class _DrillScreenState extends State<DrillScreen> {
   bool _grading = false;
   CompositionFeedback? _feedback;
 
-  /// 入力音量（0.0〜1.0、なめらかに追従させた値）。リングの線幅に反映する。
-  double _level = 0;
+  /// 「わからないので飛ばす」で未回答のまま結果画面へ進んだかどうか。
+  /// 結果画面を「未採点」表示に切り替えるためのフラグで、次の問題でリセットする。
+  bool _skipped = false;
 
   /// 現在の問で消費したトークン（「もう一度」でやり直した分も加算）
   TokenUsage _transcriptionUsage = TokenUsage.zero;
@@ -175,22 +182,30 @@ class _DrillScreenState extends State<DrillScreen> {
   }
 
   /// 回答が空のまま時間切れになった場合の処理。
+  Future<void> _submitTimeout() =>
+      _submitUnanswered(explanation: _timeoutExplanation, skipped: false);
+
+  /// 未回答のまま結果画面へ進む処理（時間切れ／「わからないので飛ばす」）。
   ///
   /// ローカルでスコア0の[CompositionFeedback]を組み立てて即座に表示する
   /// （通信を伴わないため、待たせずにすぐ結果を見せる）。履歴・SRSキューへの
   /// 保存（score<70のため既存ロジックで自動的にSRS復習キューへ登録される）は
   /// 表示をブロックしないよう並行して行う。
-  Future<void> _submitTimeout() async {
+  Future<void> _submitUnanswered({
+    required String explanation,
+    required bool skipped,
+  }) async {
     if (!mounted || _grading || _feedback != null) return;
-    const feedback = CompositionFeedback(
+    final feedback = CompositionFeedback(
       score: 0,
       isAcceptable: false,
       corrected: '',
-      explanationJa: _timeoutExplanation,
+      explanationJa: explanation,
       comparisonJa: '',
     );
     setState(() {
       _resultMode = true;
+      _skipped = skipped;
       _stagedSpoken = '';
       _stagedReading = null;
       _feedback = feedback;
@@ -220,18 +235,9 @@ class _DrillScreenState extends State<DrillScreen> {
   /// 触らない（recに入った時点でリセットしてはいけない）。
   Future<void> _startRecording() async {
     if (_recording || _secondsLeft <= 0) return;
-    setState(() => _level = 0);
     try {
       // 部分認識テキストは表示しない（画面は日本語文・残り時間・主ボタンのみ）
-      await _speechInput.start(
-        onPartial: (_) {},
-        // 音量はリング線幅（8〜14px）に反映。生値の揺れをならすため
-        // 前回値と半々でブレンドして追従させる。
-        onLevel: (level) {
-          if (!mounted || !_recording) return;
-          setState(() => _level = _level + (level - _level) * 0.5);
-        },
-      );
+      await _speechInput.start(onPartial: (_) {});
       setState(() => _recording = true);
     } on SpeechInputException catch (e) {
       _showSnack(e.message);
@@ -253,7 +259,6 @@ class _DrillScreenState extends State<DrillScreen> {
         _stagedSpoken = result.text;
         _stagedReading = result.reading;
         _transcriptionUsage = _transcriptionUsage + result.usage;
-        _level = 0;
       });
       return true;
     } on SpeechInputException catch (e) {
@@ -276,7 +281,7 @@ class _DrillScreenState extends State<DrillScreen> {
       _stagedReading = null;
       _feedback = null;
       _recording = false;
-      _level = 0;
+      _skipped = false;
     });
     _startTimer();
   }
@@ -286,6 +291,25 @@ class _DrillScreenState extends State<DrillScreen> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  /// 「わからないので飛ばす」: 確認ダイアログのうえで、この問題を未回答のまま
+  /// 結果画面（未採点）へ進める。
+  ///
+  /// 録音中なら音声は文字起こしせずに破棄する（Geminiに送らないので
+  /// トークンも消費しない）。飛ばした問題はスコア0で履歴に残り、
+  /// 既存のロジックでそのままSRS復習キューに登録される。
+  Future<void> _skipQuestion() async {
+    if (_resultMode || _processingSpeech || _grading) return;
+    final skip = await confirmSkipQuestion(context);
+    if (!skip || !mounted || _resultMode) return;
+    _timer?.cancel();
+    if (_recording) {
+      setState(() => _recording = false);
+      await _speechInput.cancel();
+      if (!mounted) return;
+    }
+    await _submitUnanswered(explanation: _skipExplanation, skipped: true);
   }
 
   Future<void> _submit() async {
@@ -458,7 +482,7 @@ class _DrillScreenState extends State<DrillScreen> {
       _stagedReading = null;
       _feedback = null;
       _recording = false;
-      _level = 0;
+      _skipped = false;
       _transcriptionUsage = TokenUsage.zero;
       _correctionUsage = TokenUsage.zero;
       _speechUsage = TokenUsage.zero;
@@ -523,6 +547,7 @@ class _DrillScreenState extends State<DrillScreen> {
                 spoken: _stagedSpoken,
                 spokenReading: _stagedReading,
                 feedback: _feedback,
+                skipped: _skipped,
                 onNext: _next,
                 onRetry: _retryCurrent,
                 ttsService: _tts,
@@ -607,12 +632,14 @@ class _DrillScreenState extends State<DrillScreen> {
                       label: '$_secondsLeft',
                       recording: _recording,
                       idleLabel: '聞き取り前',
-                      level: _level,
                       dimmed: pre,
                       urgent: urgent,
                     ),
                   ),
                 ),
+                // 答えが浮かばないまま時間を眺め続けずに模範解答へ進める逃げ道。
+                // 主ボタンと競合しないよう、下線付きのテキストリンクで控えめに置く。
+                _SkipQuestionButton(onPressed: _skipQuestion),
               ],
             ),
           ),
@@ -626,6 +653,38 @@ class _DrillScreenState extends State<DrillScreen> {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// 「わからないので飛ばす」導線（下線付きのテキストリンク）。
+///
+/// 主ボタン（答える／採点する）より弱く見せるため、グレー文字＋薄いグレーの
+/// 下線にしている。
+class _SkipQuestionButton extends StatelessWidget {
+  const _SkipQuestionButton({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton(
+      onPressed: onPressed,
+      style: TextButton.styleFrom(
+        foregroundColor: const Color(0xFF5F6368),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+      child: const Text(
+        'わからないので飛ばす',
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.bold,
+          height: 1,
+          decoration: TextDecoration.underline,
+          decorationColor: Color(0xFFB9BDC4),
+        ),
+      ),
     );
   }
 }
