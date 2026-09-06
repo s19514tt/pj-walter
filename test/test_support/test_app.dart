@@ -37,7 +37,7 @@ MaterialApp localizedApp({
 
 /// [getIt] に登録した依存で Store を組み立てる [AppScope] 付きの [localizedApp]。
 ///
-/// [wrap] を渡すと MaterialApp をさらに包む（移行中の provider 配線用）。
+/// [wrap] を渡すと MaterialApp をさらに包む。
 Widget scopedApp({
   required GetIt getIt,
   Widget? home,

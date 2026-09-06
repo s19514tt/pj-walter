@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:signals_flutter/signals_flutter.dart';
 
-import '../features/review/domain/srs_item.dart';
-import '../services/history_service.dart';
-import '../services/settings_service.dart';
-import '../core/l10n/l10n.dart';
-import '../core/theme/app_theme.dart';
-import '../core/utils/app_route.dart';
-import '../core/utils/review_launcher.dart';
-import '../core/widgets/app_card.dart';
-import '../core/widgets/score_square_badge.dart';
-import '../core/widgets/section_header.dart';
-import '../features/composition/presentation/deck_select_screen.dart';
-import '../features/monologue/presentation/topic_select_screen.dart';
-import '../features/settings/presentation/settings_screen.dart';
+import '../../../core/di/store_factory.dart';
+import '../../../core/l10n/l10n.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/app_route.dart';
+import '../../../core/widgets/app_card.dart';
+import '../../../core/widgets/score_square_badge.dart';
+import '../../../core/widgets/section_header.dart';
+import '../../composition/presentation/deck_select_screen.dart';
+import '../../monologue/presentation/topic_select_screen.dart';
+import '../../review/presentation/review_launcher.dart';
+import '../../settings/presentation/settings_screen.dart';
+import '../../stats/domain/daily_stats.dart';
+import 'home_store.dart';
 
 /// ホームタブ（ダッシュボード）。
 ///
@@ -27,15 +27,24 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final _launcher = const ReviewSessionLauncher();
-  bool _startingReview = false;
+  late final HomeStore _store;
 
-  Future<void> _startReview(List<SrsItem> dueItems) async {
-    if (_startingReview) return;
-    setState(() => _startingReview = true);
-    await _launcher.start(context, dueItems);
+  @override
+  void initState() {
+    super.initState();
+    _store = StoreFactory.of(context).home();
+  }
+
+  @override
+  void dispose() {
+    _store.dispose();
+    super.dispose();
+  }
+
+  Future<void> _startReview() async {
+    final sentences = await _store.loadReviewSentences();
     if (!mounted) return;
-    setState(() => _startingReview = false);
+    await startReviewSession(context, sentences);
   }
 
   void _openSettings() {
@@ -44,183 +53,113 @@ class _HomeScreenState extends State<HomeScreen> {
     ).push(appRoute(builder: (_) => const SettingsScreen()));
   }
 
-  /// ドリル・独り言の履歴を新しい順に混ぜて上位3件を返す。
-  List<_RecentEntry> _recentEntries(HistoryService history, DateTime now) {
-    final l10n = context.l10n;
-    // 履歴は言語混在なので、各エントリを記録された言語の呼び名で表示する。
-    String when(DateTime t) {
-      final days = DateTime(
-        now.year,
-        now.month,
-        now.day,
-      ).difference(DateTime(t.year, t.month, t.day)).inDays;
-      if (days <= 0) return '今日';
-      if (days == 1) return '昨日';
-      return '$days日前';
-    }
-
-    final entries = <(DateTime, _RecentEntry)>[
-      for (final r in history.drillHistory)
-        (
-          r.timestamp,
-          _RecentEntry(
-            title: l10n.compositionTitle(r.language),
-            meta:
-                '${l10n.deckLevelLabel(r.language, r.level)}'
-                ' · ${r.feedback.score}点',
-            when: when(r.timestamp),
-            score: r.feedback.score,
-          ),
-        ),
-      for (final r in history.monologueHistory)
-        (
-          r.timestamp,
-          _RecentEntry(
-            title: l10n.monologueTitle(r.language),
-            meta: '${r.seconds}秒 · 流暢さ${r.feedback.fluencyScore}',
-            when: when(r.timestamp),
-            score: r.feedback.fluencyScore,
-          ),
-        ),
-    ]..sort((a, b) => b.$1.compareTo(a.$1));
-    return [for (final e in entries.take(3)) e.$2];
-  }
-
-  String get _greeting {
-    final hour = DateTime.now().hour;
-    if (hour < 5) return 'こんばんは';
-    if (hour < 11) return 'おはよう';
-    if (hour < 18) return 'こんにちは';
-    return 'こんばんは';
-  }
-
   @override
   Widget build(BuildContext context) {
-    final history = context.watch<HistoryService>();
-    final settings = context.watch<SettingsService>();
-    final profile = settings.languageProfile;
-    final dueItems = history.dueSrsItems(language: profile.code);
-    final now = DateTime.now();
-    final todayStats = history.statsForDate(now);
-    // 今週（月〜日）の各曜日に学習があったか。未来の曜日はfalse。
-    final monday = DateTime(
-      now.year,
-      now.month,
-      now.day,
-    ).subtract(Duration(days: now.weekday - 1));
-    final weekStudied = [
-      for (var i = 0; i < 7; i++)
-        !monday.add(Duration(days: i)).isAfter(now) &&
-            history
-                    .statsForDate(monday.add(Duration(days: i)))
-                    .values
-                    .fold(0, (a, b) => a + b) >
-                0,
-    ];
-    final recent = _recentEntries(history, now);
-
+    final l10n = context.l10n;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('pj-walter'),
+        title: Text(l10n.appTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings_outlined),
-            tooltip: '設定',
+            tooltip: l10n.settingsTitle,
             onPressed: _openSettings,
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _GreetingHeader(
-            greeting: _greeting,
-            language: context.l10n.languageName(profile.code),
-          ),
-          const SizedBox(height: 16),
-          if (!settings.hasApiKey) ...[
-            _ApiKeyBanner(onTap: _openSettings),
-            const SizedBox(height: 16),
-          ],
-          _StreakCard(
-            streak: history.currentStreak(),
-            todayStats: todayStats,
-            weekStudied: weekStudied,
-          ),
-          const SizedBox(height: 16),
-          _TodayReviewCard(
-            dueItems: dueItems,
-            loading: _startingReview,
-            onStart: () => _startReview(dueItems),
-          ),
-          const SizedBox(height: 24),
-          const SectionHeader(title: 'トレーニング'),
-          const SizedBox(height: 12),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      body: SignalBuilder(
+        builder: (context) {
+          final profile = _store.profile.value;
+          final dueItems = _store.dueItems.value;
+          final recent = _store.recentEntries.value;
+          return ListView(
+            padding: const EdgeInsets.all(16),
             children: [
-              Expanded(
-                child: _TrainingShortcutCard(
-                  icon: Icons.edit_note,
-                  title: context.l10n.compositionTitle(profile.code),
-                  description: '制限時間内に発話',
-                  onTap: () {
-                    Navigator.of(
-                      context,
-                    ).push(appRoute(builder: (_) => const DeckSelectScreen()));
-                  },
-                ),
+              _GreetingHeader(
+                greeting: l10n.greeting(_store.greeting.name),
+                language: l10n.languageName(profile.code),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _TrainingShortcutCard(
-                  icon: Icons.forum_outlined,
-                  title: context.l10n.monologueTitle(profile.code),
-                  description: 'お題を30秒〜3分',
-                  onTap: () {
-                    Navigator.of(
-                      context,
-                    ).push(appRoute(builder: (_) => const TopicSelectScreen()));
-                  },
-                ),
+              const SizedBox(height: 16),
+              if (!_store.hasApiKey.value) ...[
+                _ApiKeyBanner(onTap: _openSettings),
+                const SizedBox(height: 16),
+              ],
+              _StreakCard(
+                streak: _store.streak.value,
+                todayStats: _store.todayStats.value,
+                weekStudied: _store.weekStudied.value,
               ),
+              const SizedBox(height: 16),
+              _TodayReviewCard(
+                dueCount: dueItems.length,
+                loading: _store.startingReview.value,
+                onStart: _startReview,
+              ),
+              const SizedBox(height: 24),
+              SectionHeader(title: l10n.trainingSection),
+              const SizedBox(height: 12),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: _TrainingShortcutCard(
+                      icon: Icons.edit_note,
+                      title: l10n.compositionTitle(profile.code),
+                      description: l10n.compositionShortcutDesc,
+                      onTap: () {
+                        Navigator.of(context).push(
+                          appRoute(builder: (_) => const DeckSelectScreen()),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _TrainingShortcutCard(
+                      icon: Icons.forum_outlined,
+                      title: l10n.monologueTitle(profile.code),
+                      description: l10n.monologueShortcutDesc,
+                      onTap: () {
+                        Navigator.of(context).push(
+                          appRoute(builder: (_) => const TopicSelectScreen()),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              if (recent.isNotEmpty) ...[
+                const SizedBox(height: 24),
+                SectionHeader(title: l10n.recentStudy),
+                const SizedBox(height: 12),
+                _RecentHistoryCard(entries: recent, store: _store),
+              ],
             ],
-          ),
-          if (recent.isNotEmpty) ...[
-            const SizedBox(height: 24),
-            const SectionHeader(title: '最近の学習'),
-            const SizedBox(height: 12),
-            _RecentHistoryCard(entries: recent),
-          ],
-        ],
+          );
+        },
       ),
     );
   }
 }
 
-/// 最近の学習1件分の表示データ。
-class _RecentEntry {
-  const _RecentEntry({
-    required this.title,
-    required this.meta,
-    required this.when,
-    required this.score,
-  });
-
-  final String title;
-  final String meta;
-  final String when;
-  final int score;
-}
-
 /// 最近の学習（ドリル・独り言の直近履歴）を1枚のカードにまとめたリスト。
 class _RecentHistoryCard extends StatelessWidget {
-  const _RecentHistoryCard({required this.entries});
+  const _RecentHistoryCard({required this.entries, required this.store});
 
-  final List<_RecentEntry> entries;
+  final List<RecentEntry> entries;
+  final HomeStore store;
+
+  String _when(BuildContext context, DateTime timestamp) {
+    final l10n = context.l10n;
+    final days = store.daysAgo(timestamp);
+    if (days <= 0) return l10n.today;
+    if (days == 1) return l10n.yesterday;
+    return l10n.daysAgo(days);
+  }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Container(
       decoration: BoxDecoration(
         color: AppColors.background,
@@ -249,7 +188,9 @@ class _RecentHistoryCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          entries[i].title,
+                          entries[i].isDrill
+                              ? l10n.compositionTitle(entries[i].language)
+                              : l10n.monologueTitle(entries[i].language),
                           style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
@@ -258,7 +199,18 @@ class _RecentHistoryCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          entries[i].meta,
+                          entries[i].isDrill
+                              ? l10n.drillRecentMeta(
+                                  l10n.deckLevelLabel(
+                                    entries[i].language,
+                                    entries[i].level,
+                                  ),
+                                  entries[i].score,
+                                )
+                              : l10n.monologueRecentMeta(
+                                  l10n.durationSeconds(entries[i].seconds),
+                                  entries[i].score,
+                                ),
                           style: const TextStyle(
                             fontSize: 11,
                             color: AppColors.textSecondary,
@@ -268,7 +220,7 @@ class _RecentHistoryCard extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    entries[i].when,
+                    _when(context, entries[i].timestamp),
                     style: const TextStyle(
                       fontSize: 11,
                       color: Color(0xFF9AA0A6),
@@ -293,11 +245,12 @@ class _GreetingHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          '$greeting👋',
+          l10n.greetingWave(greeting),
           style: const TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.bold,
@@ -306,7 +259,7 @@ class _GreetingHeader extends StatelessWidget {
         ),
         const SizedBox(height: 2),
         Text(
-          '今日も$languageを話そう',
+          l10n.todayLetsSpeak(language),
           style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
         ),
       ],
@@ -322,18 +275,16 @@ class _StreakCard extends StatelessWidget {
   });
 
   final int streak;
-  final Map<String, int> todayStats;
+  final DailyStats todayStats;
 
   /// 今週（月〜日）の各曜日に学習したかどうか
   final List<bool> weekStudied;
 
   @override
   Widget build(BuildContext context) {
-    final drillCount = todayStats['drillCount'] ?? 0;
-    final monologueCount = todayStats['monologueCount'] ?? 0;
-    final studiedToday = drillCount + monologueCount > 0;
+    final l10n = context.l10n;
+    final studiedToday = todayStats.isStudyDay;
     final weekCount = weekStudied.where((v) => v).length;
-    const labels = ['月', '火', '水', '木', '金', '土', '日'];
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -363,11 +314,11 @@ class _StreakCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 10),
-              const Padding(
-                padding: EdgeInsets.only(bottom: 4),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
                 child: Text(
-                  '日連続',
-                  style: TextStyle(
+                  l10n.streakDays,
+                  style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
@@ -385,7 +336,7 @@ class _StreakCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
-                  '今週 $weekCount/7日',
+                  l10n.thisWeekDays(weekCount),
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
@@ -398,8 +349,11 @@ class _StreakCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             studiedToday
-                ? '今日はドリル$drillCount問・独り言$monologueCount回。いい調子です！'
-                : '今日はまだ練習していません。3分だけ話してみましょう。',
+                ? l10n.todayProgress(
+                    todayStats.drillCount,
+                    todayStats.monologueCount,
+                  )
+                : l10n.todayNothingYet,
             style: TextStyle(
               fontSize: 13,
               height: 1.6,
@@ -436,7 +390,7 @@ class _StreakCard extends StatelessWidget {
                             : null,
                       ),
                       Text(
-                        labels[i],
+                        l10n.weekdayShort('${i + 1}'),
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w500,
@@ -456,22 +410,23 @@ class _StreakCard extends StatelessWidget {
 
 class _TodayReviewCard extends StatelessWidget {
   const _TodayReviewCard({
-    required this.dueItems,
+    required this.dueCount,
     required this.loading,
     required this.onStart,
   });
 
-  final List<SrsItem> dueItems;
+  final int dueCount;
   final bool loading;
   final VoidCallback onStart;
 
   @override
   Widget build(BuildContext context) {
-    if (dueItems.isEmpty) {
-      return const AppCard(
+    final l10n = context.l10n;
+    if (dueCount == 0) {
+      return AppCard(
         child: Text(
-          '今日の復習はありません🎉',
-          style: TextStyle(color: AppColors.textSecondary, fontSize: 15),
+          l10n.noReviewToday,
+          style: const TextStyle(color: AppColors.textSecondary, fontSize: 15),
         ),
       );
     }
@@ -498,9 +453,9 @@ class _TodayReviewCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  '今日の復習',
-                  style: TextStyle(
+                Text(
+                  l10n.todayReview,
+                  style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
                     color: AppColors.textPrimary,
@@ -508,7 +463,7 @@ class _TodayReviewCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '間隔反復キューに${dueItems.length}件たまっています',
+                  l10n.reviewQueueCount(dueCount),
                   style: const TextStyle(
                     fontSize: 12,
                     color: AppColors.textSecondary,
@@ -518,7 +473,7 @@ class _TodayReviewCard extends StatelessWidget {
             ),
           ),
           Text(
-            '${dueItems.length}',
+            '$dueCount',
             style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w900,
@@ -593,20 +548,20 @@ class _ApiKeyBanner extends StatelessWidget {
     return AppCard(
       onTap: onTap,
       color: AppColors.scoreMediumSurface,
-      child: const Row(
+      child: Row(
         children: [
-          Text('⚠️', style: TextStyle(fontSize: 20)),
-          SizedBox(width: 12),
+          const Text('⚠️', style: TextStyle(fontSize: 20)),
+          const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'APIキーを設定してください',
-              style: TextStyle(
+              context.l10n.setApiKeyBanner,
+              style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary,
               ),
             ),
           ),
-          Icon(Icons.chevron_right, color: AppColors.textSecondary),
+          const Icon(Icons.chevron_right, color: AppColors.textSecondary),
         ],
       ),
     );

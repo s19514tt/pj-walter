@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/l10n/l10n.dart';
+import '../../review/presentation/review_screen.dart';
+import '../../stats/presentation/stats_screen.dart';
 import 'home_screen.dart';
-import 'review_screen.dart';
-import 'stats_screen.dart';
 import 'training_menu_screen.dart';
 
 /// BottomNavigationBar を持つアプリのシェル。
@@ -16,6 +17,7 @@ class Shell extends StatefulWidget {
 }
 
 class _ShellState extends State<Shell> {
+  // タブの選択は描画都合のローカル状態（業務状態ではない）
   int _currentIndex = 0;
 
   static const _screens = [
@@ -27,27 +29,31 @@ class _ShellState extends State<Shell> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Scaffold(
       body: IndexedStack(index: _currentIndex, children: _screens),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) => setState(() => _currentIndex = index),
-        items: const [
+        items: [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'ホーム',
+            icon: const Icon(Icons.home_outlined),
+            activeIcon: const Icon(Icons.home),
+            label: l10n.tabHome,
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.edit_note_outlined),
-            activeIcon: Icon(Icons.edit_note),
-            label: '学習',
+            icon: const Icon(Icons.edit_note_outlined),
+            activeIcon: const Icon(Icons.edit_note),
+            label: l10n.tabTraining,
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.refresh), label: '復習'),
           BottomNavigationBarItem(
-            icon: Icon(Icons.insights_outlined),
-            activeIcon: Icon(Icons.insights),
-            label: '記録',
+            icon: const Icon(Icons.refresh),
+            label: l10n.review,
+          ),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.insights_outlined),
+            activeIcon: const Icon(Icons.insights),
+            label: l10n.tabStats,
           ),
         ],
       ),

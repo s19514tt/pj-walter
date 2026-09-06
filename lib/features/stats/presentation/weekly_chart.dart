@@ -1,10 +1,10 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
-import '../../core/theme/app_theme.dart';
-import '../../core/widgets/app_card.dart';
-
-const _weekdayLabels = ['月', '火', '水', '木', '金', '土', '日'];
+import '../../../core/l10n/l10n.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_card.dart';
+import '../domain/daily_stats.dart';
 
 /// 直近N日間の学習量（ドリル＋独り言の合計件数）を表す棒グラフカード。
 ///
@@ -12,14 +12,14 @@ const _weekdayLabels = ['月', '火', '水', '木', '金', '土', '日'];
 class WeeklyChart extends StatelessWidget {
   const WeeklyChart({super.key, required this.stats});
 
-  /// 古い→新しい順の(日付, 統計)。[HistoryService.statsForLastDays]の戻り値。
-  final List<MapEntry<DateTime, Map<String, int>>> stats;
+  /// 古い→新しい順の(日付, 統計)。`StudyLog.lastDays`の戻り値。
+  final List<MapEntry<DateTime, DailyStats>> stats;
 
   @override
   Widget build(BuildContext context) {
     final counts = [
       for (final entry in stats)
-        (entry.value['drillCount'] ?? 0) + (entry.value['monologueCount'] ?? 0),
+        entry.value.drillCount + entry.value.monologueCount,
     ];
     final maxCount = counts.isEmpty
         ? 0
@@ -52,7 +52,8 @@ class WeeklyChart extends StatelessWidget {
                 sideTitles: SideTitles(
                   showTitles: true,
                   reservedSize: 28,
-                  getTitlesWidget: (value, meta) => _bottomTitle(value, meta),
+                  getTitlesWidget: (value, meta) =>
+                      _bottomTitle(context, value, meta),
                 ),
               ),
             ),
@@ -76,10 +77,10 @@ class WeeklyChart extends StatelessWidget {
     );
   }
 
-  Widget _bottomTitle(double value, TitleMeta meta) {
+  Widget _bottomTitle(BuildContext context, double value, TitleMeta meta) {
     final index = value.toInt();
     if (index < 0 || index >= stats.length) return const SizedBox.shrink();
-    final label = _weekdayLabels[stats[index].key.weekday - 1];
+    final label = context.l10n.weekdayShort('${stats[index].key.weekday}');
     return SideTitleWidget(
       meta: meta,
       space: 6,

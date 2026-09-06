@@ -11,10 +11,10 @@ import 'package:hive/hive.dart';
 import 'package:pj_walter/core/language/learning_language.dart';
 import 'package:pj_walter/features/review/data/srs_item_dto.dart';
 import 'package:pj_walter/features/review/domain/srs_item.dart';
-import 'package:pj_walter/services/history_service.dart';
 import 'package:pj_walter/features/content/data/asset_content_repository.dart';
 import 'package:pj_walter/features/content/domain/content_repository.dart';
-import 'package:pj_walter/services/settings_service.dart';
+import 'package:pj_walter/features/review/data/hive_srs_repository.dart';
+import 'package:pj_walter/features/settings/data/hive_settings_repository.dart';
 
 import 'test_support/hive_test_support.dart';
 
@@ -218,28 +218,34 @@ void main() {
     });
   });
 
-  group('SettingsService の学習言語', () {
+  group('SettingsRepository の学習言語', () {
     test('既定は英語で、切り替えると永続化される', () async {
       final box = await Hive.openBox('settings');
-      final settings = SettingsService(settingsBox: box);
-      await settings.init();
+      final settings = HiveSettingsRepository(settingsBox: box);
+      await settings.load();
 
-      expect(settings.learningLanguage, LearningLanguage.english);
-      expect(settings.languageProfile.code, 'en');
+      expect(
+        settings.settings.value.learningLanguage,
+        LearningLanguage.english,
+      );
+      expect(settings.settings.value.languageProfile.code, 'en');
 
       await settings.setLearningLanguage(LearningLanguage.chinese);
-      expect(settings.languageProfile.code, 'zh');
+      expect(settings.settings.value.languageProfile.code, 'zh');
 
       // 別インスタンスで読み直しても保持されている
-      final reopened = SettingsService(settingsBox: box);
-      await reopened.init();
-      expect(reopened.learningLanguage, LearningLanguage.chinese);
+      final reopened = HiveSettingsRepository(settingsBox: box);
+      await reopened.load();
+      expect(
+        reopened.settings.value.learningLanguage,
+        LearningLanguage.chinese,
+      );
     });
   });
 
   group('復習キューの言語分離', () {
-    test('dueSrsItemsは指定した学習言語のアイテムだけを返す', () async {
-      await Hive.openBox('srs_items');
+    test('dueは指定した学習言語のアイテムだけを返す', () async {
+      final box = await Hive.openBox('srs_items');
       final today = DateTime.now();
       final due = DateTime(today.year, today.month, today.day);
       for (final item in [
@@ -262,26 +268,14 @@ void main() {
           lastResult: false,
         ),
       ]) {
-        await Hive.box(
-          'srs_items',
-        ).put(item.sentenceId, SrsItemDto.fromEntity(item).toJson());
+        await box.put(item.sentenceId, SrsItemDto.fromEntity(item).toJson());
       }
       // Repository は生成時に box を読むので、書き込み後に組み立てる
-      final history = HistoryService(
-        drillResultsBox: await Hive.openBox('drill_results'),
-        monologueResultsBox: await Hive.openBox('monologue_results'),
-        srsItemsBox: await Hive.openBox('srs_items'),
-        phrasesBox: await Hive.openBox('phrases'),
-        dailyStatsBox: await Hive.openBox('daily_stats'),
-      );
+      final srs = HiveSrsRepository(box);
 
-      expect(history.dueSrsItems().length, 2);
-      expect(history.dueSrsItems(language: 'zh').map((i) => i.sentenceId), [
-        'z3-001',
-      ]);
-      expect(history.dueSrsItems(language: 'en').map((i) => i.sentenceId), [
-        's700-001',
-      ]);
+      expect(srs.due().length, 2);
+      expect(srs.due(language: 'zh').map((i) => i.sentenceId), ['z3-001']);
+      expect(srs.due(language: 'en').map((i) => i.sentenceId), ['s700-001']);
     });
   });
 }

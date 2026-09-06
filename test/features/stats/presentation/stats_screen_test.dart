@@ -1,42 +1,17 @@
 // StatsScreenのウィジェットテスト。
 //
-// Hive I/Oはtester.runAsync()で実の非同期ゾーンに切り替えて行う
-// （test/review_screen_test.dartと同じパターン）。
+// Hive I/Oはtester.runAsync()で実の非同期ゾーンに切り替えて行う。
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hive/hive.dart';
 import 'package:pj_walter/features/composition/domain/drill_result.dart';
 import 'package:pj_walter/features/monologue/domain/monologue_result.dart';
-import 'package:pj_walter/screens/stats_screen.dart';
-import 'package:pj_walter/services/history_service.dart';
-import 'package:pj_walter/features/content/data/asset_content_repository.dart';
-import 'package:pj_walter/features/content/domain/content_repository.dart';
-import 'package:provider/provider.dart';
+import 'package:pj_walter/features/stats/presentation/stats_screen.dart';
 
-import 'test_support/hive_test_support.dart';
-import 'test_support/test_app.dart';
-
-Future<HistoryService> _buildHistoryService() async => HistoryService(
-  drillResultsBox: await Hive.openBox('drill_results'),
-  monologueResultsBox: await Hive.openBox('monologue_results'),
-  srsItemsBox: await Hive.openBox('srs_items'),
-  phrasesBox: await Hive.openBox('phrases'),
-  dailyStatsBox: await Hive.openBox('daily_stats'),
-);
-
-Widget _buildApp(HistoryService historyService) {
-  return localizedApp(
-    home: MultiProvider(
-      providers: [
-        ChangeNotifierProvider<HistoryService>.value(value: historyService),
-        Provider<ContentRepository>(create: (_) => AssetContentRepository()),
-      ],
-      child: const StatsScreen(),
-    ),
-  );
-}
+import '../../../test_support/hive_test_support.dart';
+import '../../../test_support/test_app.dart';
+import '../../../test_support/test_dependencies.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -53,12 +28,14 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(400, 3000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    late HistoryService historyService;
+    late TestDependencies deps;
     await tester.runAsync(() async {
-      historyService = await _buildHistoryService();
+      deps = await TestDependencies.create();
     });
 
-    await tester.pumpWidget(_buildApp(historyService));
+    await tester.pumpWidget(
+      scopedApp(getIt: deps.getIt, home: const StatsScreen()),
+    );
     await tester.pump();
 
     expect(find.text('連続日数'), findsOneWidget);
@@ -75,10 +52,10 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(400, 3000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    late HistoryService historyService;
+    late TestDependencies deps;
     await tester.runAsync(() async {
-      historyService = await _buildHistoryService();
-      await historyService.saveDrillResult(
+      deps = await TestDependencies.create();
+      await deps.recordDrill(
         DrillResult(
           id: 'd-1',
           sentenceId: 's700-001',
@@ -94,8 +71,9 @@ void main() {
             comparison: '比較テキスト',
           ),
         ),
+        isReview: false,
       );
-      await historyService.saveMonologueResult(
+      await deps.recordMonologue(
         MonologueResult(
           id: 'm-1',
           topicId: 't-001',
@@ -114,14 +92,16 @@ void main() {
       );
     });
 
-    await tester.pumpWidget(_buildApp(historyService));
+    await tester.pumpWidget(
+      scopedApp(getIt: deps.getIt, home: const StatsScreen()),
+    );
     await tester.pump();
 
     expect(find.text('連続日数'), findsOneWidget);
     expect(find.text('this is my spoken answer'), findsOneWidget);
     expect(find.text('my monologue transcript'), findsOneWidget);
 
-    // 口頭英作文の履歴をタップすると詳細ボトムシートが開く
+    // 口頭作文の履歴をタップすると詳細ボトムシートが開く
     await tester.tap(find.text('this is my spoken answer'));
     await tester.pumpAndSettle();
 
@@ -134,12 +114,14 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(400, 3000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    late HistoryService historyService;
+    late TestDependencies deps;
     await tester.runAsync(() async {
-      historyService = await _buildHistoryService();
+      deps = await TestDependencies.create();
     });
 
-    await tester.pumpWidget(_buildApp(historyService));
+    await tester.pumpWidget(
+      scopedApp(getIt: deps.getIt, home: const StatsScreen()),
+    );
     await tester.pump();
 
     final now = DateTime.now();

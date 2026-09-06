@@ -7,12 +7,15 @@ import '../../features/composition/presentation/drill_summary_store.dart';
 import '../../features/composition/presentation/sentence_list_store.dart';
 import '../../features/content/domain/sentence.dart';
 import '../../features/content/domain/topic.dart';
+import '../../features/home/presentation/home_store.dart';
 import '../../features/monologue/domain/monologue_result.dart';
 import '../../features/monologue/presentation/monologue_feedback_store.dart';
 import '../../features/monologue/presentation/monologue_speak_store.dart';
 import '../../features/monologue/presentation/topic_select_store.dart';
+import '../../features/review/presentation/review_store.dart';
 import '../../features/settings/presentation/settings_store.dart';
 import '../../features/speech/domain/speech_input_service.dart';
+import '../../features/stats/presentation/stats_store.dart';
 import '../domain/gemini_pricing.dart';
 
 /// 画面が Store を組み立てるための入口（DESIGN.md「DI」）。
@@ -60,6 +63,12 @@ abstract interface class StoreFactory {
     SpeechInputService? speechInput,
   });
 
+  ReviewStore review();
+
+  StatsStore stats();
+
+  HomeStore home();
+
   static StoreFactory of(BuildContext context) => AppScope.of(context);
 }
 
@@ -76,7 +85,7 @@ class AppScope extends InheritedWidget {
     final scope = context
         .getElementForInheritedWidgetOfExactType<AppScope>()
         ?.widget;
-    assert(scope != null, 'AppScope が MaterialApp の外側に置かれていません');
+    assert(scope != null, 'AppScope must wrap the MaterialApp');
     return (scope! as AppScope).stores;
   }
 

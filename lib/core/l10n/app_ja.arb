@@ -437,5 +437,247 @@
     }
   },
   "savePhrase": "＋保存",
-  "phraseSaved": "保存済"
+  "phraseSaved": "保存済",
+  "tabHome": "ホーム",
+  "tabTraining": "学習",
+  "tabStats": "記録",
+  "greeting": "{kind, select, morning{おはよう} afternoon{こんにちは} other{こんばんは}}",
+  "@greeting": {
+    "description": "時間帯のあいさつ",
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "greetingWave": "{greeting}👋",
+  "@greetingWave": {
+    "description": "あいさつ＋絵文字",
+    "placeholders": {
+      "greeting": {
+        "type": "String"
+      }
+    }
+  },
+  "todayLetsSpeak": "今日も{language}を話そう",
+  "@todayLetsSpeak": {
+    "description": "ホームのサブタイトル",
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "setApiKeyBanner": "APIキーを設定してください",
+  "streakDays": "日連続",
+  "thisWeekDays": "今週 {count}/7日",
+  "@thisWeekDays": {
+    "description": "今週の学習日数",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "todayProgress": "今日はドリル{drills}問・独り言{monologues}回。いい調子です！",
+  "@todayProgress": {
+    "description": "今日の学習量",
+    "placeholders": {
+      "drills": {
+        "type": "int"
+      },
+      "monologues": {
+        "type": "int"
+      }
+    }
+  },
+  "todayNothingYet": "今日はまだ練習していません。3分だけ話してみましょう。",
+  "weekdayShort": "{weekday, select, 1{月} 2{火} 3{水} 4{木} 5{金} 6{土} 7{日} other{{weekday}}}",
+  "@weekdayShort": {
+    "description": "曜日の1文字（DateTime.weekday を文字列にしたもの）",
+    "placeholders": {
+      "weekday": {
+        "type": "String"
+      }
+    }
+  },
+  "noReviewToday": "今日の復習はありません🎉",
+  "todayReview": "今日の復習",
+  "reviewQueueCount": "間隔反復キューに{count}件たまっています",
+  "@reviewQueueCount": {
+    "description": "今日の復習件数",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingSection": "トレーニング",
+  "compositionShortcutDesc": "制限時間内に発話",
+  "monologueShortcutDesc": "お題を30秒〜3分",
+  "recentStudy": "最近の学習",
+  "today": "今日",
+  "yesterday": "昨日",
+  "tomorrow": "明日",
+  "daysAgo": "{days}日前",
+  "@daysAgo": {
+    "description": "N日前",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "daysLater": "{days}日後",
+  "@daysLater": {
+    "description": "N日後",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "drillRecentMeta": "{deck} · {score}点",
+  "@drillRecentMeta": {
+    "description": "最近の学習（口頭作文）の補足",
+    "placeholders": {
+      "deck": {
+        "type": "String"
+      },
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "monologueRecentMeta": "{duration} · 流暢さ{score}",
+  "@monologueRecentMeta": {
+    "description": "最近の学習（独り言）の補足",
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      },
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "chooseTraining": "トレーニングを選ぶ",
+  "compositionMenuDesc": "日本語文を見て制限時間内に{language}で発話し、AIが添削します。",
+  "@compositionMenuDesc": {
+    "description": "口頭作文メニューの説明",
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "monologueMenuDesc": "お題について自由に話し、AIがフィードバックします。",
+  "srsIntervalNote": "1日→3日→7日→14日→30日の間隔で再出題されます",
+  "daysLabel": "{count}日",
+  "@daysLabel": {
+    "description": "日数",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "startReviewBatch": "{count}件を一括で開始",
+  "@startReviewBatch": {
+    "description": "今日の復習の開始ボタン",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "upcomingReviews": "復習予定",
+  "noUpcomingReviews": "復習予定の文はまだありません",
+  "totalCount": "合計{count}件",
+  "@totalCount": {
+    "description": "合計件数",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sentenceOfDeck": "{deck}の文",
+  "@sentenceOfDeck": {
+    "description": "復習予定の1行",
+    "placeholders": {
+      "deck": {
+        "type": "String"
+      }
+    }
+  },
+  "andMore": "ほか{count}件",
+  "@andMore": {
+    "description": "残り件数",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "phraseBook": "フレーズ帳",
+  "phraseSearchHint": "{language}・日本語で検索",
+  "@phraseSearchHint": {
+    "description": "フレーズ帳の検索欄",
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "noPhrases": "フレーズはまだ登録されていません",
+  "noMatchingPhrases": "一致するフレーズがありません",
+  "delete": "削除",
+  "deleted": "削除しました",
+  "streakDaysLabel": "連続日数",
+  "totalDrills": "総ドリル数",
+  "totalStudyMinutes": "総学習分",
+  "last7Days": "直近7日の学習量",
+  "studyCalendar": "学習カレンダー",
+  "correctionHistory": "添削履歴",
+  "noHistory": "まだ添削履歴がありません",
+  "showMore": "もっと見る（残り{count}件）",
+  "@showMore": {
+    "description": "履歴のページング",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "compositionGeneric": "口頭作文",
+  "monologueGeneric": "独り言",
+  "loading": "読み込み中…",
+  "sentenceNotFound": "（教材が見つかりません）",
+  "sourceText": "原文",
+  "topicLabel": "お題",
+  "transcriptRaw": "トランスクリプト",
+  "scoreLabel": "スコア {score}",
+  "@scoreLabel": {
+    "description": "詳細シートのスコア",
+    "placeholders": {
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "prevMonth": "前月",
+  "nextMonth": "翌月",
+  "yearMonth": "{year}年{month}月",
+  "@yearMonth": {
+    "description": "カレンダーの年月",
+    "placeholders": {
+      "year": {
+        "type": "int"
+      },
+      "month": {
+        "type": "int"
+      }
+    }
+  }
 }

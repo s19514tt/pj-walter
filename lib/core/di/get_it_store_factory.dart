@@ -10,17 +10,25 @@ import '../../features/composition/presentation/sentence_list_store.dart';
 import '../../features/content/domain/content_repository.dart';
 import '../../features/content/domain/sentence.dart';
 import '../../features/content/domain/topic.dart';
+import '../../features/composition/domain/drill_history_repository.dart';
+import '../../features/home/presentation/home_store.dart';
+import '../../features/monologue/domain/monologue_history_repository.dart';
 import '../../features/monologue/domain/monologue_result.dart';
 import '../../features/monologue/domain/monologue_review_repository.dart';
 import '../../features/monologue/domain/record_monologue_result.dart';
 import '../../features/monologue/presentation/monologue_feedback_store.dart';
 import '../../features/monologue/presentation/monologue_speak_store.dart';
 import '../../features/monologue/presentation/topic_select_store.dart';
+import '../../features/review/domain/load_review_session.dart';
 import '../../features/review/domain/phrase_repository.dart';
+import '../../features/review/domain/srs_repository.dart';
+import '../../features/review/presentation/review_store.dart';
 import '../../features/settings/domain/settings_repository.dart';
 import '../../features/settings/presentation/settings_store.dart';
 import '../../features/speech/domain/speech_input_service.dart';
 import '../../features/speech/speech_module.dart';
+import '../../features/stats/domain/study_stats_repository.dart';
+import '../../features/stats/presentation/stats_store.dart';
 import '../domain/gemini_pricing.dart';
 import 'store_factory.dart';
 
@@ -120,6 +128,32 @@ class GetItStoreFactory implements StoreFactory {
     settings: _getIt<SettingsRepository>(),
     initialResult: initialResult,
     speechInput: speechInput,
+  );
+
+  @override
+  ReviewStore review() => ReviewStore(
+    srs: _getIt<SrsRepository>(),
+    phrases: _getIt<PhraseRepository>(),
+    settings: _getIt<SettingsRepository>(),
+    loadReviewSession: _getIt<LoadReviewSession>(),
+  );
+
+  @override
+  StatsStore stats() => StatsStore(
+    stats: _getIt<StudyStatsRepository>(),
+    drillHistory: _getIt<DrillHistoryRepository>(),
+    monologueHistory: _getIt<MonologueHistoryRepository>(),
+    content: _getIt<ContentRepository>(),
+  );
+
+  @override
+  HomeStore home() => HomeStore(
+    settings: _getIt<SettingsRepository>(),
+    srs: _getIt<SrsRepository>(),
+    stats: _getIt<StudyStatsRepository>(),
+    drillHistory: _getIt<DrillHistoryRepository>(),
+    monologueHistory: _getIt<MonologueHistoryRepository>(),
+    loadReviewSession: _getIt<LoadReviewSession>(),
   );
 
   @override

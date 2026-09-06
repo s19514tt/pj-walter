@@ -541,4 +541,247 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get phraseSaved => '保存済';
+
+  @override
+  String get tabHome => 'ホーム';
+
+  @override
+  String get tabTraining => '学習';
+
+  @override
+  String get tabStats => '記録';
+
+  @override
+  String greeting(String kind) {
+    String _temp0 = intl.Intl.selectLogic(kind, {
+      'morning': 'おはよう',
+      'afternoon': 'こんにちは',
+      'other': 'こんばんは',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String greetingWave(String greeting) {
+    return '$greeting👋';
+  }
+
+  @override
+  String todayLetsSpeak(String language) {
+    return '今日も$languageを話そう';
+  }
+
+  @override
+  String get setApiKeyBanner => 'APIキーを設定してください';
+
+  @override
+  String get streakDays => '日連続';
+
+  @override
+  String thisWeekDays(int count) {
+    return '今週 $count/7日';
+  }
+
+  @override
+  String todayProgress(int drills, int monologues) {
+    return '今日はドリル$drills問・独り言$monologues回。いい調子です！';
+  }
+
+  @override
+  String get todayNothingYet => '今日はまだ練習していません。3分だけ話してみましょう。';
+
+  @override
+  String weekdayShort(String weekday) {
+    String _temp0 = intl.Intl.selectLogic(weekday, {
+      '1': '月',
+      '2': '火',
+      '3': '水',
+      '4': '木',
+      '5': '金',
+      '6': '土',
+      '7': '日',
+      'other': '$weekday',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get noReviewToday => '今日の復習はありません🎉';
+
+  @override
+  String get todayReview => '今日の復習';
+
+  @override
+  String reviewQueueCount(int count) {
+    return '間隔反復キューに$count件たまっています';
+  }
+
+  @override
+  String get trainingSection => 'トレーニング';
+
+  @override
+  String get compositionShortcutDesc => '制限時間内に発話';
+
+  @override
+  String get monologueShortcutDesc => 'お題を30秒〜3分';
+
+  @override
+  String get recentStudy => '最近の学習';
+
+  @override
+  String get today => '今日';
+
+  @override
+  String get yesterday => '昨日';
+
+  @override
+  String get tomorrow => '明日';
+
+  @override
+  String daysAgo(int days) {
+    return '$days日前';
+  }
+
+  @override
+  String daysLater(int days) {
+    return '$days日後';
+  }
+
+  @override
+  String drillRecentMeta(String deck, int score) {
+    return '$deck · $score点';
+  }
+
+  @override
+  String monologueRecentMeta(String duration, int score) {
+    return '$duration · 流暢さ$score';
+  }
+
+  @override
+  String get chooseTraining => 'トレーニングを選ぶ';
+
+  @override
+  String compositionMenuDesc(String language) {
+    return '日本語文を見て制限時間内に$languageで発話し、AIが添削します。';
+  }
+
+  @override
+  String get monologueMenuDesc => 'お題について自由に話し、AIがフィードバックします。';
+
+  @override
+  String get srsIntervalNote => '1日→3日→7日→14日→30日の間隔で再出題されます';
+
+  @override
+  String daysLabel(int count) {
+    return '$count日';
+  }
+
+  @override
+  String startReviewBatch(int count) {
+    return '$count件を一括で開始';
+  }
+
+  @override
+  String get upcomingReviews => '復習予定';
+
+  @override
+  String get noUpcomingReviews => '復習予定の文はまだありません';
+
+  @override
+  String totalCount(int count) {
+    return '合計$count件';
+  }
+
+  @override
+  String sentenceOfDeck(String deck) {
+    return '$deckの文';
+  }
+
+  @override
+  String andMore(int count) {
+    return 'ほか$count件';
+  }
+
+  @override
+  String get phraseBook => 'フレーズ帳';
+
+  @override
+  String phraseSearchHint(String language) {
+    return '$language・日本語で検索';
+  }
+
+  @override
+  String get noPhrases => 'フレーズはまだ登録されていません';
+
+  @override
+  String get noMatchingPhrases => '一致するフレーズがありません';
+
+  @override
+  String get delete => '削除';
+
+  @override
+  String get deleted => '削除しました';
+
+  @override
+  String get streakDaysLabel => '連続日数';
+
+  @override
+  String get totalDrills => '総ドリル数';
+
+  @override
+  String get totalStudyMinutes => '総学習分';
+
+  @override
+  String get last7Days => '直近7日の学習量';
+
+  @override
+  String get studyCalendar => '学習カレンダー';
+
+  @override
+  String get correctionHistory => '添削履歴';
+
+  @override
+  String get noHistory => 'まだ添削履歴がありません';
+
+  @override
+  String showMore(int count) {
+    return 'もっと見る（残り$count件）';
+  }
+
+  @override
+  String get compositionGeneric => '口頭作文';
+
+  @override
+  String get monologueGeneric => '独り言';
+
+  @override
+  String get loading => '読み込み中…';
+
+  @override
+  String get sentenceNotFound => '（教材が見つかりません）';
+
+  @override
+  String get sourceText => '原文';
+
+  @override
+  String get topicLabel => 'お題';
+
+  @override
+  String get transcriptRaw => 'トランスクリプト';
+
+  @override
+  String scoreLabel(int score) {
+    return 'スコア $score';
+  }
+
+  @override
+  String get prevMonth => '前月';
+
+  @override
+  String get nextMonth => '翌月';
+
+  @override
+  String yearMonth(int year, int month) {
+    return '$year年$month月';
+  }
 }

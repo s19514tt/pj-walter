@@ -33,7 +33,7 @@ class MonologueFeedbackScreen extends StatefulWidget {
     this.speechInput,
   }) : assert(
          result != null || speechInput != null,
-         'resultかspeechInputのどちらかが必要',
+         'either result or speechInput is required',
        );
 
   /// 出題されたお題（フレーズ追加時のsourceに使用）

@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../core/theme/app_theme.dart';
-import '../../core/widgets/app_card.dart';
-
-const _weekdayHeaders = ['月', '火', '水', '木', '金', '土', '日'];
+import '../../../core/l10n/l10n.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_card.dart';
 
 /// 当月の学習カレンダー（自作グリッド）。
 ///
@@ -12,6 +11,7 @@ class StudyCalendar extends StatelessWidget {
   const StudyCalendar({
     super.key,
     required this.displayedMonth,
+    required this.today,
     required this.isStudyDay,
     required this.onPrevMonth,
     required this.onNextMonth,
@@ -19,6 +19,9 @@ class StudyCalendar extends StatelessWidget {
 
   /// 表示中の月（dayは無視される）
   final DateTime displayedMonth;
+
+  /// 今日（枠線で強調する日）
+  final DateTime today;
 
   /// 指定日が学習日かどうかを判定する
   final bool Function(DateTime day) isStudyDay;
@@ -52,8 +55,8 @@ class StudyCalendar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final cells = _buildCells();
-    final today = DateTime.now();
 
     return AppCard(
       child: Column(
@@ -64,10 +67,10 @@ class StudyCalendar extends StatelessWidget {
               IconButton(
                 icon: const Icon(Icons.chevron_left),
                 onPressed: onPrevMonth,
-                tooltip: '前月',
+                tooltip: l10n.prevMonth,
               ),
               Text(
-                '${displayedMonth.year}年${displayedMonth.month}月',
+                l10n.yearMonth(displayedMonth.year, displayedMonth.month),
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -77,7 +80,7 @@ class StudyCalendar extends StatelessWidget {
               IconButton(
                 icon: const Icon(Icons.chevron_right),
                 onPressed: onNextMonth,
-                tooltip: '翌月',
+                tooltip: l10n.nextMonth,
               ),
             ],
           ),
@@ -87,10 +90,10 @@ class StudyCalendar extends StatelessWidget {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             children: [
-              for (final label in _weekdayHeaders)
+              for (var weekday = 1; weekday <= 7; weekday++)
                 Center(
                   child: Text(
-                    label,
+                    l10n.weekdayShort('$weekday'),
                     style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,

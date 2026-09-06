@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../core/theme/app_theme.dart';
-import '../../core/widgets/app_card.dart';
+import '../../../core/l10n/l10n.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_card.dart';
+import '../domain/daily_stats.dart';
 
 /// ストリーク大表示（🔥＋N日連続）＋累計サマリー（総ドリル数/総独り言/総学習時間）。
 class StreakSummary extends StatelessWidget {
@@ -14,27 +16,31 @@ class StreakSummary extends StatelessWidget {
   /// 現在の連続学習日数
   final int streak;
 
-  /// [HistoryService.totalStats]の戻り値（drillCount/monologueCount/studySeconds）
-  final Map<String, int> totalStats;
+  /// 累計の学習量
+  final DailyStats totalStats;
 
   @override
   Widget build(BuildContext context) {
-    final totalMinutes = (totalStats['studySeconds'] ?? 0) ~/ 60;
+    final l10n = context.l10n;
+    final totalMinutes = totalStats.studySeconds ~/ 60;
     return Row(
       children: [
         Expanded(
-          child: _StatTile(value: '$streak', label: '連続日数'),
+          child: _StatTile(value: '$streak', label: l10n.streakDaysLabel),
         ),
         const SizedBox(width: 10),
         Expanded(
           child: _StatTile(
-            value: '${totalStats['drillCount'] ?? 0}',
-            label: '総ドリル数',
+            value: '${totalStats.drillCount}',
+            label: l10n.totalDrills,
           ),
         ),
         const SizedBox(width: 10),
         Expanded(
-          child: _StatTile(value: '$totalMinutes', label: '総学習分'),
+          child: _StatTile(
+            value: '$totalMinutes',
+            label: l10n.totalStudyMinutes,
+          ),
         ),
       ],
     );

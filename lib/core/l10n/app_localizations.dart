@@ -925,6 +925,378 @@ abstract class AppLocalizations {
   /// In ja, this message translates to:
   /// **'保存済'**
   String get phraseSaved;
+
+  /// No description provided for @tabHome.
+  ///
+  /// In ja, this message translates to:
+  /// **'ホーム'**
+  String get tabHome;
+
+  /// No description provided for @tabTraining.
+  ///
+  /// In ja, this message translates to:
+  /// **'学習'**
+  String get tabTraining;
+
+  /// No description provided for @tabStats.
+  ///
+  /// In ja, this message translates to:
+  /// **'記録'**
+  String get tabStats;
+
+  /// 時間帯のあいさつ
+  ///
+  /// In ja, this message translates to:
+  /// **'{kind, select, morning{おはよう} afternoon{こんにちは} other{こんばんは}}'**
+  String greeting(String kind);
+
+  /// あいさつ＋絵文字
+  ///
+  /// In ja, this message translates to:
+  /// **'{greeting}👋'**
+  String greetingWave(String greeting);
+
+  /// ホームのサブタイトル
+  ///
+  /// In ja, this message translates to:
+  /// **'今日も{language}を話そう'**
+  String todayLetsSpeak(String language);
+
+  /// No description provided for @setApiKeyBanner.
+  ///
+  /// In ja, this message translates to:
+  /// **'APIキーを設定してください'**
+  String get setApiKeyBanner;
+
+  /// No description provided for @streakDays.
+  ///
+  /// In ja, this message translates to:
+  /// **'日連続'**
+  String get streakDays;
+
+  /// 今週の学習日数
+  ///
+  /// In ja, this message translates to:
+  /// **'今週 {count}/7日'**
+  String thisWeekDays(int count);
+
+  /// 今日の学習量
+  ///
+  /// In ja, this message translates to:
+  /// **'今日はドリル{drills}問・独り言{monologues}回。いい調子です！'**
+  String todayProgress(int drills, int monologues);
+
+  /// No description provided for @todayNothingYet.
+  ///
+  /// In ja, this message translates to:
+  /// **'今日はまだ練習していません。3分だけ話してみましょう。'**
+  String get todayNothingYet;
+
+  /// 曜日の1文字（DateTime.weekday を文字列にしたもの）
+  ///
+  /// In ja, this message translates to:
+  /// **'{weekday, select, 1{月} 2{火} 3{水} 4{木} 5{金} 6{土} 7{日} other{{weekday}}}'**
+  String weekdayShort(String weekday);
+
+  /// No description provided for @noReviewToday.
+  ///
+  /// In ja, this message translates to:
+  /// **'今日の復習はありません🎉'**
+  String get noReviewToday;
+
+  /// No description provided for @todayReview.
+  ///
+  /// In ja, this message translates to:
+  /// **'今日の復習'**
+  String get todayReview;
+
+  /// 今日の復習件数
+  ///
+  /// In ja, this message translates to:
+  /// **'間隔反復キューに{count}件たまっています'**
+  String reviewQueueCount(int count);
+
+  /// No description provided for @trainingSection.
+  ///
+  /// In ja, this message translates to:
+  /// **'トレーニング'**
+  String get trainingSection;
+
+  /// No description provided for @compositionShortcutDesc.
+  ///
+  /// In ja, this message translates to:
+  /// **'制限時間内に発話'**
+  String get compositionShortcutDesc;
+
+  /// No description provided for @monologueShortcutDesc.
+  ///
+  /// In ja, this message translates to:
+  /// **'お題を30秒〜3分'**
+  String get monologueShortcutDesc;
+
+  /// No description provided for @recentStudy.
+  ///
+  /// In ja, this message translates to:
+  /// **'最近の学習'**
+  String get recentStudy;
+
+  /// No description provided for @today.
+  ///
+  /// In ja, this message translates to:
+  /// **'今日'**
+  String get today;
+
+  /// No description provided for @yesterday.
+  ///
+  /// In ja, this message translates to:
+  /// **'昨日'**
+  String get yesterday;
+
+  /// No description provided for @tomorrow.
+  ///
+  /// In ja, this message translates to:
+  /// **'明日'**
+  String get tomorrow;
+
+  /// N日前
+  ///
+  /// In ja, this message translates to:
+  /// **'{days}日前'**
+  String daysAgo(int days);
+
+  /// N日後
+  ///
+  /// In ja, this message translates to:
+  /// **'{days}日後'**
+  String daysLater(int days);
+
+  /// 最近の学習（口頭作文）の補足
+  ///
+  /// In ja, this message translates to:
+  /// **'{deck} · {score}点'**
+  String drillRecentMeta(String deck, int score);
+
+  /// 最近の学習（独り言）の補足
+  ///
+  /// In ja, this message translates to:
+  /// **'{duration} · 流暢さ{score}'**
+  String monologueRecentMeta(String duration, int score);
+
+  /// No description provided for @chooseTraining.
+  ///
+  /// In ja, this message translates to:
+  /// **'トレーニングを選ぶ'**
+  String get chooseTraining;
+
+  /// 口頭作文メニューの説明
+  ///
+  /// In ja, this message translates to:
+  /// **'日本語文を見て制限時間内に{language}で発話し、AIが添削します。'**
+  String compositionMenuDesc(String language);
+
+  /// No description provided for @monologueMenuDesc.
+  ///
+  /// In ja, this message translates to:
+  /// **'お題について自由に話し、AIがフィードバックします。'**
+  String get monologueMenuDesc;
+
+  /// No description provided for @srsIntervalNote.
+  ///
+  /// In ja, this message translates to:
+  /// **'1日→3日→7日→14日→30日の間隔で再出題されます'**
+  String get srsIntervalNote;
+
+  /// 日数
+  ///
+  /// In ja, this message translates to:
+  /// **'{count}日'**
+  String daysLabel(int count);
+
+  /// 今日の復習の開始ボタン
+  ///
+  /// In ja, this message translates to:
+  /// **'{count}件を一括で開始'**
+  String startReviewBatch(int count);
+
+  /// No description provided for @upcomingReviews.
+  ///
+  /// In ja, this message translates to:
+  /// **'復習予定'**
+  String get upcomingReviews;
+
+  /// No description provided for @noUpcomingReviews.
+  ///
+  /// In ja, this message translates to:
+  /// **'復習予定の文はまだありません'**
+  String get noUpcomingReviews;
+
+  /// 合計件数
+  ///
+  /// In ja, this message translates to:
+  /// **'合計{count}件'**
+  String totalCount(int count);
+
+  /// 復習予定の1行
+  ///
+  /// In ja, this message translates to:
+  /// **'{deck}の文'**
+  String sentenceOfDeck(String deck);
+
+  /// 残り件数
+  ///
+  /// In ja, this message translates to:
+  /// **'ほか{count}件'**
+  String andMore(int count);
+
+  /// No description provided for @phraseBook.
+  ///
+  /// In ja, this message translates to:
+  /// **'フレーズ帳'**
+  String get phraseBook;
+
+  /// フレーズ帳の検索欄
+  ///
+  /// In ja, this message translates to:
+  /// **'{language}・日本語で検索'**
+  String phraseSearchHint(String language);
+
+  /// No description provided for @noPhrases.
+  ///
+  /// In ja, this message translates to:
+  /// **'フレーズはまだ登録されていません'**
+  String get noPhrases;
+
+  /// No description provided for @noMatchingPhrases.
+  ///
+  /// In ja, this message translates to:
+  /// **'一致するフレーズがありません'**
+  String get noMatchingPhrases;
+
+  /// No description provided for @delete.
+  ///
+  /// In ja, this message translates to:
+  /// **'削除'**
+  String get delete;
+
+  /// No description provided for @deleted.
+  ///
+  /// In ja, this message translates to:
+  /// **'削除しました'**
+  String get deleted;
+
+  /// No description provided for @streakDaysLabel.
+  ///
+  /// In ja, this message translates to:
+  /// **'連続日数'**
+  String get streakDaysLabel;
+
+  /// No description provided for @totalDrills.
+  ///
+  /// In ja, this message translates to:
+  /// **'総ドリル数'**
+  String get totalDrills;
+
+  /// No description provided for @totalStudyMinutes.
+  ///
+  /// In ja, this message translates to:
+  /// **'総学習分'**
+  String get totalStudyMinutes;
+
+  /// No description provided for @last7Days.
+  ///
+  /// In ja, this message translates to:
+  /// **'直近7日の学習量'**
+  String get last7Days;
+
+  /// No description provided for @studyCalendar.
+  ///
+  /// In ja, this message translates to:
+  /// **'学習カレンダー'**
+  String get studyCalendar;
+
+  /// No description provided for @correctionHistory.
+  ///
+  /// In ja, this message translates to:
+  /// **'添削履歴'**
+  String get correctionHistory;
+
+  /// No description provided for @noHistory.
+  ///
+  /// In ja, this message translates to:
+  /// **'まだ添削履歴がありません'**
+  String get noHistory;
+
+  /// 履歴のページング
+  ///
+  /// In ja, this message translates to:
+  /// **'もっと見る（残り{count}件）'**
+  String showMore(int count);
+
+  /// No description provided for @compositionGeneric.
+  ///
+  /// In ja, this message translates to:
+  /// **'口頭作文'**
+  String get compositionGeneric;
+
+  /// No description provided for @monologueGeneric.
+  ///
+  /// In ja, this message translates to:
+  /// **'独り言'**
+  String get monologueGeneric;
+
+  /// No description provided for @loading.
+  ///
+  /// In ja, this message translates to:
+  /// **'読み込み中…'**
+  String get loading;
+
+  /// No description provided for @sentenceNotFound.
+  ///
+  /// In ja, this message translates to:
+  /// **'（教材が見つかりません）'**
+  String get sentenceNotFound;
+
+  /// No description provided for @sourceText.
+  ///
+  /// In ja, this message translates to:
+  /// **'原文'**
+  String get sourceText;
+
+  /// No description provided for @topicLabel.
+  ///
+  /// In ja, this message translates to:
+  /// **'お題'**
+  String get topicLabel;
+
+  /// No description provided for @transcriptRaw.
+  ///
+  /// In ja, this message translates to:
+  /// **'トランスクリプト'**
+  String get transcriptRaw;
+
+  /// 詳細シートのスコア
+  ///
+  /// In ja, this message translates to:
+  /// **'スコア {score}'**
+  String scoreLabel(int score);
+
+  /// No description provided for @prevMonth.
+  ///
+  /// In ja, this message translates to:
+  /// **'前月'**
+  String get prevMonth;
+
+  /// No description provided for @nextMonth.
+  ///
+  /// In ja, this message translates to:
+  /// **'翌月'**
+  String get nextMonth;
+
+  /// カレンダーの年月
+  ///
+  /// In ja, this message translates to:
+  /// **'{year}年{month}月'**
+  String yearMonth(int year, int month);
 }
 
 class _AppLocalizationsDelegate

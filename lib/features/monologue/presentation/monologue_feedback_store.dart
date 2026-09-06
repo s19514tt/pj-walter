@@ -55,7 +55,7 @@ class MonologueFeedbackStore extends Store {
     this._speechInput,
   }) : assert(
          initialResult != null || _speechInput != null,
-         'initialResult か speechInput のどちらかが必要',
+         'either initialResult or speechInput is required',
        ),
        profile = settings.settings.peek().languageProfile {
     transcript = createSignal(initialResult?.transcript);

@@ -1,20 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
+import 'package:signals_flutter/signals_flutter.dart';
 
-import '../core/l10n/l10n.dart';
-
-import '../features/review/domain/phrase.dart';
-import '../features/review/domain/srs_item.dart';
-import '../services/history_service.dart';
-import '../core/theme/app_theme.dart';
-import '../core/utils/review_launcher.dart';
-import '../core/widgets/app_card.dart';
-import '../core/widgets/section_header.dart';
-import '../services/settings_service.dart';
-
-/// 復習予定一覧で全件を個別表示する上限。超えた分は件数表示のみにする。
-const _upcomingListLimit = 8;
+import '../../../core/di/store_factory.dart';
+import '../../../core/l10n/l10n.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_card.dart';
+import '../../../core/widgets/section_header.dart';
+import '../domain/phrase.dart';
+import 'review_launcher.dart';
+import 'review_store.dart';
 
 /// 復習タブ。「今日の復習」「復習予定」「フレーズ帳」を表示する。
 class ReviewScreen extends StatefulWidget {
@@ -25,94 +20,89 @@ class ReviewScreen extends StatefulWidget {
 }
 
 class _ReviewScreenState extends State<ReviewScreen> {
+  late final ReviewStore _store;
   final _searchController = TextEditingController();
-  final _launcher = const ReviewSessionLauncher();
-  String _query = '';
-  bool _startingReview = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _store = StoreFactory.of(context).review();
+  }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _store.dispose();
     super.dispose();
   }
 
-  Future<void> _startReview(List<SrsItem> dueItems) async {
-    if (_startingReview) return;
-    setState(() => _startingReview = true);
-    await _launcher.start(context, dueItems);
+  Future<void> _startReview() async {
+    final sentences = await _store.loadReviewSentences();
     if (!mounted) return;
-    setState(() => _startingReview = false);
+    await startReviewSession(context, sentences);
+    _store.reviewFinished();
   }
 
-  Future<void> _deletePhrase(HistoryService history, Phrase phrase) async {
-    await history.deletePhrase(phrase.id);
+  Future<void> _deletePhrase(Phrase phrase) async {
+    await _store.deletePhrase(phrase.id);
     if (!mounted) return;
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('削除しました')));
-  }
-
-  List<Phrase> _filteredPhrases(List<Phrase> phrases) {
-    final query = _query.trim().toLowerCase();
-    if (query.isEmpty) return phrases;
-    return phrases
-        .where(
-          (p) =>
-              p.target.toLowerCase().contains(query) ||
-              p.ja.toLowerCase().contains(query),
-        )
-        .toList();
+    ).showSnackBar(SnackBar(content: Text(context.l10n.deleted)));
   }
 
   @override
   Widget build(BuildContext context) {
-    final history = context.watch<HistoryService>();
-    final profile = context.watch<SettingsService>().languageProfile;
-    // 復習は現在の学習言語だけを対象にする（別言語の文が現在の言語の
-    // プロンプトで採点されるのを防ぐ）。
-    final dueItems = history.dueSrsItems(language: profile.code);
-    final allItems = history.allSrsItems;
-    final phrases = _filteredPhrases(history.phrases);
-
+    final l10n = context.l10n;
     return Scaffold(
-      appBar: AppBar(title: const Text('復習')),
+      appBar: AppBar(title: Text(l10n.review)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _buildTodayReview(dueItems, allItems),
+          SignalBuilder(builder: (context) => _buildTodayReview(context)),
           const SizedBox(height: 24),
-          const SectionHeader(title: '復習予定'),
+          SectionHeader(title: l10n.upcomingReviews),
           const SizedBox(height: 12),
-          _buildUpcoming(allItems),
+          SignalBuilder(builder: (context) => _buildUpcoming(context)),
           const SizedBox(height: 24),
-          SectionHeader(
-            title: 'フレーズ帳',
-            trailing: Text(
-              '${history.phrases.length}件',
-              style: const TextStyle(
-                fontSize: 12,
-                color: AppColors.textSecondary,
+          SignalBuilder(
+            builder: (context) => SectionHeader(
+              title: l10n.phraseBook,
+              trailing: Text(
+                l10n.itemCount(_store.phraseCount.value),
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
+                ),
               ),
             ),
           ),
           const SizedBox(height: 12),
-          _buildSearchField(context.l10n.languageName(profile.code)),
+          SignalBuilder(
+            builder: (context) => TextField(
+              controller: _searchController,
+              onChanged: _store.setQuery,
+              decoration: InputDecoration(
+                hintText: l10n.phraseSearchHint(
+                  l10n.languageName(_store.profile.value.code),
+                ),
+                prefixIcon: const Icon(Icons.search),
+                border: const OutlineInputBorder(),
+              ),
+            ),
+          ),
           const SizedBox(height: 12),
-          _buildPhrases(history, phrases),
+          SignalBuilder(builder: (context) => _buildPhrases(context)),
         ],
       ),
     );
   }
 
-  Widget _buildTodayReview(List<SrsItem> dueItems, List<SrsItem> allItems) {
-    // stage 0-4を「1日→3日→7日→14日→30日」の各間隔として件数表示する
-    const stageLabels = ['1日', '3日', '7日', '14日', '30日'];
-    final stageCounts = List<int>.filled(stageLabels.length, 0);
-    for (final item in allItems) {
-      if (item.stage >= 0 && item.stage < stageLabels.length) {
-        stageCounts[item.stage]++;
-      }
-    }
+  Widget _buildTodayReview(BuildContext context) {
+    final l10n = context.l10n;
+    final dueItems = _store.dueItems.value;
+    final stageCounts = _store.upcoming.value.stageCounts;
+    final starting = _store.startingReview.value;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -122,9 +112,9 @@ class _ReviewScreenState extends State<ReviewScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            '今日の復習',
-            style: TextStyle(
+          Text(
+            l10n.todayReview,
+            style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
               color: Colors.white,
@@ -132,7 +122,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            '1日→3日→7日→14日→30日の間隔で再出題されます',
+            l10n.srsIntervalNote,
             style: TextStyle(
               fontSize: 12,
               height: 1.7,
@@ -142,7 +132,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
           const SizedBox(height: 14),
           Row(
             children: [
-              for (var i = 0; i < stageLabels.length; i++) ...[
+              for (var i = 0; i < ReviewStore.srsStageDays.length; i++) ...[
                 if (i > 0) const SizedBox(width: 8),
                 Expanded(
                   child: Container(
@@ -162,7 +152,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                           ),
                         ),
                         Text(
-                          stageLabels[i],
+                          l10n.daysLabel(ReviewStore.srsStageDays[i]),
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w500,
@@ -181,9 +171,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
             width: double.infinity,
             height: 48,
             child: FilledButton(
-              onPressed: dueItems.isEmpty || _startingReview
-                  ? null
-                  : () => _startReview(dueItems),
+              onPressed: dueItems.isEmpty || starting ? null : _startReview,
               style: FilledButton.styleFrom(
                 backgroundColor: Colors.white,
                 disabledBackgroundColor: Colors.white.withValues(alpha: 0.6),
@@ -196,7 +184,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              child: _startingReview
+              child: starting
                   ? const SizedBox(
                       width: 20,
                       height: 20,
@@ -204,8 +192,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
                     )
                   : Text(
                       dueItems.isEmpty
-                          ? '今日の復習はありません🎉'
-                          : '${dueItems.length}件を一括で開始',
+                          ? l10n.noReviewToday
+                          : l10n.startReviewBatch(dueItems.length),
                     ),
             ),
           ),
@@ -214,47 +202,45 @@ class _ReviewScreenState extends State<ReviewScreen> {
     );
   }
 
-  Widget _buildUpcoming(List<SrsItem> allItems) {
-    if (allItems.isEmpty) {
-      return const AppCard(
+  Widget _buildUpcoming(BuildContext context) {
+    final l10n = context.l10n;
+    final upcoming = _store.upcoming.value;
+    if (upcoming.total == 0) {
+      return AppCard(
         child: Text(
-          '復習予定の文はまだありません',
-          style: TextStyle(color: AppColors.textSecondary),
+          l10n.noUpcomingReviews,
+          style: const TextStyle(color: AppColors.textSecondary),
         ),
       );
     }
-
-    final sorted = [...allItems]
-      ..sort((a, b) => a.dueDate.compareTo(b.dueDate));
-    final shown = sorted.take(_upcomingListLimit).toList();
-    final remaining = sorted.length - shown.length;
-    final today = DateTime.now();
 
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '合計${sorted.length}件',
+            l10n.totalCount(upcoming.total),
             style: const TextStyle(
               fontWeight: FontWeight.bold,
               color: AppColors.textPrimary,
             ),
           ),
           const SizedBox(height: 8),
-          for (final item in shown)
+          for (final item in upcoming.shown)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Row(
                 children: [
                   Expanded(
                     child: Text(
-                      '${context.l10n.deckLevelLabel(item.language, item.level)}の文',
+                      l10n.sentenceOfDeck(
+                        l10n.deckLevelLabel(item.language, item.level),
+                      ),
                       style: const TextStyle(color: AppColors.textPrimary),
                     ),
                   ),
                   Text(
-                    _relativeDueLabel(item.dueDate, today),
+                    _relativeDueLabel(context, _store.daysUntil(item.dueDate)),
                     style: const TextStyle(
                       color: AppColors.textSecondary,
                       fontSize: 13,
@@ -263,11 +249,11 @@ class _ReviewScreenState extends State<ReviewScreen> {
                 ],
               ),
             ),
-          if (remaining > 0)
+          if (upcoming.remaining > 0)
             Padding(
               padding: const EdgeInsets.only(top: 4),
               child: Text(
-                'ほか$remaining件',
+                l10n.andMore(upcoming.remaining),
                 style: const TextStyle(
                   color: AppColors.textSecondary,
                   fontSize: 13,
@@ -279,23 +265,21 @@ class _ReviewScreenState extends State<ReviewScreen> {
     );
   }
 
-  Widget _buildSearchField(String language) {
-    return TextField(
-      controller: _searchController,
-      onChanged: (value) => setState(() => _query = value),
-      decoration: InputDecoration(
-        hintText: '$language・日本語で検索',
-        prefixIcon: const Icon(Icons.search),
-        border: const OutlineInputBorder(),
-      ),
-    );
+  /// 今日からの相対的な表示（「今日」「明日」「N日後」）。過去日は「今日」として扱う。
+  String _relativeDueLabel(BuildContext context, int diffDays) {
+    final l10n = context.l10n;
+    if (diffDays <= 0) return l10n.today;
+    if (diffDays == 1) return l10n.tomorrow;
+    return l10n.daysLater(diffDays);
   }
 
-  Widget _buildPhrases(HistoryService history, List<Phrase> phrases) {
+  Widget _buildPhrases(BuildContext context) {
+    final l10n = context.l10n;
+    final phrases = _store.filteredPhrases.value;
     if (phrases.isEmpty) {
       return AppCard(
         child: Text(
-          _query.isEmpty ? 'フレーズはまだ登録されていません' : '一致するフレーズがありません',
+          _store.query.value.isEmpty ? l10n.noPhrases : l10n.noMatchingPhrases,
           style: const TextStyle(color: AppColors.textSecondary),
         ),
       );
@@ -344,8 +328,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
                     Icons.delete_outline,
                     color: AppColors.textSecondary,
                   ),
-                  tooltip: '削除',
-                  onPressed: () => _deletePhrase(history, phrase),
+                  tooltip: l10n.delete,
+                  onPressed: () => _deletePhrase(phrase),
                 ),
               ],
             ),
@@ -356,15 +340,3 @@ class _ReviewScreenState extends State<ReviewScreen> {
     );
   }
 }
-
-/// [dueDate]の[today]からの相対的な日本語表示（「今日」「明日」「N日後」）を返す。
-///
-/// 時刻は無視して日単位で比較する。過去日は「今日」として扱う。
-String _relativeDueLabel(DateTime dueDate, DateTime today) {
-  final diffDays = _dateOnly(dueDate).difference(_dateOnly(today)).inDays;
-  if (diffDays <= 0) return '今日';
-  if (diffDays == 1) return '明日';
-  return '$diffDays日後';
-}
-
-DateTime _dateOnly(DateTime date) => DateTime(date.year, date.month, date.day);
