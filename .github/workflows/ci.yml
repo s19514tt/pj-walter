@@ -20,6 +20,16 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      # 生成物（freezed / json_serializable / gen-l10n）はコミットする方針
+      # （DESIGN.md「生成物のコミット方針」）。ここで生成し直し、差分が無いことを検証する。
+      - name: Regenerate code
+        run: |
+          dart run build_runner build --delete-conflicting-outputs
+          flutter gen-l10n
+
+      - name: Verify generated files are committed
+        run: git diff --exit-code --stat
+
       - name: Verify formatting
         run: dart format --output=none --set-exit-if-changed .
 
