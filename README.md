@@ -77,31 +77,52 @@ APIキーが未設定の状態で添削・フィードバックを利用しよ�
 
 ## アーキテクチャ概略
 
-詳細は [DESIGN.md](./DESIGN.md) を参照してください。要点のみ:
+詳細は [DESIGN.md](./DESIGN.md) の「アーキテクチャ」、今後の計画は [docs/ROADMAP.md](./docs/ROADMAP.md) を参照してください。要点のみ:
 
-- 状態管理: `provider` + `ChangeNotifier`（Riverpod/BLoCは不使用）
+- 構成: feature-first のクリーンアーキテクチャ（`lib/core/` + `lib/features/<機能>/{domain,data,presentation}`）
+- 状態管理: `signals`（`signals_flutter`）。画面ごとの Store が signal / computed を持ち、UI は `SignalBuilder` で購読（`provider` は不使用）
+- DI: `get_it` によるコンポジションルート（`lib/core/di/`）。Store へはコンストラクタ注入。UI・Store から get_it は参照しない
+- モデル: `freezed` + `json_serializable`。外部 I/O 用の DTO（Hive / Gemini）と domain の Entity を分離
+- i18n: `flutter_localizations` + ARB（`lib/core/l10n/app_ja.arb`）。UI 文言はすべて ARB 経由（現在は ja のみ）
 - ルーティング: 素の `Navigator`（`go_router` は不使用）
 - ローカルDB: `hive` / `hive_flutter`（学習履歴・SRS・フレーズ帳・設定・日次統計）
 - APIキー保存: `flutter_secure_storage`
-- 音声入力: `record` で録音（PCM16）→ 16kHz mono に変換 → WAV化 → Gemini文字起こし。`SpeechInputService` で抽象化（テストではフェイクに差し替え）
-- Gemini通信: `http` でREST APIを直接呼び出し（構造化出力はJSON Schemaで固定）
+- 音声入力: `record` で録音（PCM16）→ 16kHz mono に変換 → WAV化 → `TranscriptionRepository` で文字起こし。`SpeechInputService` で抽象化（テストではフェイクに差し替え）
+- 外部 I/O は `CorrectionRepository` / `MonologueReviewRepository` / `TranscriptionRepository` / `TtsRepository` / `ContentRepository` のインタフェースに閉じ込め、現在は Gemini REST 直叩き（構造化出力はJSON Schemaで固定）とアセット読み込みで実装。次フェーズでここがバックエンド呼び出しに差し替わる
 - グラフ: `fl_chart`
 
 ### ディレクトリ構成
 
 ```
 lib/
-  main.dart          # Hive初期化、Provider登録、MaterialApp
-  theme/              # デザインシステム（色・タイポ・コンポーネントテーマ）
-  models/             # 純Dartモデル（fromJson/toJson）
-  services/           # 設定・Gemini通信・音声入力・読み上げ・教材ロード・履歴永続化などのロジック
-  screens/            # 画面（composition/, monologue/, stats/ にサブ画面をまとめて配置）
-  widgets/            # 共通UIパーツ
-  utils/              # 画面をまたぐ小さなヘルパー
+  main.dart           # Hive初期化 → configureDependencies() → runApp
+  app.dart            # MaterialApp（テーマ・ローカライズ・AppScope）
+  core/
+    di/               # コンポジションルート（get_it）、StoreFactory / AppScope
+    state/            # Store 基底クラス（signals のライフサイクル管理）
+    l10n/             # ARB と gen-l10n の生成物
+    language/         # LearningLanguage / LanguageProfile / LanguageSupport
+    domain/           # TokenUsage, GeminiPricing, AppFailure
+    data/             # GeminiClient（共通トランスポート）
+    theme/            # デザインシステム（色・タイポ・コンポーネントテーマ）
+    widgets/          # 共通UIパーツ
+    utils/            # 画面をまたぐ小さなヘルパー
+  features/
+    settings/         # 学習言語・独り言デフォルト時間・APIキー
+    content/          # 教材・お題（アセット読み込み）
+    speech/           # 文字起こし・読み上げ・録音／再生の抽象化
+    composition/      # 口頭作文（デッキ選択→ドリル→添削表示→まとめ）
+    monologue/        # 独り言（お題選択→スピーキング→フィードバック）
+    review/           # SRS復習・フレーズ帳
+    stats/            # 日次統計・記録タブ
+    home/             # シェル・ホーム・学習メニュー
+    （各 feature は domain/ data/ presentation/ と <feature>_module.dart を持つ）
 assets/data/en/       # 英語教材（TOEIC700/800）・独り言お題のJSON
 assets/data/zh/       # 中国語教材（HSK3/4）・独り言お題のJSON
+docs/ROADMAP.md       # フェーズ計画
 tool/hsk/             # 中国語教材のHSK語彙検証・ピンイン生成スクリプト
-test/                 # ウィジェットテスト・ユニットテスト
+test/                 # ウィジェットテスト・ユニットテスト・Store のユニットテスト・ゴールデン
+widgetbook/           # UIの状態一覧（Widgetbook）
 ```
 
 ## 開発コマンド
@@ -110,6 +131,8 @@ test/                 # ウィジェットテスト・ユニットテスト
 export PATH="$HOME/flutter/bin:$PATH"
 
 flutter pub get        # 依存パッケージ取得
+dart run build_runner build --delete-conflicting-outputs  # freezed / json_serializable の生成（モデルを変えたとき）
+flutter gen-l10n         # ARB からローカライズクラスを生成（app_ja.arb を変えたとき）
 flutter analyze         # 静的解析（警告0を維持）
 flutter test             # 全テスト実行
 dart format lib test      # フォーマット

@@ -10,9 +10,10 @@
 // `flutter test --update-goldens test/goldens` で生成する）。
 
 import 'package:flutter/material.dart';
-import 'package:pj_walter/theme/app_theme.dart';
-import 'package:pj_walter/widgets/countdown_ring.dart';
-import 'package:pj_walter/widgets/score_ring.dart';
+import 'package:pj_walter/core/l10n/l10n.dart';
+import 'package:pj_walter/core/theme/app_theme.dart';
+import 'package:pj_walter/core/widgets/countdown_ring.dart';
+import 'package:pj_walter/core/widgets/score_ring.dart';
 import 'package:widgetbook/widgetbook.dart';
 
 import 'fixtures/drill_feedback_fixtures.dart';
@@ -28,6 +29,12 @@ class PjWalterWidgetbook extends StatelessWidget {
   Widget build(BuildContext context) {
     return Widgetbook.material(
       addons: [
+        // 画面・ウィジェットは ARB の文言を使うため、ロケールを ja に固定して描く
+        LocalizationAddon(
+          locales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          initialLocale: const Locale('ja'),
+        ),
         ViewportAddon([
           IosViewports.iPhone13,
           IosViewports.iPhone12Mini,

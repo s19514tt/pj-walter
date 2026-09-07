@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pj_walter/utils/wav_builder.dart';
+import 'package:pj_walter/core/utils/wav_builder.dart';
 
 void main() {
   group('buildWavBytes', () {

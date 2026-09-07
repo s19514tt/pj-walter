@@ -8,25 +8,27 @@ import 'package:flutter_secure_storage/test/test_flutter_secure_storage_platform
 import 'package:flutter_secure_storage_platform_interface/flutter_secure_storage_platform_interface.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
-import 'package:pj_walter/models/learning_language.dart';
-import 'package:pj_walter/models/srs_item.dart';
-import 'package:pj_walter/services/history_service.dart';
-import 'package:pj_walter/services/sentence_repository.dart';
-import 'package:pj_walter/services/settings_service.dart';
+import 'package:pj_walter/core/language/learning_language.dart';
+import 'package:pj_walter/features/review/data/srs_item_dto.dart';
+import 'package:pj_walter/features/review/domain/srs_item.dart';
+import 'package:pj_walter/features/content/data/asset_content_repository.dart';
+import 'package:pj_walter/features/content/domain/content_repository.dart';
+import 'package:pj_walter/features/review/data/hive_srs_repository.dart';
+import 'package:pj_walter/features/settings/data/hive_settings_repository.dart';
 
 import 'test_support/hive_test_support.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  late SentenceRepository repository;
+  late ContentRepository repository;
 
   setUp(() async {
     await initTestHive();
     FlutterSecureStoragePlatform.instance = TestFlutterSecureStoragePlatform(
       {},
     );
-    repository = SentenceRepository();
+    repository = AssetContentRepository();
   });
 
   tearDown(() async {
@@ -35,11 +37,11 @@ void main() {
 
   group('中国語教材', () {
     test('HSK3・HSK4のデッキがロードでき、レベルが一致する', () async {
-      final hsk3 = await repository.sentencesFor(
+      final hsk3 = await repository.sentences(
         profile: LanguageProfile.chinese,
         level: 3,
       );
-      final hsk4 = await repository.sentencesFor(
+      final hsk4 = await repository.sentences(
         profile: LanguageProfile.chinese,
         level: 4,
       );
@@ -52,7 +54,7 @@ void main() {
 
     test('全ての文が日本語・中国語・ピンイン・解説を持つ', () async {
       for (final level in [3, 4]) {
-        final sentences = await repository.sentencesFor(
+        final sentences = await repository.sentences(
           profile: LanguageProfile.chinese,
           level: level,
         );
@@ -68,7 +70,7 @@ void main() {
 
     test('各デッキが300文ある', () async {
       for (final level in [3, 4]) {
-        final sentences = await repository.sentencesFor(
+        final sentences = await repository.sentences(
           profile: LanguageProfile.chinese,
           level: level,
         );
@@ -78,7 +80,7 @@ void main() {
 
     test('日本語文・中国語文がデッキ内で重複しない', () async {
       for (final level in [3, 4]) {
-        final sentences = await repository.sentencesFor(
+        final sentences = await repository.sentences(
           profile: LanguageProfile.chinese,
           level: level,
         );
@@ -99,7 +101,7 @@ void main() {
     test('どのテーマでも1セッション分（10問）以上そろっている', () async {
       for (final level in [3, 4]) {
         for (final theme in ['daily', 'business', 'travel']) {
-          final sentences = await repository.sentencesFor(
+          final sentences = await repository.sentences(
             profile: LanguageProfile.chinese,
             level: level,
             theme: theme,
@@ -116,7 +118,7 @@ void main() {
     test('IDが教材全体で一意である', () async {
       final ids = <String>[];
       for (final level in [3, 4]) {
-        final sentences = await repository.sentencesFor(
+        final sentences = await repository.sentences(
           profile: LanguageProfile.chinese,
           level: level,
         );
@@ -129,14 +131,14 @@ void main() {
     test('IDが英語教材のIDと衝突しない（SRSキューが混ざらない）', () async {
       final chinese = [
         for (final level in [3, 4])
-          ...await repository.sentencesFor(
+          ...await repository.sentences(
             profile: LanguageProfile.chinese,
             level: level,
           ),
       ].map((s) => s.id).toSet();
       final english = [
         for (final level in [700, 800])
-          ...await repository.sentencesFor(
+          ...await repository.sentences(
             profile: LanguageProfile.english,
             level: level,
           ),
@@ -148,7 +150,7 @@ void main() {
     test('テーマが3分類のいずれかに収まっている', () async {
       const themes = {'daily', 'business', 'travel'};
       for (final level in [3, 4]) {
-        final sentences = await repository.sentencesFor(
+        final sentences = await repository.sentences(
           profile: LanguageProfile.chinese,
           level: level,
         );
@@ -159,11 +161,11 @@ void main() {
     });
 
     test('テーマで絞り込める', () async {
-      final all = await repository.sentencesFor(
+      final all = await repository.sentences(
         profile: LanguageProfile.chinese,
         level: 3,
       );
-      final businessOnly = await repository.sentencesFor(
+      final businessOnly = await repository.sentences(
         profile: LanguageProfile.chinese,
         level: 3,
         theme: 'business',
@@ -187,10 +189,8 @@ void main() {
 
     test('その言語に無いレベルを要求すると例外になる', () async {
       expect(
-        () => repository.sentencesFor(
-          profile: LanguageProfile.chinese,
-          level: 700,
-        ),
+        () =>
+            repository.sentences(profile: LanguageProfile.chinese, level: 700),
         throwsArgumentError,
       );
     });
@@ -208,42 +208,44 @@ void main() {
       );
     });
 
-    test('中国語だけ発音表記のラベルを持ち、分かち書きしない扱いになる', () {
-      expect(LanguageProfile.english.readingLabel, isNull);
+    test('中国語だけ読み表記（ピンイン）を持ち、分かち書きしない扱いになる', () {
+      expect(LanguageProfile.english.hasReading, isFalse);
+      expect(LanguageProfile.english.support.reading, isNull);
       expect(LanguageProfile.english.wordSeparated, isTrue);
-      expect(LanguageProfile.chinese.readingLabel, 'ピンイン');
+      expect(LanguageProfile.chinese.hasReading, isTrue);
+      expect(LanguageProfile.chinese.support.reading, ReadingSystem.pinyin);
       expect(LanguageProfile.chinese.wordSeparated, isFalse);
     });
   });
 
-  group('SettingsService の学習言語', () {
+  group('SettingsRepository の学習言語', () {
     test('既定は英語で、切り替えると永続化される', () async {
       final box = await Hive.openBox('settings');
-      final settings = SettingsService(settingsBox: box);
-      await settings.init();
+      final settings = HiveSettingsRepository(settingsBox: box);
+      await settings.load();
 
-      expect(settings.learningLanguage, LearningLanguage.english);
-      expect(settings.languageProfile.code, 'en');
+      expect(
+        settings.settings.value.learningLanguage,
+        LearningLanguage.english,
+      );
+      expect(settings.settings.value.languageProfile.code, 'en');
 
       await settings.setLearningLanguage(LearningLanguage.chinese);
-      expect(settings.languageProfile.compositionTitle, '口頭中国語作文');
+      expect(settings.settings.value.languageProfile.code, 'zh');
 
       // 別インスタンスで読み直しても保持されている
-      final reopened = SettingsService(settingsBox: box);
-      await reopened.init();
-      expect(reopened.learningLanguage, LearningLanguage.chinese);
+      final reopened = HiveSettingsRepository(settingsBox: box);
+      await reopened.load();
+      expect(
+        reopened.settings.value.learningLanguage,
+        LearningLanguage.chinese,
+      );
     });
   });
 
   group('復習キューの言語分離', () {
-    test('dueSrsItemsは指定した学習言語のアイテムだけを返す', () async {
-      final history = HistoryService(
-        drillResultsBox: await Hive.openBox('drill_results'),
-        monologueResultsBox: await Hive.openBox('monologue_results'),
-        srsItemsBox: await Hive.openBox('srs_items'),
-        phrasesBox: await Hive.openBox('phrases'),
-        dailyStatsBox: await Hive.openBox('daily_stats'),
-      );
+    test('dueは指定した学習言語のアイテムだけを返す', () async {
+      final box = await Hive.openBox('srs_items');
       final today = DateTime.now();
       final due = DateTime(today.year, today.month, today.day);
       for (final item in [
@@ -266,29 +268,14 @@ void main() {
           lastResult: false,
         ),
       ]) {
-        await Hive.box('srs_items').put(item.sentenceId, item.toJson());
+        await box.put(item.sentenceId, SrsItemDto.fromEntity(item).toJson());
       }
+      // Repository は生成時に box を読むので、書き込み後に組み立てる
+      final srs = HiveSrsRepository(box);
 
-      expect(history.dueSrsItems().length, 2);
-      expect(history.dueSrsItems(language: 'zh').map((i) => i.sentenceId), [
-        'z3-001',
-      ]);
-      expect(history.dueSrsItems(language: 'en').map((i) => i.sentenceId), [
-        's700-001',
-      ]);
-    });
-
-    test('languageが無い保存済みアイテムは英語として扱われる', () {
-      final restored = SrsItem.fromJson({
-        'sentenceId': 's700-001',
-        'level': 700,
-        'stage': 0,
-        'dueDate': DateTime(2026, 1, 1).toIso8601String(),
-        'lapses': 0,
-        'lastResult': false,
-      });
-
-      expect(restored.language, 'en');
+      expect(srs.due().length, 2);
+      expect(srs.due(language: 'zh').map((i) => i.sentenceId), ['z3-001']);
+      expect(srs.due(language: 'en').map((i) => i.sentenceId), ['s700-001']);
     });
   });
 }

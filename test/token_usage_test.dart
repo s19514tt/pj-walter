@@ -1,18 +1,14 @@
-// TokenUsage（usageMetadataの読み取り・合算）とGeminiPricing（単価の日付切替・
+// TokenUsage（合算）とGeminiPricing（単価の日付切替・
 // 料金計算）のユニットテスト。
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pj_walter/models/token_usage.dart';
-import 'package:pj_walter/services/gemini_pricing.dart';
+import 'package:pj_walter/core/domain/token_usage.dart';
+import 'package:pj_walter/core/domain/gemini_pricing.dart';
 
 void main() {
   group('TokenUsage', () {
-    test('usageMetadataから読み取り、欠けたキーは0にする', () {
-      final usage = TokenUsage.fromUsageMetadata({
-        'promptTokenCount': 120,
-        'candidatesTokenCount': 30,
-        'totalTokenCount': 150,
-      });
+    test('思考トークンを省略すると0で、出力・合計を計算できる', () {
+      const usage = TokenUsage(promptTokens: 120, candidatesTokens: 30);
       expect(usage.promptTokens, 120);
       expect(usage.candidatesTokens, 30);
       expect(usage.thoughtsTokens, 0);
@@ -21,9 +17,9 @@ void main() {
       expect(usage.isZero, isFalse);
     });
 
-    test('nullならzero', () {
-      expect(TokenUsage.fromUsageMetadata(null), TokenUsage.zero);
+    test('zeroは使用量なし', () {
       expect(TokenUsage.zero.isZero, isTrue);
+      expect(TokenUsage.zero + TokenUsage.zero, TokenUsage.zero);
     });
 
     test('思考トークンは出力に含めて合算する', () {
@@ -72,15 +68,12 @@ void main() {
       expect(standardCost, closeTo(1.5 + 25 * 7.5 / 1000000, 1e-12));
     });
 
-    test('単価の説明と金額の整形', () {
-      expect(
-        GeminiPricing.introductory.rateDescription,
-        '入力 \$0.75 / 出力 \$3.75 per 1M tokens',
-      );
-      expect(
-        GeminiPricing.standard.rateDescription,
-        '入力 \$1.5 / 出力 \$7.5 per 1M tokens',
-      );
+    test('単価の表記と金額の整形', () {
+      expect(GeminiPricing.introductory.inputRateLabel, '\$0.75');
+      expect(GeminiPricing.introductory.outputRateLabel, '\$3.75');
+      expect(GeminiPricing.standard.inputRateLabel, '\$1.5');
+      expect(GeminiPricing.standard.outputRateLabel, '\$7.5');
+      expect(GeminiPricing.tts.tier, PricingTier.tts);
       expect(formatUsd(0.00016875), '\$0.0002');
       expect(formatUsd(0), '\$0.0000');
       expect(formatUsd(1.23456), '\$1.2346');

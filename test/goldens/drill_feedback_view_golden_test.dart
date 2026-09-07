@@ -14,9 +14,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pj_walter/theme/app_theme.dart';
+import 'package:pj_walter/core/theme/app_theme.dart';
 
 import '../../widgetbook/fixtures/drill_feedback_fixtures.dart';
+import '../test_support/test_app.dart';
 
 void main() {
   for (final story in drillFeedbackStories) {
@@ -26,10 +27,10 @@ void main() {
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
       await tester.pumpWidget(
-        MaterialApp(
+        // ロケールは ja に固定する（翻訳を足しても画像が変わらないように）
+        localizedApp(
           // Google Fonts はネットワーク取得になるため、テストではシステムフォントで組む
           theme: AppTheme.build(webFonts: false),
-          debugShowCheckedModeBanner: false,
           home: Scaffold(
             backgroundColor: AppColors.pageBackground,
             body: story.build(),

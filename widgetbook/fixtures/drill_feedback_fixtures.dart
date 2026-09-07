@@ -6,12 +6,12 @@
 // 状態はここにだけ書く。widgetbook パッケージには依存しない（テストからも読むため）。
 
 import 'package:flutter/material.dart';
-import 'package:pj_walter/models/drill_result.dart';
-import 'package:pj_walter/models/learning_language.dart';
-import 'package:pj_walter/models/sentence.dart';
-import 'package:pj_walter/models/token_usage.dart';
-import 'package:pj_walter/screens/composition/drill_feedback_view.dart';
-import 'package:pj_walter/services/tts_service.dart';
+import 'package:pj_walter/features/composition/domain/drill_result.dart';
+import 'package:pj_walter/core/language/learning_language.dart';
+import 'package:pj_walter/features/content/domain/sentence.dart';
+import 'package:pj_walter/core/domain/token_usage.dart';
+import 'package:pj_walter/features/composition/presentation/drill_feedback_view.dart';
+import 'package:pj_walter/features/speech/domain/tts_service.dart';
 
 /// ストーリー1件（名前＋ウィジェットの組み立て）。
 class Story {
@@ -88,8 +88,8 @@ CompositionFeedback _zhPerfect(List<String> spokenWords) => CompositionFeedback(
   ]),
   spokenWords: _spokenWords(spokenWords),
   correctedReading: 'wǒ yào shuǐ',
-  explanationJa: '文法的な誤りはありません。',
-  comparisonJa: '模範解答と同じです。',
+  explanation: '文法的な誤りはありません。',
+  comparison: '模範解答と同じです。',
 );
 
 CompositionFeedback _zhFixed(List<String> spokenWords) => CompositionFeedback(
@@ -106,16 +106,16 @@ CompositionFeedback _zhFixed(List<String> spokenWords) => CompositionFeedback(
   ]),
   spokenWords: _spokenWords(spokenWords),
   correctedReading: 'qǐng chóngxīn shuōmíng yíxià hǎo ma',
-  explanationJa: '文末の「好吗」を付けると依頼の口調になります。',
-  comparisonJa: '模範解答と同じ形に直しました。',
+  explanation: '文末の「好吗」を付けると依頼の口調になります。',
+  comparison: '模範解答と同じ形に直しました。',
 );
 
 const _enFeedback = CompositionFeedback(
   score: 85,
   isAcceptable: true,
   corrected: 'I had toast this morning.',
-  explanationJa: '過去の話なので had を使います。',
-  comparisonJa: '模範解答と同じ意味です。',
+  explanation: '過去の話なので had を使います。',
+  comparison: '模範解答と同じ意味です。',
 );
 
 DrillFeedbackView _view({
@@ -221,8 +221,8 @@ final drillFeedbackStories = <Story>[
         ]),
         spokenWords: _spokenWords(const ['你', '早点儿', '回家', '休息', '吧']),
         correctedReading: 'nǐ zǎo diǎnr huíjiā xiūxi ba',
-        explanationJa: '問題ありません。',
-        comparisonJa: '',
+        explanation: '問題ありません。',
+        comparison: '',
       ),
     ),
   ),
@@ -259,8 +259,8 @@ final drillFeedbackStories = <Story>[
           ('？', ''),
         ]),
         spokenWords: _spokenWords(const ['请', '重新', '说明', '一下']),
-        explanationJa: '文末の「好吗」を付けると依頼の口調になります。',
-        comparisonJa: '模範解答と同じ形に直しました。',
+        explanation: '文末の「好吗」を付けると依頼の口調になります。',
+        comparison: '模範解答と同じ形に直しました。',
       ),
     ),
   ),
@@ -277,8 +277,8 @@ final drillFeedbackStories = <Story>[
         isAcceptable: true,
         corrected: '我要水。',
         correctedReading: 'wo yao shui',
-        explanationJa: '問題ありません。',
-        comparisonJa: '',
+        explanation: '問題ありません。',
+        comparison: '',
       ),
     ),
   ),
@@ -316,8 +316,8 @@ final drillFeedbackStories = <Story>[
         score: 0,
         isAcceptable: false,
         corrected: '',
-        explanationJa: '時間切れで回答できませんでした。模範解答を確認して復習しましょう。',
-        comparisonJa: '',
+        explanation: '時間切れで回答できませんでした。模範解答を確認して復習しましょう。',
+        comparison: '',
       ),
     ),
   ),
@@ -334,8 +334,8 @@ final drillFeedbackStories = <Story>[
         score: 0,
         isAcceptable: false,
         corrected: '',
-        explanationJa: 'わからないので飛ばした問題です。模範解答を声に出して真似るところから始めましょう。',
-        comparisonJa: '',
+        explanation: 'わからないので飛ばした問題です。模範解答を声に出して真似るところから始めましょう。',
+        comparison: '',
       ),
     ),
   ),
